@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
 import { FiDownload, FiFilter, FiEdit2, FiTrash2, FiChevronDown, FiChevronUp, FiFileText, FiFile, FiX, FiCopy } from "react-icons/fi";
 
@@ -87,7 +87,7 @@ export default function ImportantContactsPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col gap-4 max-w-7xl mx-auto px-4 py-3">
+      <div className="flex flex-col gap-4 py-3">
         <h1 className="text-2xl font-bold mb-4">Important Contacts</h1>
         <div className="rounded-2xl shadow-lg bg-white">
           {/* Controls */}
@@ -191,7 +191,7 @@ export default function ImportantContactsPage() {
                   value={entriesPerPage}
                   onChange={handleEntriesChange}
                 >
-                  {[3, 5, 10, 20].map(num => (
+                  {[2, 5, 10].map(num => (
                     <option key={num} value={num}>{num}</option>
                   ))}
                 </select>
@@ -302,19 +302,19 @@ export default function ImportantContactsPage() {
                 <FiX size={22} />
               </button>
               <h2 className="text-xl font-bold mb-4 text-rose-600">Delete Contact</h2>
-              <p className="mb-4 text-gray-700">Type <span className="font-mono bg-gray-100 px-2 py-1 rounded">delete</span> to confirm deletion of <span className="font-semibold">{deleteContact.name}</span>.</p>
+              <p className="mb-4 text-gray-700">Type <span className="font-mono bg-gray-100 px-2 py-1 rounded">Delete</span> to confirm deletion of <span className="font-semibold">{deleteContact.name}</span>.</p>
               <input
                 type="text"
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-rose-400 mb-4"
                 value={deleteConfirm}
                 onChange={e => setDeleteConfirm(e.target.value)}
-                placeholder="Type 'delete' to confirm"
+                placeholder="Type 'Delete' to confirm"
               />
               <button
                 type="button"
-                className={`bg-rose-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-rose-700 transition w-full ${deleteConfirm !== 'delete' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`bg-rose-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-rose-700 transition w-full ${deleteConfirm.trim().toLowerCase() === 'delete' ? 'font-bold' : 'opacity-50 cursor-not-allowed'}`}
                 onClick={handleDelete}
-                disabled={deleteConfirm !== 'delete'}
+                disabled={deleteConfirm.trim().toLowerCase() !== 'delete'}
               >
                 Delete
               </button>

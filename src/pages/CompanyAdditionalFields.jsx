@@ -1,13 +1,13 @@
 import React from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
 
-export default function MembershipManagement() {
+export default function CompanyAdditionalFields() {
   return (
     <DashboardLayout>
-      <div className="flex flex-col gap-4 max-w-7xl mx-auto px-4 py-3">
-        <h1 className="text-2xl font-bold mb-4">Membership Management</h1>
+      <div className="flex flex-col gap-4 py-3">
+        <h1 className="text-2xl font-bold mb-4">Company Additional Fields</h1>
         <div className="rounded-2xl shadow-lg bg-white p-8 text-center text-gray-500">
-          Membership management content goes here.
+          Company additional fields content goes here.
         </div>
       </div>
     </DashboardLayout>
