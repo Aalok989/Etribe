@@ -27,8 +27,10 @@ const data = [
 export default function AnalyticsGraph() {
   return (
     <div className="rounded-2xl shadow-lg bg-white h-full w-full">
-      <div className="rounded-t-2xl bg-gradient-to-r from-indigo-500 to-blue-500 px-6 py-4">
-        <h2 className="text-xl font-bold text-white tracking-wide">Member Analytics</h2>
+      <div className="relative rounded-t-2xl overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-indigo-200 via-blue-100 to-blue-200" />
+        <div className="absolute inset-0 bg-white/30 backdrop-blur-md border-b border-white/30" />
+        <h2 className="relative z-10 text-xl font-bold text-gray-900 tracking-wide px-6 py-4">Member Analytics</h2>
       </div>
       <div className="p-6 h-[calc(100%-64px)]">
         <ResponsiveContainer width="100%" height="100%">

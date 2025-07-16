@@ -20,6 +20,12 @@ import MembershipPlans from "./pages/MembershipPlans";
 import AllEvents from "./pages/AllEvents";
 import UpcomingEventsPage from "./pages/UpcomingEventsPage";
 import PastEvents from "./pages/PastEvents";
+import AboutUs from "./pages/AboutUs";
+import OurServices from "./pages/OurServices";
+import Contact from "./pages/Contact";
+import Policy from "./pages/Policy";
+import TermsOfService from "./pages/TermsOfService";
+import CookiePolicy from "./pages/CookiePolicy";
 
 function App() {
   return (
@@ -46,6 +52,12 @@ function App() {
         <Route path="/master-settings/user-additional-fields" element={<UserAdditionalFields />} />
         <Route path="/master-settings/company-additional-fields" element={<CompanyAdditionalFields />} />
         <Route path="/master-settings/membership-plans" element={<MembershipPlans />} />
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/services" element={<OurServices />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/policy" element={<Policy />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/cookies" element={<CookiePolicy />} />
       </Routes>
     </Router>
   );
