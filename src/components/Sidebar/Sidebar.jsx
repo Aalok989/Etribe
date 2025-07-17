@@ -41,6 +41,7 @@ const menuItems = [
     basePath: "/event-management",
     dropdown: true,
     subItems: [
+      { label: "Calendar", path: "/calendar" },
       { label: "All Events", path: "/event-management/all" },
       { label: "Upcoming Events", path: "/event-management/upcoming" },
       { label: "Past Events", path: "/event-management/past" },

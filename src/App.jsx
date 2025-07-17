@@ -26,6 +26,7 @@ import Contact from "./pages/Contact";
 import Policy from "./pages/Policy";
 import TermsOfService from "./pages/TermsOfService";
 import CookiePolicy from "./pages/CookiePolicy";
+import Calendar from "./pages/Calendar";
 
 function App() {
   return (
@@ -58,6 +59,7 @@ function App() {
         <Route path="/policy" element={<Policy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/cookies" element={<CookiePolicy />} />
+        <Route path="/calendar" element={<Calendar />} />
       </Routes>
     </Router>
   );

@@ -1,16 +1,31 @@
 import React from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
+import privacyPolicyImg from "../assets/privacy-policy.jpg";
 
 export default function Policy() {
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-8 py-3">
         {/* Hero Section */}
-        <div className="rounded-2xl shadow-lg bg-white p-8">
-          <h1 className="text-4xl font-extrabold text-indigo-700 mb-4">Privacy Policy</h1>
-          <p className="text-lg text-gray-700 max-w-2xl">
-            This Privacy Policy explains how Etribe collects, uses, discloses, and safeguards your information when you use our platform. Please read this policy carefully.
-          </p>
+        <div className="rounded-2xl shadow-lg bg-white p-0 overflow-hidden flex flex-col md:flex-row items-stretch">
+          <div className="flex flex-1 flex-col items-start justify-start p-8">
+            <h1 className="text-4xl font-extrabold text-indigo-700 mb-2">Privacy Policy</h1>
+            <h2 className="text-lg font-semibold text-indigo-500 mb-2">Your Data, Your Trust, Our Responsibility</h2>
+            <div className="text-sm text-gray-500 mb-2">Last Updated: April 2024</div>
+            <p className="text-base text-indigo-700 mb-2 font-medium">We are committed to protecting your privacy and ensuring transparency in how your information is handled.</p>
+            <ul className="list-disc pl-5 text-gray-700 text-base mb-3 space-y-1">
+              <li>Clear explanation of what data we collect</li>
+              <li>How your information is used and protected</li>
+              <li>Your rights and choices regarding your data</li>
+              <li>Easy ways to contact us for privacy concerns</li>
+            </ul>
+            <p className="text-lg text-gray-700 max-w-2xl">
+              This Privacy Policy explains how Etribe collects, uses, discloses, and safeguards your information when you use our platform. Please read this policy carefully.
+            </p>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-8">
+            <img src={privacyPolicyImg} alt="Privacy Policy" className="w-80 h-64 object-cover rounded-2xl shadow-xl border-4 border-white" />
+          </div>
         </div>
 
         {/* Table of Contents */}

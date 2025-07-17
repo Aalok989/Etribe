@@ -95,13 +95,13 @@ export default function Contact() {
         <div className="rounded-2xl bg-white shadow-lg p-0 overflow-hidden flex flex-col md:flex-row items-stretch mt-8">
           <div className="flex flex-1 flex-col items-start justify-start p-8">
             <h2 className="text-2xl font-bold text-indigo-700 mb-2">Our Location</h2>
-            <p className="text-gray-700 mb-2">123 Business Ave, Tech City, TC 12345</p>
+            <p className="text-gray-700 mb-2">30 Days Technology</p>
             <p className="text-gray-600">Open: Mon - Fri, 9:00am - 6:00pm</p>
           </div>
           <div className="flex-1 w-full h-64 rounded-2xl overflow-hidden shadow-lg border-4 border-white m-0 md:m-8">
             <iframe
               title="Etribe Location"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.019019145409!2d-122.4194151846812!3d37.7749297797597!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8085808c7e2b1b1b%3A0x4a0b8b8b8b8b8b8b!2s123%20Business%20Ave%2C%20Tech%20City%2C%20TC%2012345!5e0!3m2!1sen!2sus!4v1680000000000!5m2!1sen!2sus"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d33298.23889084382!2d76.9521781072993!3d28.68826412524933!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390d0974e3650841%3A0xafa091d27bb886c0!2s30Days%20Technologies%20Pvt%20Ltd%20-%20Bahadurgarh!5e0!3m2!1sen!2sin!4v1752662526914!5m2!1sen!2sin"
               width="100%"
               height="100%"
               style={{ border: 0 }}
