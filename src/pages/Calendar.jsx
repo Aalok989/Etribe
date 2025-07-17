@@ -152,7 +152,7 @@ const SimpleCalendar = ({ selectedDate, onDateSelect, events }) => {
 
           return (
             <div
-              key={day}
+              key={index}
               onClick={() => onDateSelect(dayDate)}
               className={`aspect-square p-2 cursor-pointer rounded-xl transition-all duration-200 transform hover:scale-105 hover:shadow-lg relative group
                 ${isSelected ? "ring-2 ring-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50 shadow-md" : "hover:bg-gradient-to-br hover:from-emerald-50 hover:to-blue-50"}

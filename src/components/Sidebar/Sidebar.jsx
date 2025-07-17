@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FiGrid, FiUsers, FiUserCheck, FiCalendar, FiBookOpen, FiSettings, FiLogOut, FiMenu, FiUser, FiChevronDown } from "react-icons/fi";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import companyLogo from "../../assets/company-logo/parent.jpg";
 
 const menuItems = [
@@ -74,6 +74,7 @@ export default function Sidebar({ className = "" }) {
   const [collapsed, setCollapsed] = useState(false);
   const [openDropdown, setOpenDropdown] = useState("");
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Open the dropdown if a sub-item is active on page load
   React.useEffect(() => {
@@ -215,6 +216,10 @@ export default function Sidebar({ className = "" }) {
         <button 
           className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-150 text-left font-medium text-blue-900 hover:bg-red-100 hover:text-red-600"
           title="Logout"
+          onClick={() => {
+            localStorage.removeItem('token');
+            navigate('/login', { replace: true });
+          }}
         >
           <FiLogOut size={20} />
           {!collapsed && <span className="whitespace-nowrap">Logout</span>}

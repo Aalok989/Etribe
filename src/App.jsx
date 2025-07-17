@@ -27,39 +27,52 @@ import Policy from "./pages/Policy";
 import TermsOfService from "./pages/TermsOfService";
 import CookiePolicy from "./pages/CookiePolicy";
 import Calendar from "./pages/Calendar";
+import Login from "./pages/Login";
+
+function isAuthenticated() {
+  return !!localStorage.getItem('token');
+}
+
+function ProtectedRoute({ children }) {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/membership-management/active" element={<ActiveMembers />} />
-        <Route path="/membership-management/inactive" element={<InactiveMembers />} />
-        <Route path="/membership-management/expired" element={<MembershipExpired />} />
-        <Route path="/admin-management" element={<AdminManagement />} />
-        <Route path="/admin-management/accounts" element={<AdminAccounts />} />
-        <Route path="/admin-management/user-roles" element={<UserRoles />} />
-        <Route path="/admin-management/role-management" element={<RoleManagement />} />
-        <Route path="/event-management" element={<EventManagement />} />
-        <Route path="/event-management/all" element={<AllEvents />} />
-        <Route path="/event-management/upcoming" element={<UpcomingEventsPage />} />
-        <Route path="/event-management/past" element={<PastEvents />} />
-        <Route path="/important-contacts" element={<ImportantContactsPage />} />
-        <Route path="/master-settings" element={<MasterSettings />} />
-        <Route path="/master-settings/group-data" element={<GroupData />} />
-        <Route path="/master-settings/smtp-settings" element={<SMTPSettings />} />
-        <Route path="/master-settings/message-settings" element={<MessageSettings />} />
-        <Route path="/master-settings/user-additional-fields" element={<UserAdditionalFields />} />
-        <Route path="/master-settings/company-additional-fields" element={<CompanyAdditionalFields />} />
-        <Route path="/master-settings/membership-plans" element={<MembershipPlans />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/membership-management/active" element={<ProtectedRoute><ActiveMembers /></ProtectedRoute>} />
+        <Route path="/membership-management/inactive" element={<ProtectedRoute><InactiveMembers /></ProtectedRoute>} />
+        <Route path="/membership-management/expired" element={<ProtectedRoute><MembershipExpired /></ProtectedRoute>} />
+        <Route path="/admin-management" element={<ProtectedRoute><AdminManagement /></ProtectedRoute>} />
+        <Route path="/admin-management/accounts" element={<ProtectedRoute><AdminAccounts /></ProtectedRoute>} />
+        <Route path="/admin-management/user-roles" element={<ProtectedRoute><UserRoles /></ProtectedRoute>} />
+        <Route path="/admin-management/role-management" element={<ProtectedRoute><RoleManagement /></ProtectedRoute>} />
+        <Route path="/event-management" element={<ProtectedRoute><EventManagement /></ProtectedRoute>} />
+        <Route path="/event-management/all" element={<ProtectedRoute><AllEvents /></ProtectedRoute>} />
+        <Route path="/event-management/upcoming" element={<ProtectedRoute><UpcomingEventsPage /></ProtectedRoute>} />
+        <Route path="/event-management/past" element={<ProtectedRoute><PastEvents /></ProtectedRoute>} />
+        <Route path="/important-contacts" element={<ProtectedRoute><ImportantContactsPage /></ProtectedRoute>} />
+        <Route path="/master-settings" element={<ProtectedRoute><MasterSettings /></ProtectedRoute>} />
+        <Route path="/master-settings/group-data" element={<ProtectedRoute><GroupData /></ProtectedRoute>} />
+        <Route path="/master-settings/smtp-settings" element={<ProtectedRoute><SMTPSettings /></ProtectedRoute>} />
+        <Route path="/master-settings/message-settings" element={<ProtectedRoute><MessageSettings /></ProtectedRoute>} />
+        <Route path="/master-settings/user-additional-fields" element={<ProtectedRoute><UserAdditionalFields /></ProtectedRoute>} />
+        <Route path="/master-settings/company-additional-fields" element={<ProtectedRoute><CompanyAdditionalFields /></ProtectedRoute>} />
+        <Route path="/master-settings/membership-plans" element={<ProtectedRoute><MembershipPlans /></ProtectedRoute>} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/services" element={<OurServices />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/policy" element={<Policy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/cookies" element={<CookiePolicy />} />
-        <Route path="/calendar" element={<Calendar />} />
+        <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
       </Routes>
     </Router>
   );
