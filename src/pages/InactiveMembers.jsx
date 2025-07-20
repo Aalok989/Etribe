@@ -1,49 +1,79 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
-import { FiEdit2, FiX, FiCalendar, FiFileText, FiFile } from "react-icons/fi";
-
-const demoMembers = [
-  { id: 1, name: "Rohit Arya", contact: "1234567890", email: "rohit@company.com", pan: "ABCDE1234F", aadhar: "1234-5678-9012", dl: "DL-1234567890", dob: "1990-01-01", company: "Tech Solutions", validUpto: "2025-12-31", plan: "Basic" },
-  { id: 2, name: "Priya Singh", contact: "9876543210", email: "priya@company.com", pan: "PQRSX5678Y", aadhar: "2345-6789-0123", dl: "DL-0987654321", dob: "1992-05-15", company: "InnovateX", validUpto: "2024-11-30", plan: "Premium" },
-  { id: 3, name: "Amit Kumar", contact: "5551234567", email: "amit@company.com", pan: "LMNOP3456Q", aadhar: "3456-7890-1234", dl: "DL-1122334455", dob: "1988-07-20", company: "Alpha Corp", validUpto: "2026-03-15", plan: "Gold" },
-  { id: 4, name: "Neha Verma", contact: "4445556666", email: "neha@company.com", pan: "TUVWX6789Z", aadhar: "4567-8901-2345", dl: "DL-5566778899", dob: "1995-09-10", company: "Beta Ltd", validUpto: "2025-08-22", plan: "Standard" },
-  { id: 5, name: "Suresh Patel", contact: "3332221111", email: "suresh@company.com", pan: "ABCDE9999F", aadhar: "5678-9012-3456", dl: "DL-6677889900", dob: "1985-12-05", company: "Gamma Pvt Ltd", validUpto: "2023-10-10", plan: "Platinum" },
-  { id: 6, name: "Meena Joshi", contact: "8889990000", email: "meena@company.com", pan: "FGHIJ1234K", aadhar: "6789-0123-4567", dl: "DL-2233445566", dob: "1991-03-18", company: "Delta Inc", validUpto: "2025-05-20", plan: "Diamond" },
-  { id: 7, name: "Vikas Sharma", contact: "1112223333", email: "vikas@company.com", pan: "KLMNO5678P", aadhar: "7890-1234-5678", dl: "DL-3344556677", dob: "1987-11-23", company: "Epsilon LLC", validUpto: "2024-09-15", plan: "Voice over plan" },
-  { id: 8, name: "Ritu Singh", contact: "9998887777", email: "ritu@company.com", pan: "QRSTU9012V", aadhar: "8901-2345-6789", dl: "DL-4455667788", dob: "1993-06-30", company: "Zeta Group", validUpto: "2026-01-01", plan: "Basic" },
-  { id: 9, name: "Deepak Mehta", contact: "1231231234", email: "deepak@company.com", pan: "VWXYZ3456A", aadhar: "9012-3456-7890", dl: "DL-5566778899", dob: "1989-08-12", company: "Eta Pvt Ltd", validUpto: "2025-07-07", plan: "Premium" },
-  { id: 10, name: "Pooja Agarwal", contact: "3213214321", email: "pooja@company.com", pan: "ABCDE6789F", aadhar: "0123-4567-8901", dl: "DL-6677889900", dob: "1994-02-14", company: "Theta Ltd", validUpto: "2024-12-31", plan: "Gold" },
-  { id: 11, name: "Sanjay Dutt", contact: "5556667777", email: "sanjay@company.com", pan: "FGHIJ2345K", aadhar: "1234-5678-9012", dl: "DL-7788990011", dob: "1986-04-25", company: "Iota Corp", validUpto: "2025-03-10", plan: "Standard" },
-  { id: 12, name: "Asha Parekh", contact: "4443332222", email: "asha@company.com", pan: "KLMNO6789P", aadhar: "2345-6789-0123", dl: "DL-8899001122", dob: "1990-10-19", company: "Kappa Inc", validUpto: "2026-06-18", plan: "Platinum" },
-  { id: 13, name: "Ramesh Gupta", contact: "7778889999", email: "ramesh@company.com", pan: "QRSTU1234V", aadhar: "3456-7890-1234", dl: "DL-9900112233", dob: "1983-01-30", company: "Lambda Group", validUpto: "2025-11-11", plan: "Diamond" },
-  { id: 14, name: "Sunita Rao", contact: "2223334444", email: "sunita@company.com", pan: "VWXYZ5678A", aadhar: "4567-8901-2345", dl: "DL-0011223344", dob: "1992-08-08", company: "Mu Pvt Ltd", validUpto: "2024-04-04", plan: "Voice over plan" },
-  { id: 15, name: "Amitabh Bachchan", contact: "6665554444", email: "amitabh@company.com", pan: "ABCDE3456F", aadhar: "5678-9012-3456", dl: "DL-1122334455", dob: "1975-11-11", company: "Nu Ltd", validUpto: "2025-09-09", plan: "Basic" },
-  { id: 16, name: "Kiran Desai", contact: "3334445555", email: "kiran@company.com", pan: "FGHIJ6789K", aadhar: "6789-0123-4567", dl: "DL-2233445566", dob: "1996-12-12", company: "Xi Solutions", validUpto: "2026-02-02", plan: "Premium" },
-  { id: 17, name: "Manoj Bajpayee", contact: "8887776666", email: "manoj@company.com", pan: "KLMNO1234P", aadhar: "7890-1234-5678", dl: "DL-3344556677", dob: "1982-03-03", company: "Omicron LLC", validUpto: "2025-05-05", plan: "Gold" },
-  { id: 18, name: "Shilpa Shetty", contact: "1113335557", email: "shilpa@company.com", pan: "QRSTU5678V", aadhar: "8901-2345-6789", dl: "DL-4455667788", dob: "1987-07-07", company: "Pi Group", validUpto: "2024-08-08", plan: "Standard" },
-  { id: 19, name: "Rajesh Khanna", contact: "2225558888", email: "rajesh@company.com", pan: "VWXYZ9012A", aadhar: "9012-3456-7890", dl: "DL-5566778899", dob: "1979-09-09", company: "Rho Pvt Ltd", validUpto: "2025-10-10", plan: "Platinum" },
-  { id: 20, name: "Madhuri Dixit", contact: "9991113335", email: "madhuri@company.com", pan: "ABCDE7890F", aadhar: "0123-4567-8901", dl: "DL-6677889900", dob: "1988-05-05", company: "Sigma Ltd", validUpto: "2026-12-12", plan: "Diamond" },
-];
-
-const planOptions = [
-  "Basic",
-  "Standard",
-  "Premium",
-  "Platinum",
-  "Diamond",
-  "Gold",
-  "Voice over plan",
-];
+import { FiEdit2, FiX, FiCalendar, FiFileText, FiFile, FiUsers, FiSearch, FiRefreshCw, FiAlertCircle, FiCopy, FiDownload, FiUserX } from "react-icons/fi";
+import api from "../api/axiosConfig";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function InactiveMembers() {
+  const [members, setMembers] = useState([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [entriesPerPage, setEntriesPerPage] = useState(3);
+  const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [modifyMember, setModifyMember] = useState(null);
   const [form, setForm] = useState({ plan: "", validUpto: "" });
+  const [loading, setLoading] = useState(true);
+  const [firstLoad, setFirstLoad] = useState(true);
+  const [error, setError] = useState(null);
+  const [sortField, setSortField] = useState("name");
+  const [sortDirection, setSortDirection] = useState("asc");
+
+  useEffect(() => {
+    const fetchInactiveMembers = async (isFirst = false) => {
+      if (isFirst) setLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('token');
+        const uid = localStorage.getItem('uid');
+        if (!token) {
+          setError('Please log in to view inactive members');
+          window.location.href = '/';
+          return;
+        }
+        const response = await api.post('/userDetail/not_members', { uid }, {
+          headers: {
+            'token': token,
+            'uid': uid,
+          }
+        });
+        setMembers(Array.isArray(response.data) ? response.data : response.data.data || []);
+      } catch (err) {
+        setError(err.response?.data?.message || err.message || 'Failed to fetch inactive members');
+      } finally {
+        if (isFirst) setLoading(false);
+        if (isFirst) setFirstLoad(false);
+      }
+    };
+    fetchInactiveMembers(true); // Initial load
+    const interval = setInterval(() => fetchInactiveMembers(false), 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Sorting function
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Sort data
+  const sortedData = [...members].sort((a, b) => {
+    const aValue = a[sortField] || '';
+    const bValue = b[sortField] || '';
+    
+    if (sortDirection === 'asc') {
+      return aValue.toString().localeCompare(bValue.toString());
+    } else {
+      return bValue.toString().localeCompare(aValue.toString());
+    }
+  });
 
   // Filter by name
-  const filtered = demoMembers.filter(m => m.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = sortedData.filter(m => m.name?.toLowerCase().includes(search.toLowerCase()));
   const totalEntries = filtered.length;
   const totalPages = Math.ceil(totalEntries / entriesPerPage);
   const startIdx = (currentPage - 1) * entriesPerPage;
@@ -79,63 +109,434 @@ export default function InactiveMembers() {
     closeModify();
   };
 
+  const handleCopyToClipboard = () => {
+    if (!members.length) return;
+    const data = members.map(m => 
+      `${m.name}, ${m.phone_num || m.contact}, ${m.email}, ${m.address}, ${m.ad1 || m.pan}, ${m.ad2 || m.aadhar}, ${m.ad3 || m.dl}, ${m.ad4 || m.dob}, ${m.company_name || m.company}, ${m.ad5 || m.validUpto}, ${m.plan || ""}`
+    ).join('\n');
+    navigator.clipboard.writeText(data);
+  };
+
+  // Export Handlers
+  const handleExportCSV = () => {
+    if (!members.length) return;
+    const headers = [
+      "Name", "Contact", "Email", "Address", "PAN Number", "Aadhar Number", "DL Number", "D.O.B", "Company Name", "Valid Upto", "Membership Plan"
+    ];
+    const rows = members.map(m => [
+      m.name,
+      m.phone_num || m.contact,
+      m.email,
+      m.address,
+      m.ad1 || m.pan,
+      m.ad2 || m.aadhar,
+      m.ad3 || m.dl,
+      m.ad4 || m.dob,
+      m.company_name || m.company,
+      m.ad5 || m.validUpto,
+      m.plan || ""
+    ]);
+    let csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "inactive_members.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportExcel = () => {
+    if (!members.length) return;
+    const ws = XLSX.utils.json_to_sheet(
+      members.map(m => ({
+        Name: m.name,
+        Contact: m.phone_num || m.contact,
+        Email: m.email,
+        Address: m.address,
+        "PAN Number": m.ad1 || m.pan,
+        "Aadhar Number": m.ad2 || m.aadhar,
+        "DL Number": m.ad3 || m.dl,
+        "D.O.B": m.ad4 || m.dob,
+        "Company Name": m.company_name || m.company,
+        "Valid Upto": m.ad5 || m.validUpto,
+        "Membership Plan": m.plan || ""
+      }))
+    );
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Inactive Members");
+    XLSX.writeFile(wb, "inactive_members.xlsx");
+  };
+
+  const handleExportPDF = () => {
+    if (!members.length) return;
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "pt",
+      format: "a4"
+    });
+    const headers = [[
+      "Name", "Contact", "Email", "Address", "PAN Number", "Aadhar Number", "DL Number", "D.O.B", "Company Name", "Valid Upto", "Membership Plan"
+    ]];
+    const rows = members.map(m => [
+      m.name,
+      m.phone_num || m.contact,
+      m.email,
+      m.address,
+      m.ad1 || m.pan,
+      m.ad2 || m.aadhar,
+      m.ad3 || m.dl,
+      m.ad4 || m.dob,
+      m.company_name || m.company,
+      m.ad5 || m.validUpto,
+      m.plan || ""
+    ]);
+    try {
+      autoTable(doc, {
+        head: headers,
+        body: rows,
+        startY: 20,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [41, 128, 185] }
+      });
+      doc.save("inactive_members.pdf");
+    } catch (err) {
+      console.error("autoTable failed:", err);
+      alert("PDF export failed: " + err.message);
+    }
+  };
+
+  if (loading && firstLoad) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="flex items-center gap-3">
+            <FiRefreshCw className="animate-spin text-indigo-600 text-2xl" />
+          <p className="text-indigo-700">Loading inactive members...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="flex items-center gap-2 text-red-500">
+            <FiAlertCircle />
+            <p>{error}</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-4 py-3">
-        <h1 className="text-2xl font-bold mb-4">Inactive Members</h1>
-        <div className="rounded-2xl shadow-lg bg-white">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-2xl font-bold text-orange-600">Inactive Members</h1>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <FiUserX className="text-indigo-600" />
+            <span>Total Inactive Members: {members.length}</span>
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FiAlertCircle />
+              <span>{error}</span>
+            </div>
+            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
+              <FiX size={16} />
+            </button>
+          </div>
+        )}
+
+        <div className="rounded-2xl shadow-lg bg-white max-w-7xl w-full mx-auto">
           {/* Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-6 py-4 border-b border-gray-100">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search by name..."
-              className="border rounded-lg px-3 py-1 text-sm bg-indigo-50 text-indigo-700 focus:ring-2 focus:ring-indigo-400"
+                  className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              style={{ maxWidth: 220 }}
+                  style={{ minWidth: 250 }}
             />
+              </div>
+              
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, totalEntries)} of {totalEntries} entries</span>
+              </div>
+            </div>
+
             <div className="flex gap-2 items-center">
-              <button className="flex items-center gap-1 bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-600 transition"><FiFileText />CSV</button>
-              <button className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-emerald-600 transition"><FiFile />Excel</button>
-              <button className="flex items-center gap-1 bg-rose-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-rose-600 transition"><FiFile />PDF</button>
+              <button 
+                className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
+                onClick={() => window.location.reload()}
+                title="Refresh Data"
+              >
+                <FiRefreshCw /> Refresh
+              </button>
+              
+              <button 
+                className="flex items-center gap-1 bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
+                onClick={handleCopyToClipboard}
+                title="Copy to Clipboard"
+              >
+                <FiCopy /> Copy
+              </button>
+              
+              <button 
+                className="flex items-center gap-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition"
+                onClick={handleExportCSV}
+                title="Export CSV"
+              >
+                <FiDownload /> CSV
+              </button>
+              
+              <button 
+                className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition"
+                onClick={handleExportExcel}
+                title="Export Excel"
+              >
+                <FiFile /> Excel
+              </button>
+              
+              <button 
+                className="flex items-center gap-1 bg-rose-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-rose-600 transition"
+                onClick={handleExportPDF}
+                title="Export PDF"
+              >
+                <FiFile /> PDF
+              </button>
             </div>
           </div>
+          
           {/* Table */}
-          <div className="overflow-x-auto p-6">
-            <table className="min-w-max text-sm">
-              <thead className="bg-indigo-50 text-indigo-700 sticky top-0 z-10">
-                <tr>
-                  <th className="p-3 rounded-l-xl text-left">Sr No</th>
-                  <th className="p-3 text-left">Name</th>
-                  <th className="p-3 text-left">Contact</th>
-                  <th className="p-3 text-left">Email</th>
-                  <th className="p-3 text-left">PAN Number</th>
-                  <th className="p-3 text-left">Aadhar Number</th>
-                  <th className="p-3 text-left">DL Number</th>
-                  <th className="p-3 text-left">D.O.B</th>
-                  <th className="p-3 text-left">Company Name</th>
-                  <th className="p-3 text-left">Valid Upto</th>
-                  <th className="p-3 text-left">Membership Plan</th>
-                  <th className="p-3 rounded-r-xl text-center">Action</th>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
+              <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 text-gray-700 sticky top-0 z-10 shadow-sm">
+                <tr className="border-b-2 border-indigo-200">
+                  <th 
+                    className="p-3 text-center font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    style={{ minWidth: '80px', width: '80px' }}
+                    onClick={() => handleSort('id')}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      Sr No
+                      {sortField === 'id' && (
+                        <span className="text-indigo-600">
+                          {sortDirection === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    style={{ minWidth: '150px', width: '150px' }}
+                    onClick={() => handleSort('name')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Name
+                      {sortField === 'name' && (
+                        <span className="text-indigo-600">
+                          {sortDirection === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    style={{ minWidth: '120px', width: '120px' }}
+                    onClick={() => handleSort('phone_num')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Contact
+                      {sortField === 'phone_num' && (
+                        <span className="text-indigo-600">
+                          {sortDirection === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    style={{ minWidth: '180px', width: '180px' }}
+                    onClick={() => handleSort('email')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Email
+                      {sortField === 'email' && (
+                        <span className="text-indigo-600">
+                          {sortDirection === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    style={{ minWidth: '200px', width: '200px' }}
+                    onClick={() => handleSort('address')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Address
+                      {sortField === 'address' && (
+                        <span className="text-indigo-600">
+                          {sortDirection === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    style={{ minWidth: '120px', width: '120px' }}
+                    onClick={() => handleSort('ad1')}
+                  >
+                    <div className="flex items-center gap-1">
+                      PAN Number
+                      {sortField === 'ad1' && (
+                        <span className="text-indigo-600">
+                          {sortDirection === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    style={{ minWidth: '130px', width: '130px' }}
+                    onClick={() => handleSort('ad2')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Aadhar Number
+                      {sortField === 'ad2' && (
+                        <span className="text-indigo-600">
+                          {sortDirection === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    style={{ minWidth: '120px', width: '120px' }}
+                    onClick={() => handleSort('ad3')}
+                  >
+                    <div className="flex items-center gap-1">
+                      DL Number
+                      {sortField === 'ad3' && (
+                        <span className="text-indigo-600">
+                          {sortDirection === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    style={{ minWidth: '100px', width: '100px' }}
+                    onClick={() => handleSort('ad4')}
+                  >
+                    <div className="flex items-center gap-1">
+                      D.O.B
+                      {sortField === 'ad4' && (
+                        <span className="text-indigo-600">
+                          {sortDirection === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    style={{ minWidth: '150px', width: '150px' }}
+                    onClick={() => handleSort('company_name')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Company Name
+                      {sortField === 'company_name' && (
+                        <span className="text-indigo-600">
+                          {sortDirection === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    style={{ minWidth: '120px', width: '120px' }}
+                    onClick={() => handleSort('ad5')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Valid Upto
+                      {sortField === 'ad5' && (
+                        <span className="text-indigo-600">
+                          {sortDirection === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    style={{ minWidth: '140px', width: '140px' }}
+                    onClick={() => handleSort('plan')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Membership Plan
+                      {sortField === 'plan' && (
+                        <span className="text-indigo-600">
+                          {sortDirection === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="p-3 text-center font-semibold whitespace-nowrap"
+                    style={{ minWidth: '100px', width: '100px' }}
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
-              <tbody className="border-separate border-spacing-y-2">
+              <tbody>
                 {paginated.map((m, idx) => (
-                  <tr key={m.id} className="bg-white shadow rounded-xl">
-                    <td className="p-3 text-center font-semibold text-indigo-700">{startIdx + idx + 1}</td>
-                    <td className="p-3">{m.name}</td>
-                    <td className="p-3">{m.contact}</td>
-                    <td className="p-3">{m.email}</td>
-                    <td className="p-3">{m.pan}</td>
-                    <td className="p-3">{m.aadhar}</td>
-                    <td className="p-3">{m.dl}</td>
-                    <td className="p-3">{m.dob}</td>
-                    <td className="p-3">{m.company}</td>
-                    <td className="p-3">{m.validUpto}</td>
-                    <td className="p-3">{m.plan}</td>
-                    <td className="p-3 flex justify-center">
+                  <tr 
+                    key={m.id} 
+                    className={`border-b border-gray-200 transition-colors ${
+                      idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                    } hover:bg-indigo-50 hover:shadow-sm`}
+                  >
+                    <td className="p-3 text-center font-semibold text-indigo-700 border-r border-gray-200">
+                      {startIdx + idx + 1}
+                    </td>
+                    <td className="p-3 text-left border-r border-gray-200">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center text-white font-semibold text-xs">
+                          {m.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="font-medium text-gray-800">{m.name}</span>
+                      </div>
+                    </td>
+                    <td className="p-3 text-left border-r border-gray-200">{m.phone_num || m.contact}</td>
+                    <td className="p-3 text-left border-r border-gray-200">{m.email}</td>
+                    <td className="p-3 text-left border-r border-gray-200">{m.address}</td>
+                    <td className="p-3 text-left border-r border-gray-200">{m.ad1 || m.pan}</td>
+                    <td className="p-3 text-left border-r border-gray-200">{m.ad2 || m.aadhar}</td>
+                    <td className="p-3 text-left border-r border-gray-200">{m.ad3 || m.dl}</td>
+                    <td className="p-3 text-left border-r border-gray-200">{m.ad4 || m.dob}</td>
+                    <td className="p-3 text-left border-r border-gray-200">{m.company_name || m.company}</td>
+                    <td className="p-3 text-left border-r border-gray-200">{m.ad5 || m.validUpto}</td>
+                    <td className="p-3 text-left border-r border-gray-200">
+                      <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                        {m.plan || "No Plan"}
+                      </span>
+                    </td>
+                    <td className="p-3 text-center">
                       <button
-                        className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-50 transition"
+                        className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-100 transition-colors"
                         title="Modify Membership"
                         onClick={() => openModify(m)}
                       >
@@ -146,93 +547,115 @@ export default function InactiveMembers() {
                 ))}
               </tbody>
             </table>
+            
             {/* Pagination Controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-t border-gray-100">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600">Show</span>
                 <select
-                  className="border-none rounded-lg px-2 py-1 text-sm bg-indigo-100 text-indigo-700 focus:ring-2 focus:ring-indigo-400"
+                  className="border rounded-lg px-3 py-1 text-sm bg-white text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
                   value={entriesPerPage}
                   onChange={handleEntriesChange}
                 >
-                  {[3, 5, 10, 20].map(num => (
+                  {[5, 10, 25, 50, 100].map(num => (
                     <option key={num} value={num}>{num}</option>
                   ))}
                 </select>
-                <span className="text-sm text-gray-600">entries</span>
+                <span className="text-sm text-gray-600">entries per page</span>
               </div>
+              
               <div className="flex items-center gap-2">
                 <button
                   onClick={handlePrev}
                   disabled={currentPage === 1}
-                  className={`px-2 py-1 rounded-lg text-indigo-600 hover:bg-indigo-100 transition ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`px-3 py-1 rounded-lg text-indigo-600 hover:bg-indigo-100 transition-colors ${
+                    currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                   title="Previous"
                 >
-                  &lt;
+                  Previous
                 </button>
-                <span className="text-sm font-semibold text-gray-700">Page {currentPage} of {totalPages}</span>
+                <span className="text-sm font-semibold text-gray-700">
+                  Page {currentPage} of {totalPages}
+                </span>
                 <button
                   onClick={handleNext}
                   disabled={currentPage === totalPages}
-                  className={`px-2 py-1 rounded-lg text-indigo-600 hover:bg-indigo-100 transition ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`px-3 py-1 rounded-lg text-indigo-600 hover:bg-indigo-100 transition-colors ${
+                    currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                   title="Next"
                 >
-                  &gt;
+                  Next
                 </button>
               </div>
             </div>
           </div>
         </div>
-        {/* Modify Membership Modal */}
+        
+        {/* Enhanced Modify Membership Modal */}
         {modifyMember && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md relative">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg relative">
               <button
-                className="absolute top-3 right-3 text-gray-400 hover:text-rose-500"
+                className="absolute top-4 right-4 text-gray-400 hover:text-rose-500 transition-colors"
                 onClick={closeModify}
                 title="Close"
               >
-                <FiX size={22} />
+                <FiX size={24} />
               </button>
-              <h2 className="text-xl font-bold mb-4 text-indigo-700">Modify Membership</h2>
-              <form className="flex flex-col gap-4">
+              
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center text-white font-semibold text-xl">
+                  {modifyMember.name.charAt(0).toUpperCase()}
+                </div>
                 <div>
-                  <label className="block text-gray-700 font-medium mb-1">Membership Plan</label>
+                  <h2 className="text-2xl font-bold text-gray-800">Modify Membership</h2>
+                  <p className="text-gray-600">Update membership for {modifyMember.name}</p>
+                </div>
+              </div>
+              
+              <form className="space-y-6">
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">Membership Plan</label>
                   <select
                     name="plan"
                     value={form.plan}
                     onChange={handleFormChange}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
                   >
                     <option value="">Select Plan</option>
-                    {planOptions.map(opt => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
+                    <option value="Basic">Basic Plan</option>
+                    <option value="Premium">Premium Plan</option>
+                    <option value="Enterprise">Enterprise Plan</option>
                   </select>
                 </div>
+                
                 <div>
-                  <label className="block text-gray-700 font-medium mb-1">Valid Upto</label>
+                  <label className="block text-gray-700 font-semibold mb-2">Valid Until</label>
                   <div className="relative">
+                    <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     <input
                       type="date"
                       name="validUpto"
                       value={form.validUpto}
                       onChange={handleDateChange}
-                      className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 pr-10"
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
                     />
                   </div>
                 </div>
-                <div className="flex gap-4 justify-end mt-2">
+                
+                <div className="flex gap-4 justify-end pt-4 border-t border-gray-100">
                   <button
                     type="button"
-                    className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition"
+                    className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
                     onClick={closeModify}
                   >
-                    Close Popup
+                    Cancel
                   </button>
                   <button
                     type="button"
-                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition"
+                    className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
                     onClick={handleUpdate}
                   >
                     Update Membership

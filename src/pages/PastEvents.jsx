@@ -1,422 +1,759 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
-import { FaCalendarAlt, FaPlus, FaInfoCircle, FaEye, FaHistory, FaClock } from "react-icons/fa";
+import { FiPlus, FiFileText, FiFile, FiEye, FiX, FiCalendar, FiMapPin, FiClock, FiSearch, FiFilter, FiDownload, FiCopy, FiEdit2, FiTrash2, FiRefreshCw, FiImage, FiArchive } from "react-icons/fi";
+import api from "../api/axiosConfig";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-// Event Detail Modal
-function EventDetailModal({ open, event, onClose }) {
-  if (!open || !event) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-      <div className="bg-white/90 rounded-2xl shadow-2xl max-w-2xl w-full p-0 border border-indigo-100 animate-fadeIn">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-indigo-100 rounded-t-2xl bg-gradient-to-r from-indigo-50 via-blue-50 to-blue-100">
-          <h2 className="text-2xl font-bold text-indigo-700">Event Detail</h2>
-          <button onClick={onClose} className="text-2xl text-gray-400 hover:text-indigo-600 transition-colors">&times;</button>
-        </div>
-        <div className="p-6">
-          <div className="mb-4">
-            <span className="text-xl font-bold text-indigo-600">{event.event}</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-            <div>
-              <table className="w-full mb-4">
-                <tbody>
-                  <tr className="bg-indigo-50">
-                    <td className="py-2 px-3 font-semibold text-gray-700 w-40">Company Name</td>
-                    <td className="py-2 px-3 text-gray-800">{event.event}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 px-3 font-semibold text-gray-700">Timing</td>
-                    <td className="py-2 px-3 text-gray-800">{event.datetime ? new Date(event.datetime).toLocaleString() : ''}</td>
-                  </tr>
-                  <tr className="bg-indigo-50">
-                    <td className="py-2 px-3 font-semibold text-gray-700">Venue</td>
-                    <td className="py-2 px-3 text-gray-800">{event.venue}</td>
-                  </tr>
-                </tbody>
-              </table>
-              <div className="text-gray-700 mt-2">{event.agenda}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+
+// Helper to decode HTML entities
+function decodeHtml(html) {
+  const txt = document.createElement('textarea');
+  txt.innerHTML = html;
+  return txt.value;
 }
 
-// Inline Add Event Modal
-function AddEventModal({ open, form, onChange, onSubmit, onClose }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 min-h-screen transition-all">
-      <div className="bg-gradient-to-br from-white via-indigo-50 to-blue-50 border border-indigo-100 rounded-2xl shadow-2xl p-0 min-w-[300px] w-full max-w-md relative flex flex-col animate-fadeIn max-h-[90vh] overflow-y-auto">
-        {/* Sticky Header */}
-        <div className="sticky top-0 z-20 bg-white/80 backdrop-blur rounded-t-2xl flex items-center justify-between px-6 py-4 border-b border-indigo-100">
-          <h2 className="text-xl font-extrabold text-indigo-700 tracking-tight">Add Event</h2>
-          <button
-            className="text-2xl text-gray-400 hover:text-indigo-600 transition-colors bg-none border-none p-0 m-0"
-            onClick={onClose}
-            aria-label="Close"
-          >
-            &times;
-          </button>
-        </div>
-        <form className="flex flex-col gap-3 px-6 py-4" onSubmit={onSubmit} autoComplete="off">
-          {/* Divider */}
-          <div className="h-px bg-indigo-100 mb-2" />
-          {/* Event Title */}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="event" className="text-base font-semibold text-gray-700 mb-0.5">
-              <span className="text-red-500 mr-1">*</span>Event Title
-            </label>
-            <input
-              id="event"
-              name="event"
-              value={form.event}
-              onChange={onChange}
-              required
-              placeholder="Enter event title"
-              className="py-2 px-4 border border-indigo-200 rounded-xl text-base bg-indigo-50 font-medium text-gray-800 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all duration-150 hover:shadow-md"
-            />
-          </div>
-          {/* Agenda */}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="agenda" className="text-base font-semibold text-gray-700 mb-0.5">
-              <span className="text-red-500 mr-1">*</span>Agenda
-            </label>
-            <textarea
-              id="agenda"
-              name="agenda"
-              value={form.agenda}
-              onChange={onChange}
-              required
-              placeholder="Enter agenda"
-              rows={4}
-              className="py-2 px-4 border border-indigo-200 rounded-xl text-base bg-indigo-50 font-medium text-gray-800 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all duration-150 hover:shadow-md resize-y"
-            />
-          </div>
-          {/* Venue */}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="venue" className="text-base font-semibold text-gray-700 mb-0.5">
-              <span className="text-red-500 mr-1">*</span>Venue
-            </label>
-            <input
-              id="venue"
-              name="venue"
-              value={form.venue}
-              onChange={onChange}
-              required
-              placeholder="Enter venue"
-              className="py-2 px-4 border border-indigo-200 rounded-xl text-base bg-indigo-50 font-medium text-gray-800 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all duration-150 hover:shadow-md"
-            />
-          </div>
-          {/* Date & Time */}
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-1 flex flex-col gap-1">
-              <label htmlFor="date" className="text-base font-semibold text-gray-700 mb-0.5">
-                <span className="text-red-500 mr-1">*</span>Date
-              </label>
-              <input
-                id="date"
-                name="date"
-                type="date"
-                value={form.date}
-                onChange={onChange}
-                required
-                className="py-2 px-4 border border-indigo-200 rounded-xl text-base bg-indigo-50 font-medium text-gray-800 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all duration-150 hover:shadow-md"
-              />
-            </div>
-            <div className="flex-1 flex flex-col gap-1">
-              <label htmlFor="time" className="text-base font-semibold text-gray-700 mb-0.5">
-                <span className="text-red-500 mr-1">*</span>Time
-              </label>
-              <input
-                id="time"
-                name="time"
-                type="time"
-                value={form.time || ''}
-                onChange={onChange}
-                required
-                className="py-2 px-4 border border-indigo-200 rounded-xl text-base bg-indigo-50 font-medium text-gray-800 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all duration-150 hover:shadow-md"
-              />
-            </div>
-          </div>
-          {/* Reminder */}
-          <div className="flex flex-col md:flex-row gap-3">
-            <div className="flex-1 flex flex-col gap-1">
-              <label htmlFor="reminder" className="text-base font-semibold text-gray-700 mb-0.5">Do you want send Reminder?</label>
-              <select
-                id="reminder"
-                name="reminder"
-                value={form.reminder || 'Yes'}
-                onChange={onChange}
-                className="py-2 px-4 border border-indigo-200 rounded-xl text-base bg-indigo-50 font-medium text-gray-800 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all duration-150 hover:shadow-md"
-              >
-                <option value="Yes">Yes</option>
-                <option value="No">No</option>
-              </select>
-            </div>
-            <div className="flex-1 flex flex-col gap-1">
-              <label htmlFor="reminderTo" className="text-base font-semibold text-gray-700 mb-0.5">Send Reminder To</label>
-              <select
-                id="reminderTo"
-                name="reminderTo"
-                value={form.reminderTo || 'Only Approved Members'}
-                onChange={onChange}
-                className="py-2 px-4 border border-indigo-200 rounded-xl text-base bg-indigo-50 font-medium text-gray-800 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all duration-150 hover:shadow-md"
-              >
-                <option value="Only Approved Members">Only Approved Members</option>
-                <option value="All Members">All Members</option>
-              </select>
-            </div>
-          </div>
-          {/* Invitation Image */}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="image" className="text-base font-semibold text-gray-700 mb-0.5">Invitation Image</label>
-            <input
-              id="image"
-              name="image"
-              type="file"
-              accept="image/*"
-              onChange={onChange}
-              className="block w-full text-base text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-base file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-            />
-          </div>
-          <div className="flex justify-center mt-3">
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-indigo-600 to-blue-500 hover:from-indigo-700 hover:to-blue-600 text-white rounded-xl px-8 py-3 text-lg font-bold shadow-md flex items-center gap-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-            >
-              <span>&#10003;</span> Save
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-const PastEventsPage = () => {
-  // Sample events with proper date filtering
-  const [allEvents, setAllEvents] = useState([
-    {
-      id: 1,
-      event: "Office Anniversary",
-      agenda: "Celebration for 7 years completion.",
-      venue: "Radisson Delhi",
-      datetime: "2023-08-23T11:00"
-    },
-    {
-      id: 2,
-      event: "Plantation Drive",
-      agenda: "Environment Preservation Initiative",
-      venue: "Office Ground Floor",
-      datetime: "2023-08-25T10:00"
-    },
-    {
-      id: 3,
-      event: "Product Testing Session",
-      agenda: "Beta testing of new software features",
-      venue: "Online",
-      datetime: "2023-08-26T16:00"
-    },
-    {
-      id: 4,
-      event: "Team Meeting",
-      agenda: "Monthly team coordination and planning",
-      venue: "Conference Room",
-      datetime: "2023-08-26T16:00"
-    },
-    {
-      id: 5,
-      event: "Award Distribution Ceremony",
-      agenda: "Congratulate and appreciate our employees for their hardwork and dedication and successful completion of defined tasks",
-      venue: "Office 2nd Floor",
-      datetime: "2023-08-31T14:00"
-    },
-    {
-      id: 6,
-      event: "Diwali Celebration",
-      agenda: "Celebrate the festival of victory and welcoming blessings in life",
-      venue: "Office 1st Floor",
-      datetime: "2023-11-09T13:00"
-    },
-    {
-      id: 7,
-      event: "Annual Review Meeting",
-      agenda: "Year-end performance review and planning",
-      venue: "Board Room",
-      datetime: "2023-12-30T09:00"
-    },
-    {
-      id: 8,
-      event: "New Year Party",
-      agenda: "Welcome the new year with team celebration",
-      venue: "Office Premises",
-      datetime: "2023-12-31T20:00"
-    }
-  ]);
-
-  const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({
+export default function PastEvents() {
+  const [events, setEvents] = useState([]);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [entriesPerPage, setEntriesPerPage] = useState(10);
+  const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [showViewEventModal, setShowViewEventModal] = useState(false);
+  const [selectedEventIdx, setSelectedEventIdx] = useState(null);
+  const [addEventForm, setAddEventForm] = useState({
     event: "",
     agenda: "",
     venue: "",
-    date: "",
-    time: "",
-    reminder: "Yes",
-    reminderTo: "Only Approved Members",
-    image: null
+    datetime: "",
+    imageUrl: ""
   });
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [showDetail, setShowDetail] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const [saveSuccess, setSaveSuccess] = useState(null);
+  const [imageError, setImageError] = useState(false);
+  const [sortField, setSortField] = useState("datetime");
+  const [sortDirection, setSortDirection] = useState("desc");
 
-  // Filter past events (events with datetime < current date)
-  const pastEvents = allEvents.filter(event => {
-    const eventDate = new Date(event.datetime);
-    const currentDate = new Date();
-    return eventDate < currentDate;
-  });
-
-  const handleChange = (e) => {
-    const { name, value, type, files } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === "file" ? files[0] : value,
-    }));
-  };
-  const handleAddEvent = (e) => {
-    e.preventDefault();
-    const newEvent = {
-      ...form,
-      id: allEvents.length + 1,
-      datetime: form.date && form.time ? `${form.date}T${form.time}` : "",
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('token');
+        const uid = localStorage.getItem('uid');
+        const response = await api.post('/event/past', {}, {
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'login.etribes.in',
+            'Content-Type': 'application/json',
+          }
+        });
+        let backendEvents = [];
+        if (Array.isArray(response.data?.data?.event)) {
+          backendEvents = response.data.data.event;
+        } else if (Array.isArray(response.data?.data?.events)) {
+          backendEvents = response.data.data.events;
+        } else if (Array.isArray(response.data?.data)) {
+          backendEvents = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          backendEvents = response.data;
+        } else if (response.data?.data && typeof response.data.data === 'object') {
+          backendEvents = Object.values(response.data.data);
+        } else {
+          backendEvents = [];
+        }
+        const BASE_URL = "https://api.etribes.in";
+        const mappedEvents = backendEvents.map((e, idx) => ({
+          id: e.id || idx,
+          event: e.event_title || e.event || e.title || e.name || "",
+          agenda: e.event_description || e.agenda || e.description || "",
+          venue: e.event_venue || e.venue || e.location || "",
+          datetime: e.event_date && e.event_time
+            ? `${e.event_date}T${e.event_time}`
+            : e.datetime || e.date_time || e.date || "",
+          imageUrl: e.event_image
+            ? (e.event_image.startsWith("http") ? e.event_image : BASE_URL + e.event_image)
+            : (e.image || e.imageUrl || ""),
+        }));
+        setEvents(mappedEvents);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to fetch past events');
+      } finally {
+        setLoading(false);
+      }
     };
-    setAllEvents([...allEvents, newEvent]);
-    setForm({ event: "", agenda: "", venue: "", date: "", time: "", reminder: "Yes", reminderTo: "Only Approved Members", image: null });
-    setShowModal(false);
+    fetchEvents();
+  }, []);
+
+  // Filtered, sorted and paginated data
+  const filtered = events.filter(e => 
+    e.event.toLowerCase().includes(search.toLowerCase()) ||
+    e.agenda.toLowerCase().includes(search.toLowerCase()) ||
+    e.venue.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const sorted = [...filtered].sort((a, b) => {
+    let aVal = a[sortField];
+    let bVal = b[sortField];
+    
+    if (sortField === "datetime") {
+      aVal = new Date(aVal || 0);
+      bVal = new Date(bVal || 0);
+    } else {
+      aVal = aVal?.toLowerCase() || "";
+      bVal = bVal?.toLowerCase() || "";
+    }
+    
+    if (sortDirection === "asc") {
+      return aVal > bVal ? 1 : -1;
+    } else {
+      return aVal < bVal ? 1 : -1;
+    }
+  });
+
+  const totalEntries = sorted.length;
+  const totalPages = Math.ceil(totalEntries / entriesPerPage);
+  const startIdx = (currentPage - 1) * entriesPerPage;
+  const paginated = sorted.slice(startIdx, startIdx + entriesPerPage);
+
+  const handlePrev = () => setCurrentPage(p => Math.max(1, p - 1));
+  const handleNext = () => setCurrentPage(p => Math.min(totalPages, p + 1));
+  const handleEntriesChange = e => {
+    setEntriesPerPage(Number(e.target.value));
+    setCurrentPage(1);
   };
 
-  const formatPastEventDate = (datetime) => {
-    const eventDate = new Date(datetime);
-    const now = new Date();
-    const diffTime = now - eventDate;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-    const diffMinutes = Math.floor(diffTime / (1000 * 60));
-    
-    if (diffMinutes < 60) {
-      return `${diffMinutes} minutes ago`;
-    } else if (diffHours < 24) {
-      return `${diffHours} hours ago`;
-    } else if (diffDays === 1) {
-      return "Yesterday at " + eventDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else if (diffDays < 30) {
-      const weeks = Math.floor(diffDays / 7);
-      return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
-    } else if (diffDays < 365) {
-      const months = Math.floor(diffDays / 30);
-      return `${months} month${months > 1 ? 's' : ''} ago`;
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
-      const years = Math.floor(diffDays / 365);
-      return `${years} year${years > 1 ? 's' : ''} ago`;
+      setSortField(field);
+      setSortDirection("asc");
     }
   };
 
-  const getRecentEvents = () => {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    return pastEvents.filter(event => new Date(event.datetime) >= thirtyDaysAgo);
+  const getSortIcon = (field) => {
+    if (sortField !== field) return null;
+    return sortDirection === "asc" ? "↑" : "↓";
   };
 
-  const getOldEvents = () => {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    return pastEvents.filter(event => new Date(event.datetime) < thirtyDaysAgo);
+  // Add Event Modal
+  const openAddEventModal = () => {
+    setAddEventForm({ event: "", agenda: "", venue: "", datetime: "", imageUrl: "" });
+    setShowAddEventModal(true);
   };
+  const closeAddEventModal = () => setShowAddEventModal(false);
+  const handleAddEventChange = (e) => setAddEventForm({ ...addEventForm, [e.target.name]: e.target.value });
+  const handleAddEventSubmit = async (e) => {
+    e.preventDefault();
+    setSaveLoading(true);
+    setSaveError(null);
+    setSaveSuccess(null);
+    try {
+      // Prepare payload for backend
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid');
+      const payload = {
+        event_title: addEventForm.event,
+        event_description: addEventForm.agenda,
+        event_venue: addEventForm.venue,
+        event_date: addEventForm.datetime.split('T')[0],
+        event_time: addEventForm.datetime.split('T')[1] || '',
+        event_image: addEventForm.imageUrl
+      };
+      await api.post('/event/add', payload, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'login.etribes.in',
+          'Content-Type': 'application/json',
+        }
+      });
+      setShowAddEventModal(false);
+      setSaveSuccess('Event added successfully!');
+      setTimeout(() => setSaveSuccess(null), 3000);
+    } catch (err) {
+      setSaveError(err.response?.data?.message || 'Failed to add event');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // View Event Modal
+  const openViewEventModal = (idx) => {
+    setSelectedEventIdx(idx);
+    setImageError(false);
+    setShowViewEventModal(true);
+  };
+  const closeViewEventModal = () => setShowViewEventModal(false);
+
+  // Export Handlers (CSV, Excel, PDF)
+  const handleExportCSV = () => {
+    if (!events.length) return;
+    const headers = ["Event", "Agenda", "Venue", "Date & Time"];
+    const rows = events.map(e => [
+      e.event,
+      e.agenda,
+      e.venue,
+      e.datetime ? new Date(e.datetime).toLocaleString() : "",
+    ]);
+    let csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "past_events.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportExcel = () => {
+    if (!events.length) return;
+    const ws = XLSX.utils.json_to_sheet(
+      events.map(e => ({
+        Event: e.event,
+        Agenda: e.agenda,
+        Venue: e.venue,
+        "Date & Time": e.datetime ? new Date(e.datetime).toLocaleString() : "",
+      }))
+    );
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Past Events");
+    XLSX.writeFile(wb, "past_events.xlsx");
+  };
+
+  const handleExportPDF = () => {
+    if (!events.length) return;
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "pt",
+      format: "a4"
+    });
+    const headers = [[
+      "Event", "Agenda", "Venue", "Date & Time"
+    ]];
+    const rows = events.map(e => [
+      e.event,
+      e.agenda,
+      e.venue,
+      e.datetime ? new Date(e.datetime).toLocaleString() : "",
+    ]);
+    try {
+      autoTable(doc, {
+        head: headers,
+        body: rows,
+        startY: 20,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [41, 128, 185] }
+      });
+      doc.save("past_events.pdf");
+    } catch (err) {
+      alert("PDF export failed: " + err.message);
+    }
+  };
+
+  const handleCopyToClipboard = () => {
+    const data = events.map(e => 
+      `${e.event},${e.agenda},${e.venue},${e.datetime ? new Date(e.datetime).toLocaleString() : ""}`
+    ).join('\n');
+    navigator.clipboard.writeText(data);
+  };
+
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="flex items-center gap-3">
+            <FiRefreshCw className="animate-spin text-indigo-600 text-2xl" />
+          <p className="text-indigo-700">Loading past events...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-red-500">{error}</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
-      <div className="relative min-h-screen overflow-x-hidden">
-        <div className="relative z-10 min-h-screen py-6 px-4 sm:px-6">
-          {/* Header */}
-          <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-indigo-100 mb-6 rounded-b-xl shadow-lg flex flex-col sm:flex-row items-center justify-between px-4 py-5 transition-shadow">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-indigo-700 flex items-center gap-2 drop-shadow-lg">
-                <FaCalendarAlt className="text-blue-600" /> Past Events
-              </h1>
-              <p className="text-sm text-indigo-500 mt-1 font-medium">Browse all your past events and memories!</p>
-            </div>
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-400 text-white rounded-lg shadow-md hover:scale-105 hover:shadow-lg transition-all flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              aria-label="Add Event"
-            >
-              <FaPlus /> Add Event
-            </button>
+      <div className="flex flex-col gap-4 py-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-2xl font-bold text-orange-600">Past Events</h1>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <FiArchive className="text-indigo-600" />
+            <span>Total Past Events: {events.length}</span>
           </div>
-          {/* Table Section */}
-          <section className="max-w-5xl mx-auto bg-white/90 rounded-2xl shadow-xl p-4 md:p-6 overflow-x-auto transition-shadow duration-300 hover:shadow-2xl animate-fade-in border border-indigo-100">
-            <table className="w-full border-separate border-spacing-y-2 text-sm">
-              <thead className="bg-indigo-50">
+        </div>
+
+        <div className="rounded-2xl shadow-lg bg-white max-w-7xl w-full mx-auto">
+          {/* Header Controls */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <FiArchive className="text-indigo-600 text-xl" />
+                <span className="text-lg font-semibold text-gray-800">Past Event Management</span>
+              </div>
+              
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FiCalendar className="text-indigo-600" />
+                <span>Manage completed events and history</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 items-center">
+              <button
+                className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
+                onClick={handleExportCSV}
+                title="Export to CSV"
+              >
+                <FiFileText />
+                CSV
+              </button>
+              <button
+                className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition"
+                onClick={handleExportExcel}
+                title="Export to Excel"
+              >
+                <FiFile />
+                Excel
+              </button>
+              <button
+                className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition"
+                onClick={handleExportPDF}
+                title="Export to PDF"
+              >
+                <FiFile />
+                PDF
+              </button>
+              <button
+                className="flex items-center gap-1 bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
+                onClick={handleCopyToClipboard}
+                title="Copy to Clipboard"
+              >
+                <FiCopy />
+                Copy
+              </button>
+              <button
+                className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-600 transition"
+                onClick={handleRefresh}
+                title="Refresh Events"
+              >
+                <FiRefreshCw />
+                Refresh
+              </button>
+            <button
+                className="flex items-center gap-1 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
+                onClick={openAddEventModal}
+            >
+                <FiPlus />
+                Add Event
+            </button>
+            </div>
+          </div>
+
+          {/* Search and Filter */}
+          <div className="px-6 py-4 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 relative">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search past events, agenda, or venue..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <FiFilter className="text-gray-400" />
+                <span className="text-sm text-gray-600">Filtered: {filtered.length} of {events.length}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
                 <tr>
-                  <th className="py-3 px-4 text-indigo-700 font-extrabold text-base border-b-2 border-indigo-200 text-left">Sr No.</th>
-                  <th className="py-3 px-4 text-indigo-700 font-extrabold text-base border-b-2 border-indigo-200 text-left">Event</th>
-                  <th className="py-3 px-4 text-indigo-700 font-extrabold text-base border-b-2 border-indigo-200 text-left">Agenda</th>
-                  <th className="py-3 px-4 text-indigo-700 font-extrabold text-base border-b-2 border-indigo-200 text-left">Venue</th>
-                  <th className="py-3 px-4 text-indigo-700 font-extrabold text-base border-b-2 border-indigo-200 text-left">When</th>
-                  <th className="py-3 px-4 text-indigo-700 font-extrabold text-base border-b-2 border-indigo-200 text-left">View</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 transition-colors" onClick={() => handleSort("event")}>
+                    <div className="flex items-center gap-2">
+                      Event Name {getSortIcon("event")}
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 transition-colors" onClick={() => handleSort("agenda")}>
+                    <div className="flex items-center gap-2">
+                      Agenda {getSortIcon("agenda")}
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 transition-colors" onClick={() => handleSort("venue")}>
+                    <div className="flex items-center gap-2">
+                      <FiMapPin />
+                      Venue {getSortIcon("venue")}
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 transition-colors" onClick={() => handleSort("datetime")}>
+                    <div className="flex items-center gap-2">
+                      <FiClock />
+                      Date & Time {getSortIcon("datetime")}
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
-              <tbody>
-                {pastEvents.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="text-center text-indigo-400 py-8 bg-indigo-50 text-base italic rounded-md">
-                      <div className="flex flex-col items-center gap-2">
-                        <FaHistory className="text-4xl text-indigo-200 mb-1" />
-                        <p>No past events found</p>
-                        <p className="text-sm">Events will appear here once they have passed</p>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {paginated.map((event, idx) => (
+                  <tr key={event.id || idx} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-gray-500 to-gray-600 flex items-center justify-center">
+                            <span className="text-sm font-medium text-white">
+                              {event.event.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{event.event}</div>
+                          <div className="text-sm text-gray-500">Past Event #{startIdx + idx + 1}</div>
+                        </div>
                       </div>
                     </td>
-                  </tr>
-                ) : (
-                  pastEvents.map((ev, idx) => (
-                    <tr key={ev.id} className="border-b border-indigo-100 hover:bg-indigo-50/70 transition-colors animate-fade-in">
-                      <td className="py-3 px-4 text-gray-700 bg-white rounded-md font-semibold">{idx + 1}</td>
-                      <td className="py-3 px-4 text-gray-700 bg-white rounded-md font-semibold flex items-center gap-2"><FaCalendarAlt className="text-indigo-400 text-base" />{ev.event}</td>
-                      <td className="py-3 px-4 text-gray-700 bg-white rounded-md">{ev.agenda}</td>
-                      <td className="py-3 px-4 text-gray-700 bg-white rounded-md">{ev.venue}</td>
-                      <td className="py-3 px-4 text-gray-700 bg-white rounded-md font-medium flex items-center gap-2"><FaClock className="text-blue-400 text-base" />{formatPastEventDate(ev.datetime)}</td>
-                      <td className="py-3 px-4 bg-white rounded-md">
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900 max-w-xs truncate" title={event.agenda}>
+                        {event.agenda}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <FiMapPin className="mr-1" />
+                          {event.venue}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          <FiClock className="mr-1" />
+                          {event.datetime ? new Date(event.datetime).toLocaleString() : "TBD"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center gap-2">
                         <button
-                          className="bg-gradient-to-r from-indigo-400 to-indigo-600 text-white border-none rounded-md px-3 py-1 font-semibold shadow-sm text-base transition-all duration-150 hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                          aria-label={`View details for ${ev.event}`}
-                          onClick={() => { setSelectedEvent(ev); setShowDetail(true); }}
-                        >
-                          <FaEye />
+                          className="text-indigo-600 hover:text-indigo-900 transition-colors" 
+                          onClick={() => openViewEventModal(idx)}
+                          title="View Event Details"
+                      >
+                          <FiEye size={16} />
                         </button>
+                        <button className="text-blue-600 hover:text-blue-900 transition-colors" title="Edit Event">
+                          <FiEdit2 size={16} />
+                        </button>
+                        <button className="text-red-600 hover:text-red-900 transition-colors" title="Delete Event">
+                          <FiTrash2 size={16} />
+                      </button>
+                      </div>
                       </td>
                     </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
-          </section>
+          </div>
+
+          {/* Pagination */}
+          <div className="px-6 py-4 border-t border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-2 text-sm text-gray-700">
+                <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, filtered.length)} of {filtered.length} results</span>
+              </div>
+              
+              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700">Show</span>
+                <select
+                    className="border border-gray-200 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                  value={entriesPerPage}
+                  onChange={handleEntriesChange}
+                >
+                    {[5, 10, 20, 50].map(num => (
+                    <option key={num} value={num}>{num}</option>
+                  ))}
+                </select>
+                  <span className="text-sm text-gray-700">entries</span>
+              </div>
+                
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePrev}
+                  disabled={currentPage === 1}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                      currentPage === 1 
+                        ? 'text-gray-400 cursor-not-allowed' 
+                        : 'text-indigo-600 hover:bg-indigo-50'
+                    }`}
+                  >
+                    Previous
+                </button>
+                  <span className="text-sm font-medium text-gray-700">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                <button
+                  onClick={handleNext}
+                  disabled={currentPage === totalPages}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                      currentPage === totalPages 
+                        ? 'text-gray-400 cursor-not-allowed' 
+                        : 'text-indigo-600 hover:bg-indigo-50'
+                    }`}
+                  >
+                    Next
+                </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* Add Event Modal */}
+        {showAddEventModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl mx-4 relative max-h-[90vh] overflow-y-auto">
+              <button
+                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                onClick={closeAddEventModal}
+                title="Close"
+              >
+                <FiX size={24} />
+              </button>
+              
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-indigo-700 flex items-center gap-2">
+                  <FiPlus className="text-indigo-600" />
+                  Add New Event
+                </h2>
+                <p className="text-gray-600 text-sm mt-1">Create a new past event with details, venue, and schedule</p>
+              </div>
+              
+              <form className="space-y-6" onSubmit={handleAddEventSubmit}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Event Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="event"
+                      value={addEventForm.event}
+                      onChange={handleAddEventChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                      placeholder="Enter event name"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Venue <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="venue"
+                      value={addEventForm.venue}
+                      onChange={handleAddEventChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                      placeholder="Enter venue"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Date & Time <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="datetime-local"
+                      name="datetime"
+                      value={addEventForm.datetime}
+                      onChange={handleAddEventChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Image URL
+                    </label>
+                    <input
+                      type="text"
+                      name="imageUrl"
+                      value={addEventForm.imageUrl}
+                      onChange={handleAddEventChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Agenda <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      name="agenda"
+                      value={addEventForm.agenda}
+                      onChange={handleAddEventChange}
+                      rows="4"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                      placeholder="Describe the event agenda and details"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                {saveError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    {saveError}
+                  </div>
+                )}
+                
+                {saveSuccess && (
+                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+                    {saveSuccess}
+                  </div>
+                )}
+                
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                  <button
+                    type="button"
+                    className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors"
+                    onClick={closeAddEventModal}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saveLoading}
+                    className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors ${
+                      saveLoading 
+                        ? 'bg-gray-400 cursor-not-allowed text-white' 
+                        : 'bg-green-600 text-white hover:bg-green-700'
+                    }`}
+                  >
+                    {saveLoading ? (
+                      <>
+                        <FiRefreshCw className="animate-spin" />
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <FiPlus />
+                        Add Event
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* View Event Modal */}
+        {showViewEventModal && selectedEventIdx !== null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg mx-4 relative">
+              <button
+                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                onClick={closeViewEventModal}
+                title="Close"
+                aria-label="Close modal"
+              >
+                <FiX size={24} />
+              </button>
+              
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-indigo-700 flex items-center gap-2">
+                  <FiEye className="text-indigo-600" />
+                  Past Event Details
+                </h2>
+                <p className="text-gray-600 text-sm mt-1">View complete past event information</p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                    <FiCalendar className="text-indigo-600" />
+                    Event Information
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div><span className="font-medium">Event:</span> {paginated[selectedEventIdx]?.event}</div>
+                    <div><span className="font-medium">Venue:</span> {paginated[selectedEventIdx]?.venue}</div>
+                    <div><span className="font-medium">Date & Time:</span> {paginated[selectedEventIdx]?.datetime && new Date(paginated[selectedEventIdx]?.datetime).toLocaleString()}</div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-700 mb-2">Agenda</h3>
+                  <div 
+                    className="text-sm text-gray-600"
+                    dangerouslySetInnerHTML={{
+                      __html: decodeHtml(paginated[selectedEventIdx]?.agenda || ""),
+                    }}
+                  />
+                </div>
+                
+                {paginated[selectedEventIdx]?.imageUrl && paginated[selectedEventIdx]?.imageUrl.trim() !== "" && !imageError ? (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                      <FiImage className="text-indigo-600" />
+                      Event Image
+                    </h3>
+                    <img
+                      src={paginated[selectedEventIdx]?.imageUrl}
+                      alt="Event"
+                      className="rounded-lg border border-gray-200 shadow max-w-full max-h-48 object-cover"
+                      onError={() => setImageError(true)}
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                      <FiImage className="text-gray-400" />
+                      Event Image
+                    </h3>
+                    <div className="text-gray-400 italic text-sm">No image available</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      {/* Add Event Form Modal */}
-      <AddEventModal
-        open={showModal}
-        form={form}
-        onChange={handleChange}
-        onSubmit={handleAddEvent}
-        onClose={() => setShowModal(false)}
-      />
-      {/* Event Detail Modal */}
-      <EventDetailModal open={showDetail} event={selectedEvent} onClose={() => setShowDetail(false)} />
     </DashboardLayout>
   );
-};
-
-export default PastEventsPage; 
+}

@@ -1,42 +1,15 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
+import { FiCalendar, FiPlus, FiClock, FiUsers, FiMapPin, FiSearch, FiFilter, FiRefreshCw, FiEye, FiEdit2, FiTrash2, FiX } from "react-icons/fi";
 
-// -- Sample events -------------------------------------------------------------
+// Dummy event data for structure
 const initialEvents = [
-  {
-    name: "Annual Meetup",
-    date: new Date(new Date().setDate(new Date().getDate() - 2)),
-    attendees: 120,
-    description: "A gathering of all community members for networking and fun.",
-    type: "past",
-  },
   {
     name: "Tech Workshop",
     date: new Date(),
     attendees: 45,
     description: "Hands-on workshop on the latest web technologies.",
     type: "today",
-  },
-  {
-    name: "Charity Run",
-    date: new Date(new Date().setDate(new Date().getDate() + 3)),
-    attendees: 200,
-    description: "A 5K run to raise funds for local charities.",
-    type: "upcoming",
-  },
-  {
-    name: "Board Meeting",
-    date: new Date(new Date().setDate(new Date().getDate() - 10)),
-    attendees: 15,
-    description: "Quarterly board meeting to discuss progress and plans.",
-    type: "past",
-  },
-  {
-    name: "Community Picnic",
-    date: new Date(new Date().setDate(new Date().getDate() + 1)),
-    attendees: 80,
-    description: "A fun picnic for families and friends in the park.",
-    type: "upcoming",
   },
   {
     name: "Today's Green Event",
@@ -46,22 +19,15 @@ const initialEvents = [
     type: "today",
   },
   {
-    name: "Sprint Planning",
-    date: new Date(new Date().setDate(new Date().getDate() + 7)),
-    attendees: 10,
-    description: "Plan the next sprint tasks and priorities.",
+    name: "Charity Run",
+    date: new Date(new Date().setDate(new Date().getDate() + 3)),
+    attendees: 200,
+    description: "A 5K run to raise funds for local charities.",
     type: "upcoming",
-  },
-  {
-    name: "Retrospective",
-    date: new Date(new Date().setDate(new Date().getDate() - 1)),
-    attendees: 11,
-    description: "Team retrospective for the last sprint.",
-    type: "past",
   },
 ];
 
-// -- Helpers ------------------------------------------------------------------
+// Helper functions
 function isSameDay(d1, d2) {
   return (
     d1.getFullYear() === d2.getFullYear() &&
@@ -69,45 +35,31 @@ function isSameDay(d1, d2) {
     d1.getDate() === d2.getDate()
   );
 }
-
 function getEventDotColor(events) {
-  if (events.some((ev) => ev.type === "today")) return "bg-gradient-to-r from-emerald-400 to-green-500";
-  if (events.some((ev) => ev.type === "upcoming")) return "bg-gradient-to-r from-blue-400 to-cyan-500";
-  return "bg-gradient-to-r from-red-400 to-pink-500";
+  if (events.some((ev) => ev.type === "today")) return "bg-green-400";
+  if (events.some((ev) => ev.type === "upcoming")) return "bg-blue-400";
+  return "bg-pink-400";
 }
 
-// Simple calendar component
+// SimpleCalendar component
 const SimpleCalendar = ({ selectedDate, onDateSelect, events }) => {
   const today = new Date();
   const currentMonth = selectedDate.getMonth();
   const currentYear = selectedDate.getFullYear();
-  
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
-  
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
-  
   const days = [];
-  
-  // Add empty cells for days before the first day of the month
-  for (let i = 0; i < firstDayOfMonth; i++) {
-    days.push(null);
-  }
-  
-  // Add days of the month
-  for (let day = 1; day <= daysInMonth; day++) {
-    days.push(day);
-  }
-  
+  for (let i = 0; i < firstDayOfMonth; i++) days.push(null);
+  for (let day = 1; day <= daysInMonth; day++) days.push(day);
   const navigateMonth = (direction) => {
     const newDate = new Date(selectedDate);
     newDate.setMonth(currentMonth + direction);
     onDateSelect(newDate);
   };
-  
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-inner border border-gray-100">
+    <div className="">
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={() => navigateMonth(-1)}
@@ -129,7 +81,6 @@ const SimpleCalendar = ({ selectedDate, onDateSelect, events }) => {
           </svg>
         </button>
       </div>
-      
       <div className="grid grid-cols-7 gap-1 mb-2">
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
           <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
@@ -137,19 +88,16 @@ const SimpleCalendar = ({ selectedDate, onDateSelect, events }) => {
           </div>
         ))}
       </div>
-      
       <div className="grid grid-cols-7 gap-1">
         {days.map((day, index) => {
           if (day === null) {
             return <div key={index} className="aspect-square"></div>;
           }
-          
           const dayDate = new Date(currentYear, currentMonth, day);
           const eventsForDay = events.filter(event => isSameDay(event.date, dayDate));
           const isSelected = isSameDay(dayDate, selectedDate);
           const isToday = isSameDay(dayDate, today);
           const dotColor = getEventDotColor(eventsForDay);
-
           return (
             <div
               key={index}
@@ -168,7 +116,7 @@ const SimpleCalendar = ({ selectedDate, onDateSelect, events }) => {
                       {eventsForDay.length}
                     </div>
                   )}
-                  <div className="pointer-events-none absolute -top-12 left-1/2 hidden w-max max-w-48 -translate-x-1/2 
+                  <div className="pointer-events-none absolute -top-12 left-1/2 hidden w-max max-w-48 -translate-x-1/2 \
                                   rounded-lg bg-gray-900 px-3 py-2 text-xs text-white group-hover:block z-50 shadow-xl">
                     <div className="font-semibold mb-1">Events:</div>
                     {eventsForDay.slice(0, 3).map((ev, idx) => (
@@ -188,51 +136,48 @@ const SimpleCalendar = ({ selectedDate, onDateSelect, events }) => {
   );
 };
 
-// -- Main Calendar Page --------------------------------------------------------
 export default function Calendar() {
   const [events, setEvents] = useState(initialEvents);
-  const [selectedDate, setSelectedDate] = useState(new Date());
   const [time, setTime] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    date: '',
     attendees: '',
     description: '',
     type: 'upcoming',
   });
   const [formError, setFormError] = useState('');
 
-  // live clock update
   useEffect(() => {
     const interval = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // filter events on the selected date
-  const eventsForDate = events.filter((ev) =>
-    isSameDay(ev.date, selectedDate)
-  );
+  // Stats for pills
+  const todayCount = events.filter(e => e.type === 'today').length;
+  const upcomingCount = events.filter(e => e.type === 'upcoming').length;
 
-  // Handle form input
+  // Events for selected date
+  const eventsForDate = events.filter(ev => isSameDay(ev.date, selectedDate));
+
+  // Add Event form handlers
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
-  // Handle form submit
   const handleFormSubmit = (e) => {
     e.preventDefault();
     setFormError('');
-    if (!formData.name || !formData.date || !formData.attendees || !formData.description) {
+    if (!formData.name || !formData.attendees || !formData.description) {
       setFormError('All fields are required.');
       return;
     }
-    const eventDate = new Date(formData.date);
-    let type = 'upcoming';
+    const eventDate = new Date(selectedDate);
+    eventDate.setHours(0,0,0,0);
     const today = new Date();
     today.setHours(0,0,0,0);
-    eventDate.setHours(0,0,0,0);
+    let type = 'upcoming';
     if (isSameDay(eventDate, today)) type = 'today';
     else if (eventDate < today) type = 'past';
     const newEvent = {
@@ -244,269 +189,276 @@ export default function Calendar() {
     };
     setEvents((prev) => [...prev, newEvent]);
     setShowForm(false);
-    setFormData({ name: '', date: '', attendees: '', description: '', type: 'upcoming' });
-    setSelectedDate(eventDate);
-  };
-
-  const eventStats = {
-    total: events.length,
-    today: events.filter(e => e.type === 'today').length,
-    upcoming: events.filter(e => e.type === 'upcoming').length,
-    past: events.filter(e => e.type === 'past').length,
+    setFormData({ name: '', attendees: '', description: '', type: 'upcoming' });
   };
 
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-4 py-3">
-        <h1 className="text-2xl font-bold mb-4">Event Calendar</h1>
-        <div className="rounded-2xl shadow-lg bg-white max-w-7xl w-full mx-auto px-4 pb-8">
-          {/* Enhanced Header */}
-          <div className="sticky top-0 z-20 bg-white/90 backdrop-blur-xl border-b border-gray-200/50 mb-4 rounded-2xl shadow-xl mx-auto max-w-6xl">
-            <div className="flex flex-col lg:flex-row items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-2xl shadow-lg">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-2xl font-bold text-orange-600">Event Calendar</h1>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <FiCalendar className="text-indigo-600" />
+            <span>Total Events: {events.length}</span>
                 </div>
-                <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-                    Event Calendar
-                  </h1>
-                  <p className="text-gray-600 mt-0.5">Manage your events with style</p>
                 </div>
+
+        <div className="rounded-2xl shadow-lg bg-white max-w-7xl w-full mx-auto">
+          {/* Header Controls */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <FiCalendar className="text-indigo-600 text-xl" />
+                <span className="text-lg font-semibold text-gray-800">Calendar Management</span>
               </div>
-              <div className="flex items-center gap-4 mt-2 lg:mt-0">
-                {/* Stats Pills */}
-                <div className="flex gap-1">
-                  <div className="px-3 py-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-full text-sm font-semibold shadow-lg">
-                    {eventStats.today} Today
-                  </div>
-                  <div className="px-3 py-1 bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-full text-sm font-semibold shadow-lg">
-                    {eventStats.upcoming} Upcoming
-                  </div>
-                </div>
-                {/* Live Clock */}
-                <div className="text-right">
-                  <div className="text-base font-bold text-gray-800">
-                    {time.toLocaleDateString(undefined, {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </div>
-                  <div className="text-xs text-gray-600 font-mono">
-                    {time.toLocaleTimeString([], { hour12: false })}
-                  </div>
-                </div>
+              
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <FiClock className="text-indigo-600" />
+                <span>Manage events and schedules</span>
               </div>
             </div>
+
+            <div className="flex gap-2 items-center">
+              <div className="flex items-center gap-2">
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">{todayCount} Today</span>
+                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">{upcomingCount} Upcoming</span>
+                <span className="text-gray-700 font-semibold ml-2">{time.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                <span className="text-xs text-gray-500 font-mono">{time.toLocaleTimeString([], { hour12: false })}</span>
           </div>
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-              {/* Calendar Section */}
-              <div className="xl:col-span-2">
-                <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-4 border border-gray-200/50">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold text-gray-800 flex items-center gap-3">
-                      <div className="w-2 h-8 bg-gradient-to-b from-emerald-500 to-blue-600 rounded-full"></div>
-                      Calendar View
-                    </h2>
                     <button
-                      className={`px-4 py-2 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 ${
-                        showForm
-                          ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white hover:shadow-red-200'
-                          : 'bg-gradient-to-r from-emerald-500 to-blue-600 text-white hover:shadow-emerald-200'
-                      }`}
+                className="flex items-center gap-1 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
                       onClick={() => setShowForm((v) => !v)}
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        {showForm ? (
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        ) : (
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        )}
-                      </svg>
-                      {showForm ? 'Cancel' : 'Add Event'}
+                <FiPlus />
+                Add Event
                     </button>
                   </div>
-                  {/* Enhanced Form */}
-                  {showForm && (
-                    <form className="mb-4 bg-gradient-to-br from-emerald-50 to-blue-50 rounded-2xl p-4 border border-emerald-200/50 shadow-inner" onSubmit={handleFormSubmit}>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="relative">
-                            <input
-                              type="text"
-                              name="name"
-                              value={formData.name}
-                              onChange={handleFormChange}
-                              className="w-full px-3 py-2 bg-white/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition-all duration-200 peer placeholder-transparent"
-                              placeholder="Event Name"
-                              id="event-name"
-                            />
-                            <label htmlFor="event-name" className="absolute left-4 -top-2 text-sm text-gray-600 bg-white px-2 rounded transition-all duration-200 peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:text-sm peer-focus:text-emerald-600">
-                              Event Name
-                            </label>
                           </div>
-                          <div className="relative">
-                            <input
-                              type="date"
-                              name="date"
-                              value={formData.date}
-                              onChange={handleFormChange}
-                              className="w-full px-3 py-2 bg-white/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition-all duration-200"
-                              id="event-date"
-                            />
-                            <label htmlFor="event-date" className="absolute left-4 -top-2 text-sm text-gray-600 bg-white px-2 rounded">
-                              Date
-                            </label>
-                          </div>
-                        </div>
-                        <div className="relative">
-                          <input
-                            type="number"
-                            name="attendees"
-                            value={formData.attendees}
-                            onChange={handleFormChange}
-                            className="w-full px-3 py-2 bg-white/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition-all duration-200 peer placeholder-transparent"
-                            min="1"
-                            placeholder="Number of attendees"
-                            id="event-attendees"
-                          />
-                          <label htmlFor="event-attendees" className="absolute left-4 -top-2 text-sm text-gray-600 bg-white px-2 rounded transition-all duration-200 peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:text-sm peer-focus:text-emerald-600">
-                            Number of Attendees
-                          </label>
-                        </div>
-                        <div className="relative">
-                          <textarea
-                            name="description"
-                            value={formData.description}
-                            onChange={handleFormChange}
-                            className="w-full px-3 py-2 bg-white/80 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition-all duration-200 peer placeholder-transparent resize-none"
-                            rows={3}
-                            placeholder="Event description"
-                            id="event-description"
-                          />
-                          <label htmlFor="event-description" className="absolute left-4 -top-2 text-sm text-gray-600 bg-white px-2 rounded transition-all duration-200 peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:text-sm peer-focus:text-emerald-600">
-                            Description
-                          </label>
-                        </div>
-                        {formError && (
-                          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-                            {formError}
-                          </div>
-                        )}
-                        <button
-                          type="submit"
-                          className="w-full py-2 bg-gradient-to-r from-emerald-600 to-blue-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-200 transform hover:scale-105"
-                        >
-                          Create Event
-                        </button>
-                      </div>
-                    </form>
-                  )}
-                  {/* Calendar */}
+
+          {/* Main Content: Two Columns */}
+          <div className="flex flex-col xl:flex-row gap-6 p-6">
+            {/* Left: Calendar Card */}
+            <div className="flex-1 min-w-0">
+              <div className="bg-white rounded-2xl border border-gray-200 relative">
+                {/* Calendar grid */}
+                
+                {/* Calendar grid */}
+                <div className="p-6">
                   <SimpleCalendar 
                     selectedDate={selectedDate}
                     onDateSelect={setSelectedDate}
                     events={events}
                   />
-                  {/* Enhanced Legend */}
-                  <div className="mt-3 p-2 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl border border-gray-200">
-                    <div className="flex flex-wrap gap-6 justify-center items-center text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 shadow-lg"></div>
-                        <span className="font-medium text-gray-700">Today ({eventStats.today})</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 to-cyan-600 shadow-lg"></div>
-                        <span className="font-medium text-gray-700">Upcoming ({eventStats.upcoming})</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded-full bg-gradient-to-r from-red-500 to-pink-600 shadow-lg"></div>
-                        <span className="font-medium text-gray-700">Past ({eventStats.past})</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-2 text-center text-sm text-gray-600">
-                    <span className="font-semibold">Selected Date:</span> {selectedDate.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  {/* Legend */}
+                  <div className="mt-6 flex gap-6 justify-center text-sm">
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-green-400 inline-block"></span>
+                      <span className="text-gray-700">Today</span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-blue-400 inline-block"></span>
+                      <span className="text-gray-700">Upcoming</span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full bg-pink-400 inline-block"></span>
+                      <span className="text-gray-700">Past</span>
+                    </span>
                   </div>
                 </div>
               </div>
-              {/* Enhanced Event Details Sidebar */}
-              <div className="xl:col-span-1">
-                <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-3 border border-gray-200/50 sticky top-24">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-2 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full"></div>
-                    <h2 className="text-xl font-bold text-gray-800">Event Details</h2>
+            </div>
+            
+            {/* Right: Event Details Card */}
+            <div className="w-full xl:w-96 flex-shrink-0">
+              <div className="bg-white rounded-2xl border border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-100">
+                  <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <FiEye className="text-indigo-600" />
+                    Event Details
+                  </h2>
+                  <p className="text-gray-600 text-sm mt-1">
+                    Events for {selectedDate.toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </p>
                   </div>
+                
+                {/* Event cards for selected date */}
+                <div className="p-6 space-y-4">
                   {eventsForDate.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center text-gray-500 py-6">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mb-4">
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-center">No events scheduled for this date</p>
-                      <p className="text-xs text-gray-400 mt-1">Click "Add Event" to create one</p>
+                    <div className="text-center py-8">
+                      <FiCalendar className="text-gray-300 text-4xl mx-auto mb-3" />
+                      <p className="text-gray-400 text-sm">No events scheduled for this date</p>
                     </div>
                   ) : (
-                    <div className="space-y-4 max-h-96 overflow-y-auto">
-                      {eventsForDate.map((ev, idx) => {
-                        const gradientClass =
-                          ev.type === "today"
-                            ? "from-emerald-500 to-green-600"
-                            : ev.type === "upcoming"
-                            ? "from-blue-500 to-cyan-600"
-                            : "from-red-500 to-pink-600";
-                        const bgClass =
-                          ev.type === "today"
-                            ? "from-emerald-50 to-green-50"
-                            : ev.type === "upcoming"
-                            ? "from-blue-50 to-cyan-50"
-                            : "from-red-50 to-pink-50";
-                        return (
-                          <div
-                            key={idx}
-                            className={`bg-gradient-to-br ${bgClass} rounded-2xl p-3 shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-200 transform hover:scale-105`}
-                          >
-                            <div className="flex items-start justify-between mb-2">
-                              <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                                <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${gradientClass} shadow-lg`}></div>
-                                {ev.name}
-                              </h3>
-                              <span className={`px-2 py-1 bg-gradient-to-r ${gradientClass} text-white rounded-full text-xs font-semibold shadow-lg`}>
+                    eventsForDate.map((ev, idx) => (
+                      <div key={idx} className={`rounded-xl p-4 shadow-sm border transition-all hover:shadow-md ${
+                        ev.type === 'today' 
+                          ? 'bg-green-50 border-green-200' 
+                          : ev.type === 'upcoming' 
+                            ? 'bg-blue-50 border-blue-200' 
+                            : 'bg-gray-50 border-gray-200'
+                      }`}>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${
+                              ev.type === 'today' 
+                                ? 'bg-green-500' 
+                                : ev.type === 'upcoming' 
+                                  ? 'bg-blue-500' 
+                                  : 'bg-gray-500'
+                            }`}></div>
+                            <h3 className="font-semibold text-gray-900">{ev.name}</h3>
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            ev.type === 'today' 
+                              ? 'bg-green-200 text-green-700' 
+                              : ev.type === 'upcoming' 
+                                ? 'bg-blue-200 text-blue-700' 
+                                : 'bg-gray-200 text-gray-700'
+                          }`}>
                                 {ev.type.charAt(0).toUpperCase() + ev.type.slice(1)}
                               </span>
                             </div>
-                            <div className="space-y-2 text-sm text-gray-600 mb-2">
+                        
+                        <div className="space-y-2 text-sm text-gray-600">
                               <div className="flex items-center gap-2">
-                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                {ev.date.toLocaleDateString()}
+                            <FiCalendar className="text-gray-400" size={14} />
+                            <span>{ev.date.toLocaleDateString()}</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-5.197a4 4 0 11-8.485-2.829" />
-                                </svg>
-                                {ev.attendees} attendees
-                              </div>
-                            </div>
-                            <p className="text-sm text-gray-700 leading-relaxed">
-                              {ev.description}
-                            </p>
+                            <FiUsers className="text-gray-400" size={14} />
+                            <span>{ev.attendees} attendees</span>
                           </div>
-                        );
-                      })}
+                        </div>
+                        
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <p className="text-gray-700 text-sm">{ev.description}</p>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200">
+                          <button className="text-indigo-600 hover:text-indigo-900 transition-colors" title="View Details">
+                            <FiEye size={16} />
+                          </button>
+                          <button className="text-blue-600 hover:text-blue-900 transition-colors" title="Edit Event">
+                            <FiEdit2 size={16} />
+                          </button>
+                          <button className="text-red-600 hover:text-red-900 transition-colors" title="Delete Event">
+                            <FiTrash2 size={16} />
+                          </button>
+                        </div>
                     </div>
+                    ))
                   )}
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Add Event Modal */}
+        {showForm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl mx-4 relative max-h-[90vh] overflow-y-auto">
+              <button
+                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                onClick={() => setShowForm(false)}
+                title="Close"
+              >
+                <FiX size={24} />
+              </button>
+              
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-indigo-700 flex items-center gap-2">
+                  <FiPlus className="text-indigo-600" />
+                  Add New Event
+                </h2>
+                <p className="text-gray-600 text-sm mt-1">Create a new event for {selectedDate.toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}</p>
+              </div>
+              
+              <form className="space-y-6" onSubmit={handleFormSubmit}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Event Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleFormChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                      placeholder="Enter event name"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Attendees <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="attendees"
+                      value={formData.attendees}
+                      onChange={handleFormChange}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                      placeholder="Number of attendees"
+                      min="1"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                    rows={4}
+                    placeholder="Describe the event details and agenda"
+                    required
+                  />
+                </div>
+                
+                {formError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    {formError}
+                  </div>
+                )}
+                
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                  <button
+                    type="button"
+                    className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors"
+                    onClick={() => setShowForm(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors"
+                  >
+                    <FiPlus />
+                    Add Event
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

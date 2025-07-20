@@ -28,6 +28,14 @@ const Login = () => {
   const [regError, setRegError] = useState('');
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // If token exists, redirect to dashboard
+    const token = localStorage.getItem('token');
+    if (token) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
+
   // Password validation function
   const validatePassword = (password) => {
     const minLength = 8;
@@ -66,6 +74,10 @@ const Login = () => {
       
       if (response.data?.token) {
         localStorage.setItem('token', response.data.token);
+        // Store uid as well
+        if (response.data.data?.id) {
+          localStorage.setItem('uid', response.data.data.id);
+        }
         setRedirect(true);
       } else {
         setError('Invalid response from server');

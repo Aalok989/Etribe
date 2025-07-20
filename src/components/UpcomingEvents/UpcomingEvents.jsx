@@ -1,46 +1,121 @@
-import React, { useState } from "react";
-
-const events = [
-  {
-    id: 1,
-    day: "Sun",
-    date: "20",
-    month: "July",
-    year: "2025",
-    title: "Forever Together Gala",
-    time: "6:00 PM",
-    venue: "Main Hall",
-    description:
-      "A gala event for all members. Join us for an evening of celebration and connection. Enjoy the evening with music, dance, and networking opportunities for all participants. A gala event for all members. Join us for an evening of celebration and connection. Enjoy the evening with music, dance, and networking opportunities for all participants. A gala event for all members. Join us for an evening of celebration and connection. Enjoy the evening with music, dance, and networking opportunities for all participants. A gala event for all members. Join us for an evening of celebration and connection. Enjoy the evening with music, dance, and networking opportunities for all participants. A gala event for all members. Join us for an evening of celebration and connection. Enjoy the evening with music, dance, and networking opportunities for all participants.  ",
-  },
-  {
-    id: 2,
-    day: "Tue",
-    date: "22",
-    month: "July",
-    year: "2025",
-    title: "Urban Fest",
-    time: "2:00 PM",
-    venue: "Club Lawn",
-    description:
-      "A fun festival with music, food stalls, games, and live performances. Bring your friends and family for a memorable time filled with joy and entertainment.",
-  },
-  {
-    id: 3,
-    day: "Fri",
-    date: "25",
-    month: "July",
-    year: "2025",
-    title: "Tech Symposium",
-    time: "10:00 AM",
-    venue: "Conference Room",
-    description:
-      "A symposium for tech enthusiasts featuring keynote speakers, panel discussions, workshops, and networking sessions. Stay ahead with the latest tech trends.",
-  },
-];
+import React, { useState, useEffect } from "react";
+import api from "../../api/axiosConfig";
 
 export default function UpcomingEvents() {
-  const [selected, setSelected] = useState(events[0]);
+  const [events, setEvents] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUpcomingEvents = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const uid = localStorage.getItem('uid');
+        const response = await api.post('/event/future', {}, {
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'login.etribes.in',
+            'Content-Type': 'application/json',
+          }
+        });
+
+        let backendEvents = [];
+        if (Array.isArray(response.data?.data?.event)) {
+          backendEvents = response.data.data.event;
+        } else if (Array.isArray(response.data?.data?.events)) {
+          backendEvents = response.data.data.events;
+        } else if (Array.isArray(response.data?.data)) {
+          backendEvents = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          backendEvents = response.data;
+        } else if (response.data?.data && typeof response.data.data === 'object') {
+          backendEvents = Object.values(response.data.data);
+        } else {
+          backendEvents = [];
+        }
+
+        const BASE_URL = "https://api.etribes.in";
+        const mappedEvents = backendEvents.map((e, idx) => {
+          const eventDate = e.event_date && e.event_time
+            ? new Date(`${e.event_date}T${e.event_time}`)
+            : e.datetime ? new Date(e.datetime) : new Date();
+          
+          return {
+            id: e.id || idx,
+            day: eventDate.toLocaleDateString('en-US', { weekday: 'short' }),
+            date: eventDate.getDate().toString(),
+            month: eventDate.toLocaleDateString('en-US', { month: 'short' }),
+            year: eventDate.getFullYear().toString(),
+            title: e.event_title || e.event || e.title || e.name || `Event ${idx + 1}`,
+            time: e.event_time || '12:00 PM',
+            venue: e.event_venue || e.venue || e.location || 'TBD',
+            description: e.event_description || e.agenda || e.description || 'No description available.',
+            imageUrl: e.event_image
+              ? (e.event_image.startsWith("http") ? e.event_image : BASE_URL + e.event_image)
+              : (e.image || e.imageUrl || ""),
+          };
+        });
+
+        setEvents(mappedEvents);
+        if (mappedEvents.length > 0 && !selected) {
+          setSelected(mappedEvents[0]);
+        }
+      } catch (err) {
+        console.error('Fetch upcoming events error:', err);
+        // Fallback to empty array
+        setEvents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUpcomingEvents();
+    const interval = setInterval(fetchUpcomingEvents, 30000); // Poll every 30 seconds
+    return () => clearInterval(interval);
+  }, [selected]);
+
+  // If no events, show a message
+  if (loading) {
+    return (
+      <div className="rounded-2xl shadow-lg bg-white h-full w-full flex flex-col">
+        <div className="relative rounded-t-2xl overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-200 via-blue-100 to-blue-200" />
+          <div className="absolute inset-0 bg-white/30 backdrop-blur-md border-b border-white/30" />
+          <h2 className="relative z-10 text-lg font-bold text-gray-900 tracking-wide px-5 py-3">
+            Upcoming Events
+          </h2>
+        </div>
+        <div className="p-5 flex-1 flex items-center justify-center">
+          <div className="text-center text-gray-600">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-2"></div>
+            <p>Loading events...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (events.length === 0) {
+    return (
+      <div className="rounded-2xl shadow-lg bg-white h-full w-full flex flex-col">
+        <div className="relative rounded-t-2xl overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-200 via-blue-100 to-blue-200" />
+          <div className="absolute inset-0 bg-white/30 backdrop-blur-md border-b border-white/30" />
+          <h2 className="relative z-10 text-lg font-bold text-gray-900 tracking-wide px-5 py-3">
+            Upcoming Events
+          </h2>
+        </div>
+        <div className="p-5 flex-1 flex items-center justify-center">
+          <div className="text-center text-gray-600">
+            <p>No upcoming events</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl shadow-lg bg-white h-full w-full flex flex-col">
@@ -58,13 +133,13 @@ export default function UpcomingEvents() {
               <button
                 key={event.id}
                 className={`relative flex flex-col items-center px-3 py-2 rounded-lg border-2 transition-colors duration-150 min-w-[65px] shadow-sm font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400/60 mx-1 overflow-hidden ${
-                  selected.id === event.id
+                  selected?.id === event.id
                     ? "bg-gradient-to-br from-indigo-100 via-blue-50 to-blue-100 border-indigo-400 scale-105 z-10"
                     : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-indigo-100 hover:border-indigo-400"
                 }`}
                 onClick={() => setSelected(event)}
               >
-                {selected.id === event.id ? (
+                {selected?.id === event.id ? (
                   <>
                     <div className="absolute inset-0 bg-white/30 backdrop-blur-md border border-white/30 rounded-lg pointer-events-none" />
                     <div className="relative z-10 w-full h-full flex flex-col items-center justify-center">

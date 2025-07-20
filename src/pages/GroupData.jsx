@@ -1,8 +1,9 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
 import etribeLogo from "../assets/Etribe-logo.jpg";
 import defaultSignature from "../assets/company-logo/parent.jpg";
 import { FiEdit2, FiX, FiUpload } from "react-icons/fi";
+import api from "../api/axiosConfig";
 
 const initialData = {
   name: "Admin Name",
@@ -25,8 +26,90 @@ export default function GroupData() {
   const [form, setForm] = useState(initialData);
   const [logoPreview, setLogoPreview] = useState(initialData.logo);
   const [signaturePreview, setSignaturePreview] = useState(initialData.signature);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const [saveSuccess, setSaveSuccess] = useState(null);
   const logoInputRef = useRef();
   const signatureInputRef = useRef();
+
+  useEffect(() => {
+    const fetchGroupData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem('token');
+        const uid = localStorage.getItem('uid');
+        
+        if (!token) {
+          setError('Please log in to view group data');
+          return;
+        }
+
+        const response = await api.post('/groupSettings', {}, {
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'login.etribes.in',
+            'Content-Type': 'application/json',
+          }
+        });
+
+        console.log('Full API Response:', response);
+        console.log('Response data:', response.data);
+        console.log('Response status:', response.status);
+        
+        // Map backend data to frontend format
+        const backendData = response.data?.data || response.data || {};
+        console.log('Backend data received:', backendData);
+        console.log('All available fields:', Object.keys(backendData));
+        
+        // Map backend data to frontend format based on actual API response
+        const mappedData = {
+          name: backendData.name || initialData.name,
+          email: backendData.email || initialData.email,
+          contact: backendData.contact || initialData.contact,
+          address: backendData.address || initialData.address,
+          city: backendData.city || initialData.city,
+          state: backendData.state || initialData.state,
+          pincode: backendData.pincode || initialData.pincode,
+          country: backendData.country || initialData.country,
+          signatureName: backendData.signatory_name || initialData.signatureName,
+          signatureDesignation: backendData.signatory_designation || initialData.signatureDesignation,
+          logo: backendData.logo ? `https://api.etribes.in/${backendData.logo}` : initialData.logo,
+          signature: backendData.signature ? `https://api.etribes.in/${backendData.signature}` : initialData.signature,
+        };
+
+        console.log('Mapped data:', mappedData);
+        console.log('Logo URL:', mappedData.logo);
+        console.log('Signature URL:', mappedData.signature);
+        
+        // If no data from API, use default data
+        if (!backendData || Object.keys(backendData).length === 0) {
+          console.log('No data from API, using default data');
+          setData(initialData);
+          setForm(initialData);
+          setLogoPreview(initialData.logo);
+          setSignaturePreview(initialData.signature);
+        } else {
+          setData(mappedData);
+          setForm(mappedData);
+          setLogoPreview(mappedData.logo);
+          setSignaturePreview(mappedData.signature);
+        }
+      } catch (err) {
+        console.error('Fetch group data error:', err);
+        setError(err.response?.data?.message || 'Failed to fetch group data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGroupData();
+  }, []);
 
   const handleEdit = () => {
     setForm(data);
@@ -67,11 +150,81 @@ export default function GroupData() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setSaveLoading(true);
+    setSaveError(null);
+    setSaveSuccess(null);
+    
+    try {
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid');
+      
+      // Prepare payload for backend
+      const payload = {
+        name: form.name,
+        email: form.email,
+        contact: form.contact,
+        address: form.address,
+        city: form.city,
+        state: form.state,
+        pincode: form.pincode,
+        country: form.country,
+        signature_name: form.signatureName,
+        signature_designation: form.signatureDesignation,
+        logo: form.logo,
+        signature: form.signature,
+      };
+
+      console.log('Saving group data:', payload);
+      
+      await api.post('/groupSettings', payload, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'login.etribes.in',
+          'Content-Type': 'application/json',
+        }
+      });
+
     setData(form);
     setEditMode(false);
+      setSaveSuccess('Group data updated successfully!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSaveSuccess(null);
+      }, 3000);
+      
+    } catch (err) {
+      console.error('Save group data error:', err);
+      setSaveError(err.response?.data?.message || 'Failed to save group data');
+    } finally {
+      setSaveLoading(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-indigo-700">Loading group data...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-red-500">{error}</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -84,6 +237,10 @@ export default function GroupData() {
                 src={data.logo}
                 alt="Logo"
                 className="w-16 h-16 object-contain rounded-lg border border-gray-200 shadow bg-white"
+                onError={(e) => {
+                  console.log('Logo failed to load, using default');
+                  e.target.src = initialData.logo;
+                }}
               />
               <button
                 className="flex items-center gap-2 px-7 py-2 bg-indigo-600 text-white rounded-lg font-semibold shadow hover:bg-indigo-700 transition"
@@ -133,6 +290,10 @@ export default function GroupData() {
                 src={data.signature}
                 alt="Signature"
                 className="w-40 h-16 object-contain bg-white rounded border border-gray-200 shadow"
+                onError={(e) => {
+                  console.log('Signature failed to load, using default');
+                  e.target.src = initialData.signature;
+                }}
               />
               <span className="text-xs text-gray-400 mt-1 italic">{data.signatureName}, {data.signatureDesignation}</span>
             </div>
@@ -272,6 +433,10 @@ export default function GroupData() {
                         src={logoPreview}
                         alt="Logo Preview"
                         className="w-28 h-28 object-contain rounded-xl border-2 border-indigo-200 shadow"
+                        onError={(e) => {
+                          console.log('Logo preview failed to load, using default');
+                          e.target.src = initialData.logo;
+                        }}
                       />
                       <button
                         type="button"
@@ -297,6 +462,10 @@ export default function GroupData() {
                         src={signaturePreview}
                         alt="Signature Preview"
                         className="w-40 h-20 object-contain rounded border-2 border-indigo-200 shadow"
+                        onError={(e) => {
+                          console.log('Signature preview failed to load, using default');
+                          e.target.src = initialData.signature;
+                        }}
                       />
                       <button
                         type="button"
@@ -316,12 +485,23 @@ export default function GroupData() {
                     </div>
                   </div>
                 </div>
+                {saveError && (
+                  <div className="text-red-500 text-sm mt-2">{saveError}</div>
+                )}
+                {saveSuccess && (
+                  <div className="text-green-600 text-sm mt-2">{saveSuccess}</div>
+                )}
                 <div className="flex justify-end mt-6">
                   <button
                     type="submit"
-                    className="bg-indigo-600 text-white px-8 py-2 rounded-lg font-semibold shadow hover:bg-indigo-700 transition"
+                    disabled={saveLoading}
+                    className={`px-8 py-2 rounded-lg font-semibold shadow transition ${
+                      saveLoading 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    }`}
                   >
-                    Save
+                    {saveLoading ? 'Saving...' : 'Save'}
                   </button>
                 </div>
               </form>

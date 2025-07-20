@@ -1,33 +1,98 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FiUserCheck, FiUserX, FiAlertCircle } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import api from "../../api/axiosConfig";
+
+export default function StatusCards() {
+  const [activeCount, setActiveCount] = useState(0);
+  const [inactiveCount, setInactiveCount] = useState(0);
+  const [expiredCount, setExpiredCount] = useState(0);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchActiveCount = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const uid = localStorage.getItem('uid');
+        const response = await api.post('/userDetail/active_members', { uid }, {
+          headers: {
+            'token': token,
+            'uid': uid,
+          }
+        });
+        const members = Array.isArray(response.data) ? response.data : response.data.data || [];
+        setActiveCount(members.length);
+      } catch (err) {
+        setActiveCount(0);
+      }
+    };
+    const fetchInactiveCount = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const uid = localStorage.getItem('uid');
+        const response = await api.post('/userDetail/not_members', { uid }, {
+          headers: {
+            'token': token,
+            'uid': uid,
+          }
+        });
+        const members = Array.isArray(response.data) ? response.data : response.data.data || [];
+        setInactiveCount(members.length);
+      } catch (err) {
+        setInactiveCount(0);
+      }
+    };
+    const fetchExpiredCount = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const uid = localStorage.getItem('uid');
+        const response = await api.post('/userDetail/membership_expired', { uid }, {
+          headers: {
+            'token': token,
+            'uid': uid,
+          }
+        });
+        const members = Array.isArray(response.data) ? response.data : response.data.data || [];
+        setExpiredCount(members.length);
+      } catch (err) {
+        setExpiredCount(0);
+      }
+    };
+    fetchActiveCount();
+    fetchInactiveCount();
+    fetchExpiredCount();
+    const interval = setInterval(() => {
+      fetchActiveCount();
+      fetchInactiveCount();
+      fetchExpiredCount();
+    }, 10000); // Poll every 10 seconds
+    return () => clearInterval(interval);
+  }, []);
 
 const statusData = [
   {
     label: "Active",
-    count: 120, // Placeholder
+      count: activeCount, // Real value
     gradient: "bg-gradient-to-br from-blue-200 via-indigo-200 to-white",
     icon: <FiUserCheck size={32} className="text-blue-600 opacity-80" />, // Adjust icon color for contrast
     path: "/membership-management/active",
   },
   {
     label: "Inactive",
-    count: 30, // Placeholder
+      count: inactiveCount, // Real value
     gradient: "bg-gradient-to-br from-emerald-200 via-green-100 to-white",
     icon: <FiUserX size={32} className="text-emerald-600 opacity-80" />, // Adjust icon color for contrast
     path: "/membership-management/inactive",
   },
   {
     label: "Membership Expired",
-    count: 10, // Placeholder
+      count: expiredCount, // Real value
     gradient: "bg-gradient-to-br from-rose-200 via-pink-100 to-white",
     icon: <FiAlertCircle size={32} className="text-rose-600 opacity-80" />, // Adjust icon color for contrast
     path: "/membership-management/expired",
   },
 ];
 
-export default function StatusCards() {
-  const navigate = useNavigate();
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
       {statusData.map((status) => (
