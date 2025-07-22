@@ -28,6 +28,7 @@ import TermsOfService from "./pages/TermsOfService";
 import CookiePolicy from "./pages/CookiePolicy";
 import Calendar from "./pages/Calendar";
 import Login from "./pages/Login";
+import DashboardLayout from "./components/Layout/DashboardLayout";
 
 function isAuthenticated() {
   return !!localStorage.getItem('token');

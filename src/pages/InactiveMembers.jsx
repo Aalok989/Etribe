@@ -104,9 +104,41 @@ export default function InactiveMembers() {
     setForm({ ...form, validUpto: e.target.value });
   };
 
-  const handleUpdate = () => {
-    // Here you would update the member's plan and validUpto in your backend or state
+  const handleUpdate = async () => {
+    if (!modifyMember) return;
+    try {
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid');
+      // Compose payload as per cURL
+      const payload = {
+        id: modifyMember.id,
+        plan_name: form.plan,
+        plan_description: 'Updated via UI', // You can make this a form field if needed
+        plan_price: '0', // You can make this a form field if needed
+        plan_validity: form.validUpto
+      };
+      await api.post('/groupSettings/update_mem_plan', payload, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'login.etribes.in',
+          'Content-Type': 'application/json',
+        }
+      });
+      // Refresh members after update
+      const response = await api.post('/userDetail/not_members', { uid }, {
+        headers: {
+          'token': token,
+          'uid': uid,
+        }
+      });
+      setMembers(Array.isArray(response.data) ? response.data : response.data.data || []);
     closeModify();
+    } catch (err) {
+      alert('Failed to update membership: ' + (err.response?.data?.message || err.message));
+    }
   };
 
   const handleCopyToClipboard = () => {
@@ -209,10 +241,10 @@ export default function InactiveMembers() {
   if (loading && firstLoad) {
     return (
       <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-800">
           <div className="flex items-center gap-3">
             <FiRefreshCw className="animate-spin text-indigo-600 text-2xl" />
-          <p className="text-indigo-700">Loading inactive members...</p>
+            <p className="text-indigo-700 dark:text-indigo-300">Loading inactive members...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -222,10 +254,10 @@ export default function InactiveMembers() {
   if (error) {
     return (
       <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-800">
           <div className="flex items-center gap-2 text-red-500">
             <FiAlertCircle />
-            <p>{error}</p>
+            <p className="dark:text-red-300">{error}</p>
           </div>
         </div>
       </DashboardLayout>
@@ -256,27 +288,25 @@ export default function InactiveMembers() {
           </div>
         )}
 
-        <div className="rounded-2xl shadow-lg bg-white max-w-7xl w-full mx-auto">
+        <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Controls */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
               <div className="relative">
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search by name..."
-                  className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                  className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
               value={search}
               onChange={e => setSearch(e.target.value)}
                   style={{ minWidth: 250 }}
             />
               </div>
-              
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                 <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, totalEntries)} of {totalEntries} entries</span>
               </div>
             </div>
-
             <div className="flex gap-2 items-center">
               <button 
                 className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
@@ -285,7 +315,6 @@ export default function InactiveMembers() {
               >
                 <FiRefreshCw /> Refresh
               </button>
-              
               <button 
                 className="flex items-center gap-1 bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
                 onClick={handleCopyToClipboard}
@@ -293,7 +322,6 @@ export default function InactiveMembers() {
               >
                 <FiCopy /> Copy
               </button>
-              
               <button 
                 className="flex items-center gap-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition"
                 onClick={handleExportCSV}
@@ -301,7 +329,6 @@ export default function InactiveMembers() {
               >
                 <FiDownload /> CSV
               </button>
-              
               <button 
                 className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition"
                 onClick={handleExportExcel}
@@ -309,7 +336,6 @@ export default function InactiveMembers() {
               >
                 <FiFile /> Excel
               </button>
-              
               <button 
                 className="flex items-center gap-1 bg-rose-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-rose-600 transition"
                 onClick={handleExportPDF}
@@ -319,14 +345,13 @@ export default function InactiveMembers() {
               </button>
             </div>
           </div>
-          
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
-              <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 text-gray-700 sticky top-0 z-10 shadow-sm">
-                <tr className="border-b-2 border-indigo-200">
+              <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
+                <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
                   <th 
-                    className="p-3 text-center font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-center font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
                     style={{ minWidth: '80px', width: '80px' }}
                     onClick={() => handleSort('id')}
                   >
@@ -340,7 +365,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
                     style={{ minWidth: '150px', width: '150px' }}
                     onClick={() => handleSort('name')}
                   >
@@ -354,7 +379,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
                     style={{ minWidth: '120px', width: '120px' }}
                     onClick={() => handleSort('phone_num')}
                   >
@@ -368,7 +393,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
                     style={{ minWidth: '180px', width: '180px' }}
                     onClick={() => handleSort('email')}
                   >
@@ -382,7 +407,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
                     style={{ minWidth: '200px', width: '200px' }}
                     onClick={() => handleSort('address')}
                   >
@@ -396,7 +421,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
                     style={{ minWidth: '120px', width: '120px' }}
                     onClick={() => handleSort('ad1')}
                   >
@@ -410,7 +435,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
                     style={{ minWidth: '130px', width: '130px' }}
                     onClick={() => handleSort('ad2')}
                   >
@@ -424,7 +449,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
                     style={{ minWidth: '120px', width: '120px' }}
                     onClick={() => handleSort('ad3')}
                   >
@@ -438,7 +463,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
                     style={{ minWidth: '100px', width: '100px' }}
                     onClick={() => handleSort('ad4')}
                   >
@@ -452,7 +477,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
                     style={{ minWidth: '150px', width: '150px' }}
                     onClick={() => handleSort('company_name')}
                   >
@@ -466,7 +491,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
                     style={{ minWidth: '120px', width: '120px' }}
                     onClick={() => handleSort('ad5')}
                   >
@@ -480,7 +505,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
                     style={{ minWidth: '140px', width: '140px' }}
                     onClick={() => handleSort('plan')}
                   >
@@ -494,7 +519,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-center font-semibold whitespace-nowrap"
+                    className="p-3 text-center font-semibold whitespace-nowrap dark:bg-gray-800 dark:text-gray-100"
                     style={{ minWidth: '100px', width: '100px' }}
                   >
                     Actions
@@ -505,32 +530,32 @@ export default function InactiveMembers() {
                 {paginated.map((m, idx) => (
                   <tr 
                     key={m.id} 
-                    className={`border-b border-gray-200 transition-colors ${
-                      idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                    } hover:bg-indigo-50 hover:shadow-sm`}
+                    className={`border-b border-gray-200 dark:border-gray-700 transition-colors ${
+                      idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'
+                    } hover:bg-indigo-50 dark:hover:bg-gray-700 hover:shadow-sm`}
                   >
-                    <td className="p-3 text-center font-semibold text-indigo-700 border-r border-gray-200">
+                    <td className="p-3 text-center font-semibold text-indigo-700 border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">
                       {startIdx + idx + 1}
                     </td>
-                    <td className="p-3 text-left border-r border-gray-200">
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center text-white font-semibold text-xs">
                           {m.name.charAt(0).toUpperCase()}
                         </div>
-                        <span className="font-medium text-gray-800">{m.name}</span>
+                        <span className="font-medium text-gray-800 dark:text-gray-100">{m.name}</span>
                       </div>
                     </td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.phone_num || m.contact}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.email}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.address}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.ad1 || m.pan}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.ad2 || m.aadhar}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.ad3 || m.dl}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.ad4 || m.dob}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.company_name || m.company}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.ad5 || m.validUpto}</td>
-                    <td className="p-3 text-left border-r border-gray-200">
-                      <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.phone_num || m.contact}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.email}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.address}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.ad1 || m.pan}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.ad2 || m.aadhar}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.ad3 || m.dl}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.ad4 || m.dob}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.company_name || m.company}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.ad5 || m.validUpto}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">
+                      <span className="px-2 py-1 bg-red-100 dark:bg-indigo-900 text-red-700 dark:text-gray-100 rounded-full text-xs font-medium">
                         {m.plan || "No Plan"}
                       </span>
                     </td>
@@ -547,13 +572,13 @@ export default function InactiveMembers() {
                 ))}
               </tbody>
             </table>
-            
+          </div>
             {/* Pagination Controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-t border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-t border-gray-100 dark:border-gray-700">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Show</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Show</span>
                 <select
-                  className="border rounded-lg px-3 py-1 text-sm bg-white text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                className="border rounded-lg px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
                   value={entriesPerPage}
                   onChange={handleEntriesChange}
                 >
@@ -561,34 +586,32 @@ export default function InactiveMembers() {
                     <option key={num} value={num}>{num}</option>
                   ))}
                 </select>
-                <span className="text-sm text-gray-600">entries per page</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">entries per page</span>
               </div>
-              
               <div className="flex items-center gap-2">
                 <button
                   onClick={handlePrev}
                   disabled={currentPage === 1}
-                  className={`px-3 py-1 rounded-lg text-indigo-600 hover:bg-indigo-100 transition-colors ${
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
                     currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                   title="Previous"
                 >
                   Previous
                 </button>
-                <span className="text-sm font-semibold text-gray-700">
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                   Page {currentPage} of {totalPages}
                 </span>
                 <button
                   onClick={handleNext}
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1 rounded-lg text-indigo-600 hover:bg-indigo-100 transition-colors ${
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
                     currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                   title="Next"
                 >
                   Next
                 </button>
-              </div>
             </div>
           </div>
         </div>
@@ -596,7 +619,7 @@ export default function InactiveMembers() {
         {/* Enhanced Modify Membership Modal */}
         {modifyMember && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg relative">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-lg relative">
               <button
                 className="absolute top-4 right-4 text-gray-400 hover:text-rose-500 transition-colors"
                 onClick={closeModify}
@@ -610,19 +633,19 @@ export default function InactiveMembers() {
                   {modifyMember.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">Modify Membership</h2>
-                  <p className="text-gray-600">Update membership for {modifyMember.name}</p>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Modify Membership</h2>
+                  <p className="text-gray-600 dark:text-gray-400">Update membership for {modifyMember.name}</p>
                 </div>
               </div>
               
               <form className="space-y-6">
                 <div>
-                  <label className="block text-gray-700 font-semibold mb-2">Membership Plan</label>
+                  <label className="block text-gray-700 dark:text-gray-200 font-semibold mb-2">Membership Plan</label>
                   <select
                     name="plan"
                     value={form.plan}
                     onChange={handleFormChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
                   >
                     <option value="">Select Plan</option>
                     <option value="Basic">Basic Plan</option>
@@ -632,7 +655,7 @@ export default function InactiveMembers() {
                 </div>
                 
                 <div>
-                  <label className="block text-gray-700 font-semibold mb-2">Valid Until</label>
+                  <label className="block text-gray-700 dark:text-gray-200 font-semibold mb-2">Valid Until</label>
                   <div className="relative">
                     <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     <input
@@ -640,7 +663,7 @@ export default function InactiveMembers() {
                       name="validUpto"
                       value={form.validUpto}
                       onChange={handleDateChange}
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
                     />
                   </div>
                 </div>
@@ -648,14 +671,14 @@ export default function InactiveMembers() {
                 <div className="flex gap-4 justify-end pt-4 border-t border-gray-100">
                   <button
                     type="button"
-                    className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
+                    className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                     onClick={closeModify}
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
-                    className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
+                    className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors dark:bg-indigo-600 dark:hover:bg-indigo-700"
                     onClick={handleUpdate}
                   >
                     Update Membership

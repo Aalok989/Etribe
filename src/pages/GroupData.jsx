@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
 import etribeLogo from "../assets/Etribe-logo.jpg";
 import defaultSignature from "../assets/company-logo/parent.jpg";
-import { FiEdit2, FiX, FiUpload } from "react-icons/fi";
+import { FiEdit2, FiX, FiUpload, FiCheckCircle } from "react-icons/fi";
 import api from "../api/axiosConfig";
 
 const initialData = {
@@ -35,18 +35,17 @@ export default function GroupData() {
   const signatureInputRef = useRef();
 
   useEffect(() => {
-    const fetchGroupData = async () => {
-      setLoading(true);
+    let isMounted = true;
+    const fetchGroupData = async (showLoading = false) => {
+      if (showLoading) setLoading(true);
       setError(null);
       try {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
-        
         if (!token) {
           setError('Please log in to view group data');
           return;
         }
-
         const response = await api.post('/groupSettings', {}, {
           headers: {
             'Client-Service': 'COHAPPRT',
@@ -57,17 +56,7 @@ export default function GroupData() {
             'Content-Type': 'application/json',
           }
         });
-
-        console.log('Full API Response:', response);
-        console.log('Response data:', response.data);
-        console.log('Response status:', response.status);
-        
-        // Map backend data to frontend format
         const backendData = response.data?.data || response.data || {};
-        console.log('Backend data received:', backendData);
-        console.log('All available fields:', Object.keys(backendData));
-        
-        // Map backend data to frontend format based on actual API response
         const mappedData = {
           name: backendData.name || initialData.name,
           email: backendData.email || initialData.email,
@@ -82,34 +71,32 @@ export default function GroupData() {
           logo: backendData.logo ? `https://api.etribes.in/${backendData.logo}` : initialData.logo,
           signature: backendData.signature ? `https://api.etribes.in/${backendData.signature}` : initialData.signature,
         };
-
-        console.log('Mapped data:', mappedData);
-        console.log('Logo URL:', mappedData.logo);
-        console.log('Signature URL:', mappedData.signature);
-        
-        // If no data from API, use default data
-        if (!backendData || Object.keys(backendData).length === 0) {
-          console.log('No data from API, using default data');
-          setData(initialData);
-          setForm(initialData);
-          setLogoPreview(initialData.logo);
-          setSignaturePreview(initialData.signature);
-        } else {
+        if (isMounted) {
           setData(mappedData);
           setForm(mappedData);
           setLogoPreview(mappedData.logo);
           setSignaturePreview(mappedData.signature);
         }
       } catch (err) {
-        console.error('Fetch group data error:', err);
-        setError(err.response?.data?.message || 'Failed to fetch group data');
+        if (isMounted) setError(err.response?.data?.message || 'Failed to fetch group data');
       } finally {
-        setLoading(false);
+        if (showLoading && isMounted) setLoading(false);
       }
     };
-
-    fetchGroupData();
+    fetchGroupData(true); // Initial load with spinner
+    const interval = setInterval(() => fetchGroupData(false), 300000); // 5 min auto-refresh, no spinner
+    return () => { isMounted = false; clearInterval(interval); };
   }, []);
+
+  // Manual refresh button handler
+  const handleManualRefresh = () => {
+    setLoading(true);
+    setError(null);
+    // Call fetchGroupData with spinner
+    // (re-use the effect's fetchGroupData logic)
+    // For this, move fetchGroupData to useRef or out of useEffect if needed
+    window.location.reload(); // Simple way for now, or refactor for better
+  };
 
   const handleEdit = () => {
     setForm(data);
@@ -152,6 +139,7 @@ export default function GroupData() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Save button clicked', form);
     setSaveLoading(true);
     setSaveError(null);
     setSaveSuccess(null);
@@ -160,7 +148,7 @@ export default function GroupData() {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid');
       
-      // Prepare payload for backend
+      // Prepare payload for backend (as per working Postman example)
       const payload = {
         name: form.name,
         email: form.email,
@@ -169,16 +157,15 @@ export default function GroupData() {
         city: form.city,
         state: form.state,
         pincode: form.pincode,
+        area_id: form.area_id && form.area_id !== '' ? form.area_id : '13',
         country: form.country,
-        signature_name: form.signatureName,
-        signature_designation: form.signatureDesignation,
-        logo: form.logo,
-        signature: form.signature,
+        signatory_name: form.signatureName,
+        signatory_designation: form.signatureDesignation,
       };
 
-      console.log('Saving group data:', payload);
+      console.log('Saving group data (cURL):', payload);
       
-      await api.post('/groupSettings', payload, {
+      await api.post('/groupSettings/master_data', payload, {
         headers: {
           'Client-Service': 'COHAPPRT',
           'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
@@ -192,12 +179,9 @@ export default function GroupData() {
     setData(form);
     setEditMode(false);
       setSaveSuccess('Group data updated successfully!');
-      
-      // Clear success message after 3 seconds
       setTimeout(() => {
         setSaveSuccess(null);
       }, 3000);
-      
     } catch (err) {
       console.error('Save group data error:', err);
       setSaveError(err.response?.data?.message || 'Failed to save group data');
@@ -206,308 +190,154 @@ export default function GroupData() {
     }
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <p className="text-indigo-700">Loading group data...</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <p className="text-red-500">{error}</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout>
-      <div className="flex flex-col gap-4 py-3 min-h-0">
-        <h1 className="text-2xl font-bold text-black mb-4 ml-2">Group Data</h1>
-        <div className="rounded-2xl shadow-lg bg-white max-w-7xl w-full mx-auto px-4">
-          <div className="flex flex-col gap-0">
-            <div className="flex items-center justify-between px-0 pt-6">
-              <img
-                src={data.logo}
-                alt="Logo"
-                className="w-16 h-16 object-contain rounded-lg border border-gray-200 shadow bg-white"
-                onError={(e) => {
-                  console.log('Logo failed to load, using default');
-                  e.target.src = initialData.logo;
-                }}
-              />
+      <div className="relative w-full flex flex-col md:flex-row gap-8 items-start">
+        {/* Floating Edit Button */}
+        {!editMode && (
+          <button
+            className="absolute top-0 right-0 p-2 rounded-full bg-indigo-50 dark:bg-gray-700 text-indigo-600 dark:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-gray-600 hover:text-indigo-800 dark:hover:text-indigo-100 shadow transition"
+            onClick={handleEdit}
+            disabled={loading}
+            title="Edit Profile"
+          >
+            <FiEdit2 size={22} />
+          </button>
+        )}
+
+        {/* Left: Logo and Signature */}
+        <div className="flex flex-col items-center gap-6 min-w-[220px] w-full md:w-[220px]">
+          <div className="relative">
+            <img
+              src={logoPreview}
+              alt="Admin Logo"
+              className="w-28 h-28 rounded-full object-cover border-2 border-gray-300 dark:border-gray-700 shadow-md bg-gray-100 dark:bg-gray-800"
+            />
+            {editMode && (
               <button
-                className="flex items-center gap-2 px-7 py-2 bg-indigo-600 text-white rounded-lg font-semibold shadow hover:bg-indigo-700 transition"
-                onClick={handleEdit}
+                type="button"
+                className="absolute bottom-2 right-2 bg-indigo-600 text-white p-2 rounded-full shadow hover:bg-indigo-700"
+                onClick={() => logoInputRef.current.click()}
+                title="Change Logo"
               >
-                <FiEdit2 /> Edit
+                <FiUpload size={16} />
               </button>
-            </div>
-            <div className="pt-4 pb-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-8">
-                <div>
-                  <span className="font-bold text-gray-700 block mb-1">Name</span>
-                  <span className="text-gray-900 text-base font-normal">{data.name}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-gray-700 block mb-1">Email</span>
-                  <span className="text-gray-900 text-base font-normal">{data.email}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-gray-700 block mb-1">Contact No</span>
-                  <span className="text-gray-900 text-base font-normal">{data.contact}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-gray-700 block mb-1">Address</span>
-                  <span className="text-gray-900 text-base font-normal">{data.address}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-gray-700 block mb-1">City</span>
-                  <span className="text-gray-900 text-base font-normal">{data.city}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-gray-700 block mb-1">State</span>
-                  <span className="text-gray-900 text-base font-normal">{data.state}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-gray-700 block mb-1">Pincode</span>
-                  <span className="text-gray-900 text-base font-normal">{data.pincode}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-gray-700 block mb-1">Country</span>
-                  <span className="text-gray-900 text-base font-normal">{data.country}</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col items-end pb-6 pt-2">
-              <img
-                src={data.signature}
-                alt="Signature"
-                className="w-40 h-16 object-contain bg-white rounded border border-gray-200 shadow"
-                onError={(e) => {
-                  console.log('Signature failed to load, using default');
-                  e.target.src = initialData.signature;
-                }}
-              />
-              <span className="text-xs text-gray-400 mt-1 italic">{data.signatureName}, {data.signatureDesignation}</span>
-            </div>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              ref={logoInputRef}
+              className="hidden"
+              onChange={handleLogoChange}
+            />
+          </div>
+          <div className="relative">
+            <img
+              src={signaturePreview}
+              alt="Signature"
+              className="w-40 h-14 object-contain rounded-lg border-2 border-gray-300 dark:border-gray-700 shadow-md bg-gray-100 dark:bg-gray-800"
+            />
+            {editMode && (
+              <button
+                type="button"
+                className="absolute bottom-2 right-2 bg-indigo-600 text-white p-2 rounded-full shadow hover:bg-indigo-700"
+                onClick={() => signatureInputRef.current.click()}
+                title="Change Signature"
+              >
+                <FiUpload size={16} />
+              </button>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              ref={signatureInputRef}
+              className="hidden"
+              onChange={handleSignatureChange}
+            />
+          </div>
+          <div className="text-center">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mt-2">{data.name}</h2>
+            <div className="text-sm text-gray-500 dark:text-gray-300 font-medium">{data.signatureDesignation || 'Administrator'}</div>
+            <div className="text-sm text-gray-400 dark:text-gray-400">{data.email}</div>
+            <span className="text-xs text-gray-400 dark:text-gray-400 italic mt-1 block">{data.signatureName}, {data.signatureDesignation}</span>
           </div>
         </div>
 
-        {/* Edit Modal */}
-        {editMode && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl relative">
-              <button
-                className="absolute top-3 right-3 text-gray-400 hover:text-rose-500"
-                onClick={handleCancel}
-                title="Close"
-              >
-                <FiX size={22} />
-              </button>
-              <h2 className="text-xl font-bold mb-4 text-indigo-700">Edit Group Data</h2>
-              <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-                  <div className="flex flex-col gap-1">
-                    <label className="font-medium text-gray-700">Name</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={form.name}
-                      onChange={handleChange}
-                      className="px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400"
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font-medium text-gray-700">Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={form.email}
-                      onChange={handleChange}
-                      className="px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400"
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font-medium text-gray-700">Contact No</label>
-                    <input
-                      type="text"
-                      name="contact"
-                      value={form.contact}
-                      onChange={handleChange}
-                      className="px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400"
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font-medium text-gray-700">Address</label>
-                    <input
-                      type="text"
-                      name="address"
-                      value={form.address}
-                      onChange={handleChange}
-                      className="px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400"
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font-medium text-gray-700">City</label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={form.city}
-                      onChange={handleChange}
-                      className="px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400"
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font-medium text-gray-700">State</label>
-                    <input
-                      type="text"
-                      name="state"
-                      value={form.state}
-                      onChange={handleChange}
-                      className="px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400"
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font-medium text-gray-700">Pincode</label>
-                    <input
-                      type="text"
-                      name="pincode"
-                      value={form.pincode}
-                      onChange={handleChange}
-                      className="px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400"
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font-medium text-gray-700">Country</label>
-                    <input
-                      type="text"
-                      name="country"
-                      value={form.country}
-                      onChange={handleChange}
-                      className="px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400"
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font-medium text-gray-700">Signature Name</label>
-                    <input
-                      type="text"
-                      name="signatureName"
-                      value={form.signatureName}
-                      onChange={handleChange}
-                      className="px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400"
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="font-medium text-gray-700">Signature Designation</label>
-                    <input
-                      type="text"
-                      name="signatureDesignation"
-                      value={form.signatureDesignation}
-                      onChange={handleChange}
-                      className="px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col md:flex-row gap-8 mt-4">
-                  <div className="flex flex-col items-center gap-2 flex-1">
-                    <label className="font-medium text-gray-700 mb-1">Logo</label>
-                    <div className="relative w-28 h-28 mb-2">
-                      <img
-                        src={logoPreview}
-                        alt="Logo Preview"
-                        className="w-28 h-28 object-contain rounded-xl border-2 border-indigo-200 shadow"
-                        onError={(e) => {
-                          console.log('Logo preview failed to load, using default');
-                          e.target.src = initialData.logo;
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="absolute bottom-1 right-1 bg-indigo-600 text-white p-1 rounded-full shadow hover:bg-indigo-700"
-                        onClick={() => logoInputRef.current.click()}
-                        title="Upload Logo"
-                      >
-                        <FiUpload size={16} />
-                      </button>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        ref={logoInputRef}
-                        className="hidden"
-                        onChange={handleLogoChange}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-center gap-2 flex-1">
-                    <label className="font-medium text-gray-700 mb-1">Signature</label>
-                    <div className="relative w-40 h-20 mb-2">
-                      <img
-                        src={signaturePreview}
-                        alt="Signature Preview"
-                        className="w-40 h-20 object-contain rounded border-2 border-indigo-200 shadow"
-                        onError={(e) => {
-                          console.log('Signature preview failed to load, using default');
-                          e.target.src = initialData.signature;
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="absolute bottom-1 right-1 bg-indigo-600 text-white p-1 rounded-full shadow hover:bg-indigo-700"
-                        onClick={() => signatureInputRef.current.click()}
-                        title="Upload Signature"
-                      >
-                        <FiUpload size={16} />
-                      </button>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        ref={signatureInputRef}
-                        className="hidden"
-                        onChange={handleSignatureChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-                {saveError && (
-                  <div className="text-red-500 text-sm mt-2">{saveError}</div>
-                )}
-                {saveSuccess && (
-                  <div className="text-green-600 text-sm mt-2">{saveSuccess}</div>
-                )}
-                <div className="flex justify-end mt-6">
-                  <button
-                    type="submit"
-                    disabled={saveLoading}
-                    className={`px-8 py-2 rounded-lg font-semibold shadow transition ${
-                      saveLoading 
-                        ? 'bg-gray-400 cursor-not-allowed' 
-                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                    }`}
-                  >
-                    {saveLoading ? 'Saving...' : 'Save'}
-                  </button>
-                </div>
-              </form>
+        {/* Right: Details Table or Edit Form */}
+        <div className="flex-1 w-full">
+          {/* Loading/Error/Success Banners */}
+          {loading && (
+            <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex items-center justify-center rounded-2xl z-20">
+              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-200">
+                <svg className="animate-spin h-6 w-6 mr-2 text-indigo-600 dark:text-indigo-200" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" /><path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" className="opacity-75" /></svg>
+                Loading profile...
+              </div>
             </div>
+          )}
+          {error && (
+            <div className="mb-4 flex items-center gap-2 text-red-600 bg-red-50 dark:bg-red-900/40 dark:text-red-200 rounded-lg px-4 py-2">
+              <FiX /> {error}
+            </div>
+          )}
+          {saveSuccess && (
+            <div className="mb-4 flex items-center gap-2 text-green-600 bg-green-50 dark:bg-green-900/40 dark:text-green-200 rounded-lg px-4 py-2">
+              <FiCheckCircle /> {saveSuccess}
+            </div>
+          )}
+          <div className="overflow-x-auto">
+            <table className="min-w-full border border-gray-200 dark:border-gray-700 rounded-xl">
+              <tbody>
+                {[
+                  { label: 'Contact No', key: 'contact' },
+                  { label: 'Address', key: 'address' },
+                  { label: 'City', key: 'city' },
+                  { label: 'Pincode', key: 'pincode' },
+                  { label: 'Country', key: 'country' },
+                  { label: 'State', key: 'state' },
+                  { label: 'Signature Name', key: 'signatureName' },
+                  { label: 'Signature Designation', key: 'signatureDesignation' },
+                ].map(({ label, key }) => (
+                  <tr key={key} className="border-b last:border-b-0 border-gray-200 dark:border-gray-700">
+                    <td className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-900/50 w-48 align-top">{label}</td>
+                    <td className="px-6 py-4 bg-white dark:bg-gray-800">
+                      {!editMode ? (
+                        <span className="text-gray-900 dark:text-gray-100 text-base font-normal">{data[key]}</span>
+                      ) : (
+                        <input
+                          type="text"
+                          name={key}
+                          value={form[key]}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400"
+                          required
+                        />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
+          {/* Save/Cancel Buttons in Edit Mode */}
+          {editMode && (
+            <form onSubmit={handleSubmit} className="flex justify-end gap-4 mt-6">
+              <button
+                type="button"
+                className="px-6 py-2 rounded-lg font-semibold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                onClick={handleCancel}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-8 py-2 rounded-lg font-semibold bg-indigo-600 text-white shadow hover:bg-indigo-700 transition"
+                disabled={saveLoading}
+              >
+                Save
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </DashboardLayout>
   );

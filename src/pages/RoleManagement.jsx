@@ -283,7 +283,7 @@ export default function RoleManagement() {
     e.preventDefault();
     try {
       await saveRolePermissions(selectedRole, permissions);
-      setShowSuccess(true);
+    setShowSuccess(true);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -331,16 +331,16 @@ export default function RoleManagement() {
           </div>
         )}
 
-        <div className="rounded-2xl shadow-lg bg-white max-w-7xl w-full mx-auto">
+        <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Role Selection Controls */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">Select Role:</label>
-                <select
-                  className="px-4 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                  value={selectedRole}
-                  onChange={handleRoleChange}
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Role:</label>
+              <select
+                  className="px-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                value={selectedRole}
+                onChange={handleRoleChange}
                   style={{ minWidth: 200 }}
                   disabled={roles.length === 0 || submitting}
                 >
@@ -382,42 +382,42 @@ export default function RoleManagement() {
           
           {/* Permissions Table */}
           {roles.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <FiShield className="mx-auto text-4xl text-gray-300 mb-4" />
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+              <FiShield className="mx-auto text-4xl text-gray-300 dark:text-gray-500 mb-4" />
               <p className="text-lg font-medium">No roles found</p>
               <p className="text-sm text-gray-400 mt-2">Please add roles in the User Roles section first.</p>
             </div>
           ) : !selectedRole ? (
-            <div className="text-center py-12 text-gray-500">
-              <FiShield className="mx-auto text-4xl text-gray-300 mb-4" />
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+              <FiShield className="mx-auto text-4xl text-gray-300 dark:text-gray-500 mb-4" />
               <p className="text-lg font-medium">Select a Role</p>
               <p className="text-sm text-gray-400 mt-2">Please select a role from the dropdown above to view and manage its permissions.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
-                <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 text-gray-700 sticky top-0 z-10 shadow-sm">
-                  <tr className="border-b-2 border-indigo-200">
+                <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
+                  <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
                     <th 
-                      className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap"
+                      className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
                       style={{ minWidth: '250px', width: '250px' }}
                     >
                       Module
                     </th>
                     <th 
-                      className="p-3 text-center font-semibold border-r border-indigo-200 whitespace-nowrap"
+                      className="p-3 text-center font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
                       style={{ minWidth: '100px', width: '100px' }}
                     >
                       View
                     </th>
                     <th 
-                      className="p-3 text-center font-semibold border-r border-indigo-200 whitespace-nowrap"
+                      className="p-3 text-center font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
                       style={{ minWidth: '100px', width: '100px' }}
                     >
                       Add
                     </th>
                     <th 
-                      className="p-3 text-center font-semibold border-r border-indigo-200 whitespace-nowrap"
+                      className="p-3 text-center font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
                       style={{ minWidth: '100px', width: '100px' }}
                     >
                       Edit
@@ -428,70 +428,70 @@ export default function RoleManagement() {
                     >
                       Delete
                     </th>
-                  </tr>
-                </thead>
+                </tr>
+              </thead>
                 <tbody>
-                  {permissions.map((row, idx) => (
+                {permissions.map((row, idx) => (
                     <tr 
                       key={row.module} 
-                      className={`border-b border-gray-200 transition-colors ${
-                        idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      } hover:bg-indigo-50 hover:shadow-sm`}
+                      className={`border-b border-gray-200 dark:border-gray-700 transition-colors ${
+                        idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'
+                      } hover:bg-indigo-50 dark:hover:bg-gray-700 hover:shadow-sm`}
                     >
-                      <td className="p-3 text-left font-semibold text-gray-800 border-r border-gray-200">
+                      <td className="p-3 text-left font-semibold text-gray-800 dark:text-gray-100 border-r border-gray-200 dark:border-gray-700">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xs">
                             {row.module.charAt(0).toUpperCase()}
                           </div>
-                          <span>{row.module}</span>
+                          <span className="dark:text-gray-100">{row.module}</span>
                         </div>
                       </td>
-                      <td className="p-3 text-center border-r border-gray-200">
-                        <input
-                          type="checkbox"
-                          checked={row.view}
-                          onChange={() => handlePermissionChange(idx, "view")}
-                          className="h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 focus:ring-2 transition-colors"
+                      <td className="p-3 text-center border-r border-gray-200 dark:border-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={row.view}
+                        onChange={() => handlePermissionChange(idx, "view")}
+                          className="h-5 w-5 text-indigo-600 rounded border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 focus:ring-indigo-500 focus:ring-2 transition-colors"
                           disabled={submitting}
-                        />
-                      </td>
-                      <td className="p-3 text-center border-r border-gray-200">
-                        <input
-                          type="checkbox"
-                          checked={row.add}
-                          onChange={() => handlePermissionChange(idx, "add")}
-                          className="h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 focus:ring-2 transition-colors"
+                      />
+                    </td>
+                      <td className="p-3 text-center border-r border-gray-200 dark:border-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={row.add}
+                        onChange={() => handlePermissionChange(idx, "add")}
+                          className="h-5 w-5 text-indigo-600 rounded border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 focus:ring-indigo-500 focus:ring-2 transition-colors"
                           disabled={submitting}
-                        />
-                      </td>
-                      <td className="p-3 text-center border-r border-gray-200">
-                        <input
-                          type="checkbox"
-                          checked={row.edit}
-                          onChange={() => handlePermissionChange(idx, "edit")}
-                          className="h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 focus:ring-2 transition-colors"
+                      />
+                    </td>
+                      <td className="p-3 text-center border-r border-gray-200 dark:border-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={row.edit}
+                        onChange={() => handlePermissionChange(idx, "edit")}
+                          className="h-5 w-5 text-indigo-600 rounded border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 focus:ring-indigo-500 focus:ring-2 transition-colors"
                           disabled={submitting}
-                        />
-                      </td>
+                      />
+                    </td>
                       <td className="p-3 text-center">
-                        <input
-                          type="checkbox"
-                          checked={row.delete}
-                          onChange={() => handlePermissionChange(idx, "delete")}
-                          className="h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 focus:ring-2 transition-colors"
+                      <input
+                        type="checkbox"
+                        checked={row.delete}
+                        onChange={() => handlePermissionChange(idx, "delete")}
+                          className="h-5 w-5 text-indigo-600 rounded border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 focus:ring-indigo-500 focus:ring-2 transition-colors"
                           disabled={submitting}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
               
               {/* Save Button */}
-              <div className="flex justify-end p-6 border-t border-gray-100">
-                <button
+              <div className="flex justify-end p-6 border-t border-gray-100 dark:border-gray-700">
+              <button
                   className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50 shadow-lg"
-                  onClick={handleSubmit}
+                onClick={handleSubmit}
                   disabled={submitting || !selectedRole}
                 >
                   {submitting ? (
@@ -505,30 +505,30 @@ export default function RoleManagement() {
                       Save Permissions
                     </>
                   )}
-                </button>
-              </div>
+              </button>
             </div>
+          </div>
           )}
         </div>
         
         {/* Enhanced Success Modal */}
         {showSuccess && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md relative">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-md relative">
               <div className="flex flex-col items-center text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white mb-4">
                   <FiCheckCircle size={32} />
                 </div>
-                <h2 className="text-xl font-bold text-gray-800 mb-2">Permissions Saved Successfully!</h2>
-                <p className="text-gray-600 text-sm mb-6">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Permissions Saved Successfully!</h2>
+                <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">
                   Role permissions for <strong>{selectedRole}</strong> have been updated.
                 </p>
-                <button
+              <button
                   className="px-6 py-2 rounded-lg font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-                  onClick={handleSuccessClose}
-                >
+                onClick={handleSuccessClose}
+              >
                   Continue
-                </button>
+              </button>
               </div>
             </div>
           </div>

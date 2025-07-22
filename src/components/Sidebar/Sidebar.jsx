@@ -70,8 +70,7 @@ const menuItems = [
   },
 ];
 
-export default function Sidebar({ className = "" }) {
-  const [collapsed, setCollapsed] = useState(false);
+export default function Sidebar({ className = "", collapsed, setCollapsed }) {
   const [openDropdown, setOpenDropdown] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
@@ -85,9 +84,9 @@ export default function Sidebar({ className = "" }) {
   }, [location.pathname]);
 
   return (
-    <aside className={`bg-blue-50 flex flex-col transition-all duration-200 ${collapsed ? 'w-20' : 'w-72'} shadow-lg ${className}`}>
+    <aside className={`bg-blue-50 dark:bg-gray-800 flex flex-col transition-all duration-200 ${collapsed ? 'w-20' : 'w-72'} shadow-lg ${className}`}>
       {/* Header with logo and collapse button */}
-      <div className="flex items-center gap-3 p-4 border-b border-blue-100">
+      <div className="flex items-center gap-3 p-4 border-b border-blue-100 dark:border-gray-700">
         <div className="flex items-center">
           <img 
             src={companyLogo} 
@@ -96,7 +95,7 @@ export default function Sidebar({ className = "" }) {
           />
         </div>
         <button
-          className="ml-auto text-blue-600 hover:text-blue-800 transition-colors duration-150"
+          className="ml-auto text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-400 transition-colors duration-150"
           onClick={() => setCollapsed((prev) => !prev)}
           aria-label="Toggle sidebar"
         >
@@ -116,8 +115,8 @@ export default function Sidebar({ className = "" }) {
                 <li key={item.label}>
                   <button
                     onClick={() => setOpenDropdown(openDropdown === item.label ? "" : item.label)}
-                    className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-150 text-left font-medium text-blue-900 hover:bg-blue-100 hover:text-blue-900 whitespace-nowrap ${
-                      isParentOfActive ? 'bg-green-500 text-white' : ''
+                    className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-150 text-left font-medium text-blue-900 dark:text-gray-100 hover:bg-blue-100 dark:hover:bg-gray-700 hover:text-blue-900 dark:hover:text-white whitespace-nowrap ${
+                      isParentOfActive ? 'bg-green-500 text-white dark:bg-green-600' : ''
                     }`}
                   >
                     <span>{item.icon}</span>
@@ -133,14 +132,14 @@ export default function Sidebar({ className = "" }) {
                   </button>
                   {/* Dropdown sub-menu */}
                   {item.dropdown && openDropdown === item.label && !collapsed && (
-                    <ul className="ml-8 mt-1 bg-blue-100 rounded-lg shadow-inner py-2">
+                    <ul className="ml-8 mt-1 bg-blue-100 dark:bg-gray-700 rounded-lg shadow-inner py-2">
                       {item.subItems.map((sub) => (
                         <li key={sub.label}>
                           <NavLink
                             to={sub.path}
                             className={({ isActive }) =>
-                              `block px-4 py-1 text-blue-900 text-sm rounded hover:bg-blue-200 cursor-pointer ${
-                                isActive ? 'font-bold text-indigo-700' : ''
+                              `block px-4 py-1 text-blue-900 dark:text-gray-100 text-sm rounded hover:bg-blue-200 dark:hover:bg-gray-600 cursor-pointer ${
+                                isActive ? 'font-bold text-indigo-700 dark:text-indigo-300' : ''
                               }`
                             }
                           >
@@ -161,8 +160,8 @@ export default function Sidebar({ className = "" }) {
                   <NavLink
                     to={item.path}
                     className={({ isActive }) =>
-                      `w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-150 text-left font-medium text-blue-900 hover:bg-blue-100 hover:text-blue-900 whitespace-nowrap ${
-                        isActive ? 'bg-green-500 text-white' : ''
+                      `w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-150 text-left font-medium text-blue-900 dark:text-gray-100 hover:bg-blue-100 dark:hover:bg-gray-700 hover:text-blue-900 dark:hover:text-white whitespace-nowrap ${
+                        isActive ? 'bg-green-500 text-white dark:bg-green-600' : ''
                       }`
                     }
                     end={item.path === "/dashboard"}
@@ -187,14 +186,14 @@ export default function Sidebar({ className = "" }) {
                   </NavLink>
                   {/* Dropdown sub-menu */}
                   {item.dropdown && openDropdown === item.label && !collapsed && (
-                    <ul className="ml-8 mt-1 bg-blue-100 rounded-lg shadow-inner py-2">
+                    <ul className="ml-8 mt-1 bg-blue-100 dark:bg-gray-700 rounded-lg shadow-inner py-2">
                       {item.subItems.map((sub) => (
                         <li key={sub.label}>
                            <NavLink
                             to={sub.path}
                             className={({ isActive }) =>
-                              `block px-4 py-1 text-blue-900 text-sm rounded hover:bg-blue-200 cursor-pointer ${
-                                isActive ? 'font-bold text-indigo-700' : ''
+                              `block px-4 py-1 text-blue-900 dark:text-gray-100 text-sm rounded hover:bg-blue-200 dark:hover:bg-gray-600 cursor-pointer ${
+                                isActive ? 'font-bold text-indigo-700 dark:text-indigo-300' : ''
                               }`
                             }
                           >
@@ -212,9 +211,9 @@ export default function Sidebar({ className = "" }) {
       </nav>
       
       {/* Logout button */}
-      <div className="p-4 border-t border-blue-100">
+      <div className="p-4 border-t border-blue-100 dark:border-gray-700">
         <button 
-          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-150 text-left font-medium text-blue-900 hover:bg-red-100 hover:text-red-600"
+          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-150 text-left font-medium text-blue-900 dark:text-gray-100 hover:bg-red-100 dark:hover:bg-gray-700 hover:text-red-600 dark:hover:text-red-400"
           title="Logout"
           onClick={() => {
             localStorage.removeItem('token');

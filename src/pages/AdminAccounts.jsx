@@ -363,17 +363,17 @@ export default function AdminAccounts() {
           </div>
         )}
 
-        <div className="rounded-2xl shadow-lg bg-white max-w-7xl w-full mx-auto">
+        <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Filter and Export Controls */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">Filter:</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter:</label>
                 <div className="relative">
             <input
               type="text"
                     placeholder="Type to filter..."
-                    className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                    className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
               value={search}
               onChange={e => setSearch(e.target.value)}
                     style={{ minWidth: 200 }}
@@ -383,9 +383,9 @@ export default function AdminAccounts() {
               </div>
               
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">Show:</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Show:</label>
                 <select
-                  className="px-3 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                  className="px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
                   value={entriesPerPage}
                   onChange={handleEntriesChange}
                 >
@@ -431,10 +431,10 @@ export default function AdminAccounts() {
           {/* System Users Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
-              <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 text-gray-700 sticky top-0 z-10 shadow-sm">
-                <tr className="border-b-2 border-indigo-200">
+              <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
+                <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
                   <th 
-                    className="p-3 text-center font-semibold cursor-pointer hover:bg-indigo-200 transition-colors border-r border-indigo-200 whitespace-nowrap"
+                    className="p-3 text-center font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
                     onClick={() => handleSort("id")}
                     style={{ minWidth: '60px', width: '60px' }}
                   >
@@ -447,7 +447,7 @@ export default function AdminAccounts() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 transition-colors border-r border-indigo-200 whitespace-nowrap"
+                    className="p-3 font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
                     onClick={() => handleSort("name")}
                     style={{ minWidth: '120px', width: '120px' }}
                   >
@@ -460,7 +460,7 @@ export default function AdminAccounts() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 transition-colors border-r border-indigo-200 whitespace-nowrap"
+                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
                     onClick={() => handleSort("contact")}
                     style={{ minWidth: '120px', width: '120px' }}
                   >
@@ -473,7 +473,7 @@ export default function AdminAccounts() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 transition-colors border-r border-indigo-200 whitespace-nowrap"
+                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
                     onClick={() => handleSort("email")}
                     style={{ minWidth: '180px', width: '180px' }}
                   >
@@ -486,7 +486,7 @@ export default function AdminAccounts() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 transition-colors border-r border-indigo-200 whitespace-nowrap"
+                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
                     onClick={() => handleSort("address")}
                     style={{ minWidth: '200px', width: '200px' }}
                   >
@@ -499,7 +499,7 @@ export default function AdminAccounts() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 transition-colors border-r border-indigo-200 whitespace-nowrap"
+                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
                     onClick={() => handleSort("city")}
                     style={{ minWidth: '100px', width: '100px' }}
                   >
@@ -512,7 +512,7 @@ export default function AdminAccounts() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 transition-colors border-r border-indigo-200 whitespace-nowrap"
+                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
                     onClick={() => handleSort("district")}
                     style={{ minWidth: '120px', width: '120px' }}
                   >
@@ -525,7 +525,7 @@ export default function AdminAccounts() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 transition-colors border-r border-indigo-200 whitespace-nowrap"
+                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
                     onClick={() => handleSort("state")}
                     style={{ minWidth: '120px', width: '120px' }}
                   >
@@ -538,7 +538,7 @@ export default function AdminAccounts() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 transition-colors border-r border-indigo-200 whitespace-nowrap"
+                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
                     onClick={() => handleSort("country")}
                     style={{ minWidth: '100px', width: '100px' }}
                   >
@@ -547,6 +547,19 @@ export default function AdminAccounts() {
                       <div className="flex flex-col">
                         <span className={`text-xs ${sortField === "country" && sortDirection === "asc" ? "text-indigo-600" : "text-gray-400"}`}>▲</span>
                         <span className={`text-xs ${sortField === "country" && sortDirection === "desc" ? "text-indigo-600" : "text-gray-400"}`}>▼</span>
+                      </div>
+                    </div>
+                  </th>
+                  <th 
+                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
+                    onClick={() => handleSort("role")}
+                    style={{ minWidth: '120px', width: '120px' }}
+                  >
+                    <div className="flex items-center gap-1">
+                      Role
+                      <div className="flex flex-col">
+                        <span className={`text-xs ${sortField === "role" && sortDirection === "asc" ? "text-indigo-600" : "text-gray-400"}`}>▲</span>
+                        <span className={`text-xs ${sortField === "role" && sortDirection === "desc" ? "text-indigo-600" : "text-gray-400"}`}>▼</span>
                       </div>
                     </div>
                   </th>
@@ -568,43 +581,57 @@ export default function AdminAccounts() {
                 {paginated.map((user, idx) => (
                   <tr 
                     key={user.id} 
-                    className={`border-b border-gray-200 transition-colors ${
-                      idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                    } hover:bg-indigo-50 hover:shadow-sm`}
+                    className={`border-b border-gray-200 dark:border-gray-700 transition-colors ${
+                      idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'
+                    } hover:bg-indigo-50 dark:hover:bg-gray-700 hover:shadow-sm`}
                   >
-                    <td className="p-3 text-center font-semibold text-indigo-700 border-r border-gray-200">
+                    <td className="p-3 text-center font-semibold text-indigo-700 dark:text-indigo-300 border-r border-gray-200 dark:border-gray-700">
                       {startIdx + idx + 1}
                     </td>
-                    <td className="p-3 font-medium text-gray-900 border-r border-gray-200">
+                    <td className="p-3 font-medium text-gray-900 dark:text-gray-100 border-r border-gray-200 dark:border-gray-700">
                       {user.name}
                     </td>
-                    <td className="p-3 text-gray-600 border-r border-gray-200">
+                    <td className="p-3 text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">
                       {user.contact}
                     </td>
-                    <td className="p-3 text-gray-600 border-r border-gray-200">
+                    <td className="p-3 text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">
                       {user.email}
                     </td>
-                    <td className="p-3 text-gray-600 max-w-xs truncate border-r border-gray-200">
+                    <td className="p-3 text-gray-600 dark:text-gray-300 max-w-xs truncate border-r border-gray-200 dark:border-gray-700">
                       {user.address}
                     </td>
-                    <td className="p-3 text-gray-600 border-r border-gray-200">
+                    <td className="p-3 text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">
                       {user.city}
                     </td>
-                    <td className="p-3 text-gray-600 border-r border-gray-200">
+                    <td className="p-3 text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">
                       {user.district}
                     </td>
-                    <td className="p-3 text-gray-600 border-r border-gray-200">
+                    <td className="p-3 text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">
                       {user.state}
                     </td>
-                    <td className="p-3 text-gray-600 border-r border-gray-200">
+                    <td className="p-3 text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-700">
                       {user.country}
+                    </td>
+                    <td className="p-3 text-center border-r border-gray-200 dark:border-gray-700">
+                      <span className={
+                        `px-2 py-1 rounded-full text-xs font-medium border ${getRoleColor(user.role)} dark:bg-indigo-900 dark:text-gray-100 dark:border-indigo-800`
+                      }>
+                        {user.role || "No Role"}
+                      </span>
                     </td>
                     <td className="p-3">
                       <div className="flex items-center justify-center">
                       <button
-                          className="p-2 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-lg transition-colors border border-green-200 hover:border-green-300"
+                          className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-gray-700 rounded-lg transition-colors border border-blue-200 hover:border-blue-300"
+                          onClick={() => openViewModal(user)}
+                          title="View User"
+                        >
+                          <FiEye size={18} />
+                      </button>
+                      <button
+                          className="p-2 text-green-600 hover:text-green-800 hover:bg-green-100 dark:text-green-300 dark:hover:bg-gray-700 rounded-lg transition-colors border border-green-200 hover:border-green-300"
                           onClick={() => openPasswordModal(user)}
-                          title="Manage User"
+                          title="Change Password"
                         >
                           <FiKey size={18} />
                       </button>
@@ -615,8 +642,7 @@ export default function AdminAccounts() {
               </tbody>
             </table>
           </div>
-
-          {/* Enhanced Pagination */}
+          {/* Pagination Controls - moved outside scrollable area */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 py-4 border-t border-gray-100">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, totalEntries)} of {totalEntries} entries</span>
@@ -631,7 +657,7 @@ export default function AdminAccounts() {
                 >
                   &lt;
                 </button>
-                <span className="text-sm font-semibold text-gray-700 px-3 py-1 bg-gray-100 rounded-lg">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
                   Page {currentPage} of {totalPages}
                 </span>
                 <button
@@ -650,7 +676,7 @@ export default function AdminAccounts() {
         {/* Enhanced Change Password Modal */}
         {showPasswordModal && selectedUser && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md relative">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-md relative">
               <button
                 className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
                 onClick={closePasswordModal}
@@ -663,31 +689,31 @@ export default function AdminAccounts() {
                   {selectedUser.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Manage User</h2>
-                  <p className="text-gray-600 text-sm">{selectedUser.name}</p>
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Manage User</h2>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm">{selectedUser.name}</p>
                 </div>
               </div>
               <form className="flex flex-col gap-6" onSubmit={handlePasswordSave}>
                 <div className="flex flex-col gap-2">
-                  <label className="font-medium text-gray-700">New Password</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-300">New Password</label>
                   <input
                     type="password"
                     name="password"
                     value={passwordForm.password}
                     onChange={handlePasswordChange}
-                    className="px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Enter new password"
                     required
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="font-medium text-gray-700">Confirm Password</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-300">Confirm Password</label>
                   <input
                     type="password"
                     name="confirmPassword"
                     value={passwordForm.confirmPassword}
                     onChange={handlePasswordChange}
-                    className="px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Confirm new password"
                     required
                   />
@@ -715,7 +741,7 @@ export default function AdminAccounts() {
         {/* Enhanced Add System User Modal */}
         {showAddUserModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl relative max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-2xl relative max-h-[90vh] overflow-y-auto">
               <button
                 className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
                 onClick={closeAddUserModal}
@@ -728,19 +754,19 @@ export default function AdminAccounts() {
                   <FiPlus size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Add System User</h2>
-                  <p className="text-gray-600 text-sm">Create a new system user account</p>
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Add System User</h2>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm">Create a new system user account</p>
                 </div>
               </div>
               
               <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleAddUserSubmit}>
                 <div className="md:col-span-2">
-                  <label className="font-medium text-gray-700">User Role *</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-300">User Role *</label>
                   <select
                     name="role"
                     value={addUserForm.role}
                     onChange={handleAddUserChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     required
                   >
                     {userRoles.map((role, idx) => (
@@ -750,131 +776,131 @@ export default function AdminAccounts() {
                 </div>
                 
                 <div>
-                  <label className="font-medium text-gray-700">Full Name *</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-300">Full Name *</label>
                   <input
                     type="text"
                     name="name"
                     value={addUserForm.name}
                     onChange={handleAddUserChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Enter full name"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="font-medium text-gray-700">Contact Number *</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-300">Contact Number *</label>
                   <input
                     type="tel"
                     name="contact"
                     value={addUserForm.contact}
                     onChange={handleAddUserChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Enter contact number"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="font-medium text-gray-700">Email Address *</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-300">Email Address *</label>
                   <input
                     type="email"
                     name="email"
                     value={addUserForm.email}
                     onChange={handleAddUserChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Enter email address"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="font-medium text-gray-700">Password *</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-300">Password *</label>
                   <input
                     type="password"
                     name="password"
                     value={addUserForm.password}
                     onChange={handleAddUserChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Enter password"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="font-medium text-gray-700">Confirm Password *</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-300">Confirm Password *</label>
                   <input
                     type="password"
                     name="confirmPassword"
                     value={addUserForm.confirmPassword}
                     onChange={handleAddUserChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Confirm password"
                     required
                   />
                 </div>
                 
                 <div className="md:col-span-2">
-                  <label className="font-medium text-gray-700">Address</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-300">Address</label>
                   <input
                     type="text"
                     name="address"
                     value={addUserForm.address}
                     onChange={handleAddUserChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Enter address"
                   />
                 </div>
                 
                 <div>
-                  <label className="font-medium text-gray-700">City</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-300">City</label>
                   <input
                     type="text"
                     name="city"
                     value={addUserForm.city}
                     onChange={handleAddUserChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Enter city"
                   />
                 </div>
                 
                 <div>
-                  <label className="font-medium text-gray-700">District</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-300">District</label>
                   <input
                     type="text"
                     name="district"
                     value={addUserForm.district}
                     onChange={handleAddUserChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Enter district"
                   />
                 </div>
                 
                 <div>
-                  <label className="font-medium text-gray-700">State</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-300">State</label>
                   <input
                     type="text"
                     name="state"
                     value={addUserForm.state}
                     onChange={handleAddUserChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Enter state"
                   />
                 </div>
                 
                 <div>
-                  <label className="font-medium text-gray-700">Country</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-300">Country</label>
                   <input
                     type="text"
                     name="country"
                     value={addUserForm.country}
                     onChange={handleAddUserChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Enter country"
                   />
                 </div>
                 
-                <div className="md:col-span-2 flex justify-end gap-4 mt-6 pt-6 border-t border-gray-200">
+                <div className="md:col-span-2 flex justify-end gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
                   <button
                     type="button"
                     className="px-6 py-2 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
@@ -890,6 +916,50 @@ export default function AdminAccounts() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* View User Modal */}
+        {showViewModal && selectedUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-lg relative">
+              <button
+                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                onClick={closeViewModal}
+                title="Close"
+              >
+                <FiX size={24} />
+              </button>
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-xl">
+                  {selectedUser.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{selectedUser.name}</h2>
+                  <p className="text-gray-600 dark:text-gray-400">System User Profile</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg space-y-2">
+                  <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2 border-b dark:border-gray-600 pb-2">User Details</h3>
+                  <p><strong className="text-gray-600 dark:text-gray-300">Contact:</strong> <span className="text-gray-800 dark:text-gray-100">{selectedUser.contact}</span></p>
+                  <p><strong className="text-gray-600 dark:text-gray-300">Email:</strong> <span className="text-gray-800 dark:text-gray-100">{selectedUser.email}</span></p>
+                  <p><strong className="text-gray-600 dark:text-gray-300">Role:</strong> 
+                    <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium border ${getRoleColor(selectedUser.role)} dark:bg-indigo-900 dark:text-gray-100 dark:border-indigo-800`}>
+                      {selectedUser.role}
+                    </span>
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg space-y-2">
+                  <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2 border-b dark:border-gray-600 pb-2">Location</h3>
+                  <p><strong className="text-gray-600 dark:text-gray-300">Address:</strong> <span className="text-gray-800 dark:text-gray-100">{selectedUser.address}</span></p>
+                  <p><strong className="text-gray-600 dark:text-gray-300">City:</strong> <span className="text-gray-800 dark:text-gray-100">{selectedUser.city}</span></p>
+                  <p><strong className="text-gray-600 dark:text-gray-300">District:</strong> <span className="text-gray-800 dark:text-gray-100">{selectedUser.district}</span></p>
+                  <p><strong className="text-gray-600 dark:text-gray-300">State:</strong> <span className="text-gray-800 dark:text-gray-100">{selectedUser.state}</span></p>
+                  <p><strong className="text-gray-600 dark:text-gray-300">Country:</strong> <span className="text-gray-800 dark:text-gray-100">{selectedUser.country}</span></p>
+                </div>
+              </div>
             </div>
           </div>
         )}

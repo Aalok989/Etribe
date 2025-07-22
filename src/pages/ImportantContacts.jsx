@@ -6,27 +6,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import api from "../api/axiosConfig";
 
-// Fallback data in case API is not available
-const fallbackContactsData = [
-  { id: 1, dept: "CEO", name: "Rohit Arya", contact: "1234567890", email: "rohit@company.com", address: "123 Main St" },
-  { id: 2, dept: "HR", name: "Priya Singh", contact: "9876543210", email: "priya@company.com", address: "456 Park Ave" },
-  { id: 3, dept: "Tech", name: "Amit Kumar", contact: "5551234567", email: "amit@company.com", address: "789 Tech Blvd" },
-  { id: 4, dept: "HR", name: "Neha Verma", contact: "4445556666", email: "neha@company.com", address: "321 Lake Rd" },
-  { id: 5, dept: "Finance", name: "Suresh Patel", contact: "3332221111", email: "suresh@company.com", address: "654 Finance St" },
-  { id: 6, dept: "Tech", name: "Sunita Rao", contact: "2223334444", email: "sunita@company.com", address: "987 Tech Park" },
-  { id: 7, dept: "Admin", name: "Vikas Sharma", contact: "1112223333", email: "vikas@company.com", address: "159 Admin Ave" },
-  { id: 8, dept: "Finance", name: "Meena Joshi", contact: "8889990000", email: "meena@company.com", address: "753 Finance Blvd" },
-  { id: 9, dept: "CEO", name: "Anil Kapoor", contact: "7778889999", email: "anil@company.com", address: "852 Main St" },
-  { id: 10, dept: "HR", name: "Kiran Desai", contact: "6665554444", email: "kiran@company.com", address: "357 HR Lane" },
-  { id: 11, dept: "Admin", name: "Ritu Singh", contact: "9998887777", email: "ritu@company.com", address: "951 Admin Rd" },
-  { id: 12, dept: "Tech", name: "Deepak Mehta", contact: "1231231234", email: "deepak@company.com", address: "246 Tech Ave" },
-  { id: 13, dept: "Finance", name: "Pooja Agarwal", contact: "3213214321", email: "pooja@company.com", address: "135 Finance St" },
-  { id: 14, dept: "CEO", name: "Sanjay Dutt", contact: "5556667777", email: "sanjay@company.com", address: "864 Main St" },
-  { id: 15, dept: "HR", name: "Asha Parekh", contact: "4443332222", email: "asha@company.com", address: "753 HR Blvd" },
-];
-
 export default function ImportantContactsPage() {
-  const [contactsData, setContactsData] = useState(fallbackContactsData);
+  const [contactsData, setContactsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("All");
@@ -105,22 +86,13 @@ export default function ImportantContactsPage() {
         });
 
         console.log('Mapped contacts:', mappedContacts);
-
-        // If no real data, use fallback
-        if (mappedContacts.length === 0) {
-          console.log('No contacts found, using fallback data');
-          setContactsData(fallbackContactsData);
-        } else {
-          console.log('Setting contacts data:', mappedContacts);
-          setContactsData(mappedContacts);
-        }
+        setContactsData(mappedContacts);
         
       } catch (err) {
         console.error('Fetch contacts error:', err);
         console.error('Error details:', err.response?.data);
         setError('Failed to fetch contacts: ' + (err.response?.data?.message || err.message));
-        // Use fallback data on error
-        setContactsData(fallbackContactsData);
+        setContactsData([]);
       } finally {
         setLoading(false);
       }
@@ -187,8 +159,8 @@ export default function ImportantContactsPage() {
     if (deleteConfirm === "DELETE") {
       // Remove the contact from the local state
       setContactsData(prev => prev.filter(c => c.id !== deleteContact.id));
-      setDeleteContact(null);
-      setDeleteConfirm("");
+    setDeleteContact(null);
+    setDeleteConfirm("");
     }
   };
 
@@ -291,9 +263,9 @@ export default function ImportantContactsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h1 className="text-2xl font-bold text-orange-600">Important Contacts</h1>
           </div>
-          <div className="rounded-2xl shadow-lg bg-white max-w-7xl w-full mx-auto p-8">
+          <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto p-8">
             <div className="flex items-center justify-center">
-              <div className="text-center text-gray-600">
+              <div className="text-center text-gray-600 dark:text-gray-300">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-2"></div>
                 <p>Loading contacts...</p>
               </div>
@@ -315,273 +287,105 @@ export default function ImportantContactsPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl shadow-lg bg-white max-w-7xl w-full mx-auto">
-          {/* Header Controls */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100">
+        <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
+          {/* Controls */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <FiUser className="text-indigo-600 text-xl" />
-                <span className="text-lg font-semibold text-gray-800">Contact Management</span>
-              </div>
-              
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <FiMail className="text-indigo-600" />
-                <span>Manage important contacts and departments</span>
-              </div>
-            </div>
-
-            <div className="flex gap-2 items-center">
-              <button
-                className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
-                onClick={handleExportCSV}
-                title="Export to CSV"
-              >
-                <FiFileText />
-                CSV
-              </button>
-              <button
-                className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition"
-                onClick={handleExportExcel}
-                title="Export to Excel"
-              >
-                <FiFile />
-                Excel
-              </button>
-              <button
-                className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition"
-                onClick={handleExportPDF}
-                title="Export to PDF"
-              >
-                <FiFile />
-                PDF
-              </button>
-              <button
-                className="flex items-center gap-1 bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
-                onClick={handleCopyToClipboard}
-                title="Copy to Clipboard"
-              >
-                <FiCopy />
-                Copy
-              </button>
-              <button
-                className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-600 transition"
-                onClick={handleRefresh}
-                title="Refresh Contacts"
-              >
-                <FiRefreshCw />
-                Refresh
-              </button>
-              <button
-                className="flex items-center gap-1 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
-                onClick={() => setShowAddContactModal(true)}
-              >
-                <FiPlus />
-                Add Contact
-              </button>
-            </div>
-          </div>
-
-          {/* Search and Filter */}
-          <div className="px-6 py-4 border-b border-gray-100">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 relative">
+              <div className="relative">
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search contacts, email, or department..."
+                  placeholder="Search by name..."
+                  className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                  style={{ minWidth: 250 }}
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <FiFilter className="text-gray-400" />
-                <span className="text-sm text-gray-600">Filtered: {filteredContacts.length} of {contactsData.length}</span>
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, totalEntries)} of {totalEntries} entries</span>
               </div>
-              <div className="flex items-center gap-2">
-                <label htmlFor="dept-filter" className="text-sm font-medium text-gray-700">Department:</label>
-              <select
-                id="dept-filter"
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
-                value={filter}
-                onChange={e => setFilter(e.target.value)}
-              >
-                {departments.map(dept => (
-                  <option key={dept} value={dept}>{dept}</option>
-                ))}
-              </select>
             </div>
+            <div className="flex gap-2 items-center">
+              <button className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition" onClick={handleRefresh} title="Refresh Data"><FiRefreshCw /> Refresh</button>
+              <button className="flex items-center gap-1 bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition" onClick={handleCopyToClipboard} title="Copy to Clipboard"><FiCopy /> Copy</button>
+              <button className="flex items-center gap-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition" onClick={handleExportCSV} title="Export CSV"><FiDownload /> CSV</button>
+              <button className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition" onClick={handleExportExcel} title="Export Excel"><FiFile /> Excel</button>
+              <button className="flex items-center gap-1 bg-rose-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-rose-600 transition" onClick={handleExportPDF} title="Export PDF"><FiFile /> PDF</button>
             </div>
           </div>
-
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
-                    Sr No
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
-                    Department
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 transition-colors" onClick={() => setSortAsc(!sortAsc)}>
-                    <div className="flex items-center gap-2">
-                      <FiUser />
-                      Person {sortAsc ? <FiChevronDown /> : <FiChevronUp />}
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
-                    <div className="flex items-center gap-2">
-                      <FiPhone />
-                      Contact
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
-                    <div className="flex items-center gap-2">
-                      <FiMail />
-                      Email ID
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
-                    <div className="flex items-center gap-2">
-                      <FiMapPin />
-                      Address
-                    </div>
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider">
-                    Actions
-                  </th>
+            <table className="w-full text-sm border-collapse">
+              <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
+                <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
+                  <th className="p-3 text-center font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap">Sr No</th>
+                  <th className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap">Department</th>
+                  <th className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap">Name</th>
+                  <th className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap">Contact</th>
+                  <th className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap">Email</th>
+                  <th className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap">Address</th>
+                  <th className="p-3 text-center font-semibold whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {paginatedContacts.map((c, idx) => (
-                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-center font-semibold text-indigo-700">
-                      {startIdx + idx + 1}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {c.dept}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-8 w-8">
-                          <div className="h-8 w-8 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
-                            <span className="text-xs font-medium text-white">
-                              {c.name.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="ml-3">
-                          <div className="text-sm font-medium text-gray-900">{c.name}</div>
-                        </div>
+                  <tr key={c.id} className={`border-b border-gray-200 dark:border-gray-700 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'} hover:bg-indigo-50 dark:hover:bg-gray-700 hover:shadow-sm`}>
+                    <td className="p-3 text-center font-semibold text-indigo-700 dark:text-indigo-300 border-r border-gray-200 dark:border-gray-700">{startIdx + idx + 1}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{c.dept}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 dark:from-indigo-800 dark:to-purple-900 rounded-full flex items-center justify-center text-white font-semibold text-xs">{c.name.charAt(0).toUpperCase()}</div>
+                        <span className="font-medium text-gray-800 dark:text-gray-100">{c.name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-900">{c.contact}</span>
-                        <button
-                          className="text-indigo-600 hover:text-indigo-900 transition-colors"
-                          title="Copy phone number"
-                          onClick={() => handleCopy(c.contact)}
-                        >
-                          <FiCopy size={14} />
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-900">{c.email}</span>
-                        <button
-                          className="text-indigo-600 hover:text-indigo-900 transition-colors"
-                          title="Copy email address"
-                          onClick={() => handleCopy(c.email)}
-                        >
-                          <FiCopy size={14} />
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 max-w-xs truncate" title={c.address}>
-                        {c.address}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center gap-2">
-                      <button
-                          className="text-yellow-600 hover:text-yellow-900 transition-colors"
-                        onClick={() => setEditContact(c)}
-                          title="Edit Contact"
-                      >
-                          <FiEdit2 size={16} />
-                      </button>
-                      <button
-                          className="text-red-600 hover:text-red-900 transition-colors"
-                        onClick={() => setDeleteContact(c)}
-                          title="Delete Contact"
-                      >
-                          <FiTrash2 size={16} />
-                      </button>
-                      </div>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{c.contact}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{c.email}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{c.address}</td>
+                    <td className="p-3 text-center">
+                      <button className="text-yellow-600 hover:text-yellow-900 p-2 rounded-full hover:bg-yellow-100 dark:hover:bg-gray-700 transition-colors" onClick={() => setEditContact(c)} title="Edit Contact"><FiEdit2 size={18} /></button>
+                      <button className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 dark:hover:bg-gray-700 transition-colors" onClick={() => setDeleteContact(c)} title="Delete Contact"><FiTrash2 size={18} /></button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-
-          {/* Pagination */}
-          <div className="px-6 py-4 border-t border-gray-100">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, filteredContacts.length)} of {filteredContacts.length} results</span>
-              </div>
-              
-              <div className="flex items-center gap-4">
+          {/* Pagination Controls - moved outside scrollable area */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-t border-gray-100 dark:border-gray-700">
               <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-700">Show</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Show</span>
                 <select
-                    className="border border-gray-200 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                className="border rounded-lg px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
                   value={entriesPerPage}
                   onChange={handleEntriesChange}
                 >
-                    {[5, 10, 20, 50].map(num => (
+                {[5, 10, 25, 50, 100].map(num => (
                     <option key={num} value={num}>{num}</option>
                   ))}
                 </select>
-                  <span className="text-sm text-gray-700">entries</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">entries per page</span>
               </div>
-                
               <div className="flex items-center gap-2">
                 <button
                   onClick={handlePrev}
                   disabled={currentPage === 1}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                      currentPage === 1 
-                        ? 'text-gray-400 cursor-not-allowed' 
-                        : 'text-indigo-600 hover:bg-indigo-50'
-                    }`}
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title="Previous"
                   >
                     Previous
                 </button>
-                  <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                     Page {currentPage} of {totalPages}
                   </span>
                 <button
                   onClick={handleNext}
                   disabled={currentPage === totalPages}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                      currentPage === totalPages 
-                        ? 'text-gray-400 cursor-not-allowed' 
-                        : 'text-indigo-600 hover:bg-indigo-50'
-                    }`}
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title="Next"
                   >
                     Next
                 </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>

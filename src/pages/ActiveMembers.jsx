@@ -244,23 +244,23 @@ export default function ActiveMembers() {
           </div>
         )}
 
-        <div className="rounded-2xl shadow-lg bg-white max-w-7xl w-full mx-auto">
+        <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Controls */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
               <div className="relative">
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search by name..."
-                  className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                  className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
               value={search}
               onChange={e => setSearch(e.target.value)}
                   style={{ minWidth: 250 }}
             />
               </div>
               
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                 <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, totalEntries)} of {totalEntries} entries</span>
               </div>
             </div>
@@ -311,10 +311,10 @@ export default function ActiveMembers() {
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
-              <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 text-gray-700 sticky top-0 z-10 shadow-sm">
-                <tr className="border-b-2 border-indigo-200">
+              <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
+                <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
                   <th 
-                    className="p-3 text-center font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-center font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '80px', width: '80px' }}
                     onClick={() => handleSort('id')}
                   >
@@ -328,7 +328,7 @@ export default function ActiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '150px', width: '150px' }}
                     onClick={() => handleSort('name')}
                   >
@@ -342,7 +342,7 @@ export default function ActiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '120px', width: '120px' }}
                     onClick={() => handleSort('phone_num')}
                   >
@@ -356,7 +356,7 @@ export default function ActiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '180px', width: '180px' }}
                     onClick={() => handleSort('email')}
                   >
@@ -370,7 +370,7 @@ export default function ActiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '200px', width: '200px' }}
                     onClick={() => handleSort('address')}
                   >
@@ -384,7 +384,7 @@ export default function ActiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '120px', width: '120px' }}
                     onClick={() => handleSort('ad1')}
                   >
@@ -398,7 +398,7 @@ export default function ActiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '130px', width: '130px' }}
                     onClick={() => handleSort('ad2')}
                   >
@@ -412,7 +412,7 @@ export default function ActiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '120px', width: '120px' }}
                     onClick={() => handleSort('ad3')}
                   >
@@ -426,7 +426,7 @@ export default function ActiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '100px', width: '100px' }}
                     onClick={() => handleSort('ad4')}
                   >
@@ -440,7 +440,7 @@ export default function ActiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '150px', width: '150px' }}
                     onClick={() => handleSort('company_name')}
                   >
@@ -454,7 +454,7 @@ export default function ActiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '120px', width: '120px' }}
                     onClick={() => handleSort('ad5')}
                   >
@@ -479,33 +479,33 @@ export default function ActiveMembers() {
                 {paginated.map((m, idx) => (
                   <tr 
                     key={m.id} 
-                    className={`border-b border-gray-200 transition-colors ${
-                      idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                    } hover:bg-indigo-50 hover:shadow-sm`}
+                    className={`border-b border-gray-200 dark:border-gray-700 transition-colors ${
+                      idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'
+                    } hover:bg-indigo-50 dark:hover:bg-gray-700 hover:shadow-sm`}
                   >
-                    <td className="p-3 text-center font-semibold text-indigo-700 border-r border-gray-200">
+                    <td className="p-3 text-center font-semibold text-indigo-700 dark:text-indigo-300 border-r border-gray-200 dark:border-gray-700">
                       {startIdx + idx + 1}
                     </td>
-                    <td className="p-3 text-left border-r border-gray-200">
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xs">
                           {m.name.charAt(0).toUpperCase()}
                         </div>
-                        <span className="font-medium text-gray-800">{m.name}</span>
+                        <span className="font-medium text-gray-800 dark:text-gray-100">{m.name}</span>
                       </div>
                     </td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.phone_num}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.email}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.address}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.ad1}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.ad2}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.ad3}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.ad4}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.company_name}</td>
-                    <td className="p-3 text-left border-r border-gray-200">{m.ad5}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.phone_num}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.email}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.address}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.ad1}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.ad2}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.ad3}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.ad4}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.company_name}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.ad5}</td>
                     <td className="p-3 text-center">
                       <button
-                        className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-100 transition-colors"
+                        className="text-indigo-600 dark:text-indigo-300 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors"
                         title="View Profile"
                         onClick={() => setViewMember(m)}
                       >
@@ -516,13 +516,13 @@ export default function ActiveMembers() {
                 ))}
               </tbody>
             </table>
-            
-            {/* Pagination Controls */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-t border-gray-100">
+          </div>
+          {/* Pagination Controls - moved outside scrollable area */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-t border-gray-100 dark:border-gray-700">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Show</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Show</span>
                 <select
-                  className="border rounded-lg px-3 py-1 text-sm bg-white text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                className="border rounded-lg px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
                   value={entriesPerPage}
                   onChange={handleEntriesChange}
                 >
@@ -530,34 +530,33 @@ export default function ActiveMembers() {
                     <option key={num} value={num}>{num}</option>
                   ))}
                 </select>
-                <span className="text-sm text-gray-600">entries per page</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">entries per page</span>
               </div>
               
               <div className="flex items-center gap-2">
                 <button
                   onClick={handlePrev}
                   disabled={currentPage === 1}
-                  className={`px-3 py-1 rounded-lg text-indigo-600 hover:bg-indigo-100 transition-colors ${
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
                     currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                   title="Previous"
                 >
                   Previous
                 </button>
-                <span className="text-sm font-semibold text-gray-700">
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                   Page {currentPage} of {totalPages}
                 </span>
                 <button
                   onClick={handleNext}
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1 rounded-lg text-indigo-600 hover:bg-indigo-100 transition-colors ${
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
                     currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                   title="Next"
                 >
                   Next
                 </button>
-              </div>
             </div>
           </div>
         </div>
@@ -579,45 +578,45 @@ export default function ActiveMembers() {
                   {viewMember.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">{viewMember.name}</h2>
-                  <p className="text-gray-600">Active Member Profile</p>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{viewMember.name}</h2>
+                  <p className="text-gray-600 dark:text-gray-400">Active Member Profile</p>
                 </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 mb-2">Contact Information</h3>
-                    <div className="space-y-2 text-sm">
-                      <div><span className="font-medium">Phone:</span> {viewMember.phone_num}</div>
-                      <div><span className="font-medium">Email:</span> {viewMember.email}</div>
-                      <div><span className="font-medium">Address:</span> {viewMember.address}</div>
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Contact Information</h3>
+                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                      <div><span className="font-medium text-gray-800 dark:text-gray-100">Phone:</span> {viewMember.phone_num}</div>
+                      <div><span className="font-medium text-gray-800 dark:text-gray-100">Email:</span> {viewMember.email}</div>
+                      <div><span className="font-medium text-gray-800 dark:text-gray-100">Address:</span> {viewMember.address}</div>
                     </div>
                   </div>
                   
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 mb-2">Company Details</h3>
-                    <div className="space-y-2 text-sm">
-                      <div><span className="font-medium">Company:</span> {viewMember.company_name}</div>
-                      <div><span className="font-medium">Valid Until:</span> {viewMember.ad5}</div>
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Company Details</h3>
+                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                      <div><span className="font-medium text-gray-800 dark:text-gray-100">Company:</span> {viewMember.company_name}</div>
+                      <div><span className="font-medium text-gray-800 dark:text-gray-100">Valid Until:</span> {viewMember.ad5}</div>
                     </div>
                   </div>
                 </div>
                 
                 <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 mb-2">Identity Documents</h3>
-                    <div className="space-y-2 text-sm">
-                      <div><span className="font-medium">PAN Number:</span> {viewMember.ad1}</div>
-                      <div><span className="font-medium">Aadhar Number:</span> {viewMember.ad2}</div>
-                      <div><span className="font-medium">DL Number:</span> {viewMember.ad3}</div>
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Identity Documents</h3>
+                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                      <div><span className="font-medium text-gray-800 dark:text-gray-100">PAN Number:</span> {viewMember.ad1}</div>
+                      <div><span className="font-medium text-gray-800 dark:text-gray-100">Aadhar Number:</span> {viewMember.ad2}</div>
+                      <div><span className="font-medium text-gray-800 dark:text-gray-100">DL Number:</span> {viewMember.ad3}</div>
                     </div>
                   </div>
                   
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 mb-2">Personal Information</h3>
-                    <div className="space-y-2 text-sm">
-                      <div><span className="font-medium">Date of Birth:</span> {viewMember.ad4}</div>
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Personal Information</h3>
+                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                      <div><span className="font-medium text-gray-800 dark:text-gray-100">Date of Birth:</span> {viewMember.ad4}</div>
                     </div>
                   </div>
                 </div>

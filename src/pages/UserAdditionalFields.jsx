@@ -234,7 +234,7 @@ export default function UserAdditionalFields() {
     e.preventDefault();
     try {
       await saveUserAdditionalFields(form);
-      setEditMode(false);
+    setEditMode(false);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -298,180 +298,112 @@ export default function UserAdditionalFields() {
           </div>
         )}
 
-        <div className="rounded-2xl shadow-lg bg-white max-w-7xl w-full mx-auto">
+        <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto border border-gray-200 dark:border-gray-700">
           {/* Header Controls */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <FiUser className="text-indigo-600 text-xl" />
-                <span className="text-lg font-semibold text-gray-800">Additional Fields Configuration</span>
+                <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">Additional Fields Configuration</span>
               </div>
-              
               {!editMode && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                   <FiSettings className="text-indigo-600" />
                   <span>Custom user profile fields</span>
                 </div>
               )}
             </div>
-
             <div className="flex gap-2 items-center">
-              {!editMode && (
+            {!editMode && (
                 <>
-                  <button
-                    className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
-                    onClick={handleRefresh}
-                    disabled={loading}
-                    title="Refresh Fields"
-                  >
-                    <FiRefreshCw className={loading ? "animate-spin" : ""} />
-                    Refresh
-                  </button>
-                  <button
-                    className="flex items-center gap-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
-                    onClick={handleEdit}
-                  >
-                    <FiEdit2 />
-                    Edit Fields
-                  </button>
+                  <button className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition" onClick={handleRefresh} disabled={loading} title="Refresh Fields"><FiRefreshCw className={loading ? "animate-spin" : ""} /> Refresh</button>
+                  <button className="flex items-center gap-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition" onClick={handleEdit}><FiEdit2 /> Edit Fields</button>
                 </>
-              )}
+            )}
             </div>
           </div>
-
           {/* Content */}
           <div className="p-6">
             {loading ? (
-              <div className="flex items-center justify-center h-32 text-indigo-700">
-                <FiRefreshCw className="animate-spin text-indigo-600 text-xl mr-2" />
+              <div className="flex items-center justify-center h-32 text-indigo-700 dark:text-indigo-300">
+                <FiRefreshCw className="animate-spin text-indigo-600 dark:text-indigo-300 text-xl mr-2" />
                 Loading user additional fields...
               </div>
             ) : !editMode ? (
               <div className="space-y-6">
                 {/* Status Card */}
-                <div className={`p-4 rounded-lg border ${
-                  configuredFields >= 5 
-                    ? 'bg-green-50 border-green-200' 
-                    : 'bg-yellow-50 border-yellow-200'
-                }`}>
-                  <h3 className={`font-semibold mb-2 flex items-center gap-2 ${
-                    configuredFields >= 5 ? 'text-green-700' : 'text-yellow-700'
-                  }`}>
-                    <FiSettings className={configuredFields >= 5 ? 'text-green-600' : 'text-yellow-600'} />
+                <div className={`p-4 rounded-lg border ${configuredFields >= 5 ? 'bg-green-50 dark:bg-green-900/40 border-green-200 dark:border-green-700' : 'bg-yellow-50 dark:bg-yellow-900/40 border-yellow-200 dark:border-yellow-700'}`}>
+                  <h3 className={`font-semibold mb-2 flex items-center gap-2 ${configuredFields >= 5 ? 'text-green-700 dark:text-green-200' : 'text-yellow-700 dark:text-yellow-200'}`}>
+                    <FiSettings className={configuredFields >= 5 ? 'text-green-600 dark:text-green-200' : 'text-yellow-600 dark:text-yellow-200'} />
                     Configuration Status
                   </h3>
-                  <p className={`text-sm ${
-                    configuredFields >= 5 ? 'text-green-600' : 'text-yellow-600'
-                  }`}>
-                    {configuredFields >= 5 
-                      ? `${configuredFields} additional fields are configured and ready for use.` 
-                      : `${configuredFields} fields configured. At least 5 fields are recommended for better user experience.`
-                    }
+                  <p className={`text-sm ${configuredFields >= 5 ? 'text-green-600 dark:text-green-200' : 'text-yellow-600 dark:text-yellow-200'}`}>
+                    {configuredFields >= 5 ? `${configuredFields} additional fields are configured and ready for use.` : `${configuredFields} fields configured. At least 5 fields are recommended for better user experience.`}
                   </p>
                 </div>
-
                 {/* Fields Display */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {Array.from({ length: 10 }).map((_, i) => {
                     const fieldKey = `additionalField${i + 1}`;
                     const fieldValue = data[fieldKey];
                     const isConfigured = fieldValue && fieldValue.trim() !== '';
-                    
                     return (
-                      <div key={i} className={`p-4 rounded-lg border ${
-                        isConfigured ? 'bg-gray-50 border-gray-200' : 'bg-gray-50 border-gray-200 opacity-60'
-                      }`}>
+                      <div key={i} className={`p-4 rounded-lg border ${isConfigured ? 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700' : 'bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 opacity-60'}`}> 
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                          <h4 className="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                             <FiPlus className="text-indigo-600" />
                             Field {i + 1}
                           </h4>
                           {isConfigured && (
-                            <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
-                              Configured
-                            </span>
+                            <span className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 rounded text-xs font-medium">Configured</span>
                           )}
                         </div>
-                        <p className={`text-sm ${
-                          isConfigured ? 'text-gray-800' : 'text-gray-500'
-                        }`}>
-                          {isConfigured ? fieldValue : 'Not configured'}
-                        </p>
+                        <p className={`text-sm ${isConfigured ? 'text-gray-800 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}`}>{isConfigured ? fieldValue : 'Not configured'}</p>
                       </div>
                     );
                   })}
-                </div>
+                  </div>
               </div>
             ) : (
               <form className="space-y-6" onSubmit={handleSubmit}>
                 {/* Form Header */}
-                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                  <h3 className="font-semibold text-yellow-700 mb-2 flex items-center gap-2">
-                    <FiAlertCircle className="text-yellow-600" />
+                <div className="bg-yellow-50 dark:bg-yellow-900/40 p-4 rounded-lg border border-yellow-200 dark:border-yellow-700">
+                  <h3 className="font-semibold text-yellow-700 dark:text-yellow-200 mb-2 flex items-center gap-2">
+                    <FiAlertCircle className="text-yellow-600 dark:text-yellow-200" />
                     Additional Fields Configuration
                   </h3>
-                  <p className="text-yellow-700 text-sm">
-                    Configure custom fields for user profiles. At least the first 5 fields are required. Field names must be unique.
-                  </p>
+                  <p className="text-yellow-700 dark:text-yellow-200 text-sm">Configure custom fields for user profiles. At least the first 5 fields are required. Field names must be unique.</p>
                 </div>
-
                 {/* Form Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {Array.from({ length: 10 }).map((_, i) => {
                     const fieldKey = `additionalField${i + 1}`;
                     const isRequired = i < 5;
-                    
                     return (
                       <div key={i} className="space-y-2">
-                        <label className="block text-gray-700 font-medium">
+                        <label className="block text-gray-700 dark:text-gray-200 font-medium">
                           Additional Field {i + 1}
                           {isRequired && <span className="text-red-500 ml-1">*</span>}
                         </label>
-                        <input
-                          type="text"
+                    <input
+                      type="text"
                           name={fieldKey}
                           value={form[fieldKey]}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                      onChange={handleChange}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
                           placeholder={`Enter field name ${i + 1}`}
                           required={isRequired}
                           disabled={submitting}
                         />
-                        <p className="text-xs text-gray-500">
-                          {isRequired ? 'Required field' : 'Optional field'}
-                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{isRequired ? 'Required field' : 'Optional field'}</p>
                       </div>
                     );
                   })}
-                </div>
-
+                  </div>
                 {/* Form Actions */}
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                  <button
-                    type="button"
-                    className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors disabled:opacity-50"
-                    onClick={handleCancel}
-                    disabled={submitting}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition-colors disabled:opacity-50"
-                    disabled={submitting}
-                  >
-                    {submitting ? (
-                      <>
-                        <FiRefreshCw className="animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <FiSave />
-                        Save Fields
-                      </>
-                    )}
-                  </button>
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  <button type="button" className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50" onClick={handleCancel} disabled={submitting}>Cancel</button>
+                  <button type="submit" className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition-colors disabled:opacity-50" disabled={submitting}>{submitting ? (<><FiRefreshCw className="animate-spin" />Saving...</>) : (<><FiSave />Save Fields</>)}</button>
                 </div>
               </form>
             )}

@@ -84,20 +84,20 @@ export default function EventsSection() {
     return () => clearInterval(interval);
   }, []);
 
-  const eventsStats = [
-    {
-      label: "Past Events",
+const eventsStats = [
+  {
+    label: "Past Events",
       count: pastEventsCount,
-      color: "bg-gradient-to-br from-violet-400 to-indigo-500 text-white",
-      icon: <FiClock size={28} className="text-white opacity-80" />,
-    },
-    {
-      label: "Total Events",
+    color: "bg-gradient-to-br from-violet-400 to-indigo-500 text-white",
+    icon: <FiClock size={28} className="text-white opacity-80" />,
+  },
+  {
+    label: "Total Events",
       count: totalEventsCount,
-      color: "bg-gradient-to-br from-blue-400 to-indigo-400 text-white",
-      icon: <FiHash size={28} className="text-white opacity-80" />,
-    },
-  ];
+    color: "bg-gradient-to-br from-blue-400 to-indigo-400 text-white",
+    icon: <FiHash size={28} className="text-white opacity-80" />,
+  },
+];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">

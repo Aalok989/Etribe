@@ -298,16 +298,16 @@ export default function AllEvents() {
           </div>
         </div>
 
-        <div className="rounded-2xl shadow-lg bg-white max-w-7xl w-full mx-auto">
+        <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto border border-gray-200 dark:border-gray-700">
           {/* Header Controls */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <FiCalendar className="text-indigo-600 text-xl" />
-                <span className="text-lg font-semibold text-gray-800">Event Management</span>
+                <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">Event Management</span>
               </div>
               
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                 <FiMapPin className="text-indigo-600" />
                 <span>Manage all events and schedules</span>
               </div>
@@ -365,7 +365,7 @@ export default function AllEvents() {
           </div>
 
           {/* Search and Filter */}
-          <div className="px-6 py-4 border-b border-gray-100">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1 relative">
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -374,38 +374,38 @@ export default function AllEvents() {
                   placeholder="Search events, agenda, or venue..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
                 />
               </div>
               <div className="flex items-center gap-2">
                 <FiFilter className="text-gray-400" />
-                <span className="text-sm text-gray-600">Filtered: {filtered.length} of {events.length}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Filtered: {filtered.length} of {events.length}</span>
               </div>
             </div>
           </div>
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 transition-colors" onClick={() => handleSort("event")}>
+            <table className="w-full text-sm border-collapse">
+              <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
+                <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors" onClick={() => handleSort("event")}>
                     <div className="flex items-center gap-2">
                       Event Name {getSortIcon("event")}
                     </div>
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 transition-colors" onClick={() => handleSort("agenda")}>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors" onClick={() => handleSort("agenda")}>
                     <div className="flex items-center gap-2">
                       Agenda {getSortIcon("agenda")}
                     </div>
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 transition-colors" onClick={() => handleSort("venue")}>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors" onClick={() => handleSort("venue")}>
                     <div className="flex items-center gap-2">
                       <FiMapPin />
                       Venue {getSortIcon("venue")}
                     </div>
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 transition-colors" onClick={() => handleSort("datetime")}>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors" onClick={() => handleSort("datetime")}>
                     <div className="flex items-center gap-2">
                       <FiClock />
                       Date & Time {getSortIcon("datetime")}
@@ -416,32 +416,32 @@ export default function AllEvents() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                 {paginated.map((event, idx) => (
-                  <tr key={event.id || idx} className="hover:bg-gray-50 transition-colors">
+                  <tr key={event.id || idx} className={`border-b border-gray-200 dark:border-gray-700 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'} hover:bg-indigo-50 dark:hover:bg-gray-700 hover:shadow-sm`}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-indigo-800 dark:to-purple-900 flex items-center justify-center">
                             <span className="text-sm font-medium text-white">
                               {event.event.charAt(0).toUpperCase()}
                             </span>
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{event.event}</div>
-                          <div className="text-sm text-gray-500">Event #{startIdx + idx + 1}</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{event.event}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">Event #{startIdx + idx + 1}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 max-w-xs truncate" title={event.agenda.replace(/<[^>]+>/g, '')}>
+                      <div className="text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate" title={event.agenda.replace(/<[^>]+>/g, '')}>
                         {event.agenda.replace(/<[^>]+>/g, '').slice(0, 50)}...
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                           <FiMapPin className="mr-1" />
                           {event.venue}
                         </span>
@@ -449,7 +449,7 @@ export default function AllEvents() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
                           <FiClock className="mr-1" />
                           {event.datetime ? new Date(event.datetime).toLocaleString() : "TBD"}
                         </span>
@@ -458,16 +458,16 @@ export default function AllEvents() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
                       <button
-                          className="text-indigo-600 hover:text-indigo-900 transition-colors" 
+                          className="text-indigo-600 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-400 transition-colors" 
                           onClick={() => openViewEventModal(idx)}
                           title="View Event Details"
                       >
                           <FiEye size={16} />
                         </button>
-                        <button className="text-blue-600 hover:text-blue-900 transition-colors" title="Edit Event">
+                        <button className="text-blue-600 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-400 transition-colors" title="Edit Event">
                           <FiEdit2 size={16} />
                         </button>
-                        <button className="text-red-600 hover:text-red-900 transition-colors" title="Delete Event">
+                        <button className="text-red-600 dark:text-red-300 hover:text-red-900 dark:hover:text-red-400 transition-colors" title="Delete Event">
                           <FiTrash2 size={16} />
                       </button>
                       </div>
@@ -477,19 +477,17 @@ export default function AllEvents() {
               </tbody>
             </table>
           </div>
-
-          {/* Pagination */}
-          <div className="px-6 py-4 border-t border-gray-100">
+          {/* Pagination Controls - moved outside scrollable area */}
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-2 text-sm text-gray-700">
+              <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-400">
                 <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, filtered.length)} of {filtered.length} results</span>
               </div>
-              
               <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-700">Show</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-400">Show</span>
                 <select
-                    className="border border-gray-200 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+                    className="border rounded-lg px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
                   value={entriesPerPage}
                   onChange={handleEntriesChange}
                 >
@@ -497,31 +495,26 @@ export default function AllEvents() {
                     <option key={num} value={num}>{num}</option>
                   ))}
                 </select>
-                  <span className="text-sm text-gray-700">entries</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-400">entries</span>
               </div>
-                
               <div className="flex items-center gap-2">
                 <button
                   onClick={handlePrev}
                   disabled={currentPage === 1}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                      currentPage === 1 
-                        ? 'text-gray-400 cursor-not-allowed' 
-                        : 'text-indigo-600 hover:bg-indigo-50'
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                    currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                   >
                     Previous
                 </button>
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                     Page {currentPage} of {totalPages}
                   </span>
                 <button
                   onClick={handleNext}
                   disabled={currentPage === totalPages}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                      currentPage === totalPages 
-                        ? 'text-gray-400 cursor-not-allowed' 
-                        : 'text-indigo-600 hover:bg-indigo-50'
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                    currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                   >
                     Next
@@ -535,7 +528,7 @@ export default function AllEvents() {
         {/* Add Event Modal */}
         {showAddEventModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl mx-4 relative max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-2xl mx-4 relative max-h-[90vh] overflow-y-auto">
               <button
                 className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
                 onClick={closeAddEventModal}
@@ -549,13 +542,13 @@ export default function AllEvents() {
                   <FiPlus className="text-indigo-600" />
                   Add New Event
                 </h2>
-                <p className="text-gray-600 text-sm mt-1">Create a new event with details, venue, and schedule</p>
+                <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">Create a new event with details, venue, and schedule</p>
               </div>
               
               <form className="space-y-6" onSubmit={handleAddEventSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Event Name <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -563,14 +556,14 @@ export default function AllEvents() {
                       name="event"
                       value={addEventForm.event}
                       onChange={handleAddEventChange}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
                       placeholder="Enter event name"
                       required
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Venue <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -578,14 +571,14 @@ export default function AllEvents() {
                       name="venue"
                       value={addEventForm.venue}
                       onChange={handleAddEventChange}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
                       placeholder="Enter venue"
                       required
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Date & Time <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -593,13 +586,13 @@ export default function AllEvents() {
                       name="datetime"
                       value={addEventForm.datetime}
                       onChange={handleAddEventChange}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
                       required
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Image URL
                     </label>
                     <input
@@ -607,13 +600,13 @@ export default function AllEvents() {
                       name="imageUrl"
                       value={addEventForm.imageUrl}
                       onChange={handleAddEventChange}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
                       placeholder="https://example.com/image.jpg"
                     />
                   </div>
                   
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Agenda <span className="text-red-500">*</span>
                     </label>
                     <textarea
@@ -621,7 +614,7 @@ export default function AllEvents() {
                       value={addEventForm.agenda}
                       onChange={handleAddEventChange}
                       rows="4"
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
                       placeholder="Describe the event agenda and details"
                       required
                     />
@@ -629,21 +622,21 @@ export default function AllEvents() {
                 </div>
                 
                 {saveError && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                  <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded-lg">
                     {saveError}
                   </div>
                 )}
                 
                 {saveSuccess && (
-                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+                  <div className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-200 px-4 py-3 rounded-lg">
                     {saveSuccess}
                   </div>
                 )}
                 
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
                   <button
                     type="button"
-                    className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors"
+                    className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                     onClick={closeAddEventModal}
                   >
                     Cancel
@@ -678,7 +671,7 @@ export default function AllEvents() {
         {/* View Event Modal */}
         {showViewEventModal && selectedEventIdx !== null && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg mx-4 relative">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-lg mx-4 relative">
               <button
                 className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
                 onClick={closeViewEventModal}
@@ -693,26 +686,26 @@ export default function AllEvents() {
                   <FiEye className="text-indigo-600" />
                   Event Details
                 </h2>
-                <p className="text-gray-600 text-sm mt-1">View complete event information</p>
+                <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">View complete event information</p>
               </div>
               
               <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
                     <FiCalendar className="text-indigo-600" />
                     Event Information
                   </h3>
-                  <div className="space-y-2 text-sm">
-                    <div><span className="font-medium">Event:</span> {paginated[selectedEventIdx]?.event}</div>
-                    <div><span className="font-medium">Venue:</span> {paginated[selectedEventIdx]?.venue}</div>
-                    <div><span className="font-medium">Date & Time:</span> {paginated[selectedEventIdx]?.datetime && new Date(paginated[selectedEventIdx]?.datetime).toLocaleString()}</div>
+                  <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    <div><span className="font-medium text-gray-800 dark:text-gray-100">Event:</span> {paginated[selectedEventIdx]?.event}</div>
+                    <div><span className="font-medium text-gray-800 dark:text-gray-100">Venue:</span> {paginated[selectedEventIdx]?.venue}</div>
+                    <div><span className="font-medium text-gray-800 dark:text-gray-100">Date & Time:</span> {paginated[selectedEventIdx]?.datetime && new Date(paginated[selectedEventIdx]?.datetime).toLocaleString()}</div>
                   </div>
                 </div>
                 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-gray-700 mb-2">Agenda</h3>
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Agenda</h3>
                   <div 
-                    className="text-sm text-gray-600"
+                    className="text-sm text-gray-600 dark:text-gray-300"
                     dangerouslySetInnerHTML={{
                       __html: paginated[selectedEventIdx]?.agenda || "",
                     }}
@@ -720,25 +713,25 @@ export default function AllEvents() {
                 </div>
                 
                 {paginated[selectedEventIdx]?.imageUrl && paginated[selectedEventIdx]?.imageUrl.trim() !== "" && !imageError ? (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
                       <FiImage className="text-indigo-600" />
                       Event Image
                     </h3>
                     <img
                       src={paginated[selectedEventIdx]?.imageUrl}
                       alt="Event"
-                      className="rounded-lg border border-gray-200 shadow max-w-full max-h-48 object-cover"
+                      className="rounded-lg border border-gray-200 dark:border-gray-700 shadow max-w-full max-h-48 object-cover"
                       onError={() => setImageError(true)}
                     />
                   </div>
                 ) : (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
                       <FiImage className="text-gray-400" />
                       Event Image
                     </h3>
-                    <div className="text-gray-400 italic text-sm">No image available</div>
+                    <div className="text-gray-400 dark:text-gray-300 italic text-sm">No image available</div>
                   </div>
                 )}
               </div>

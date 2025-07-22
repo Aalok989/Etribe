@@ -133,29 +133,36 @@ export default function MembershipPlans() {
         throw new Error('Authentication required. Please log in.');
       }
 
-      const payload = {
-        plan_name: planData.name,
-        plan_description: planData.description,
-        plan_price: parseFloat(planData.price),
-        plan_validity: parseInt(planData.validity),
-        status: planData.status,
-      };
-
       let response;
       if (editMode && editingPlan) {
-        // Update existing plan
-        payload.id = editingPlan.id;
-        response = await api.put('/groupSettings/update_membership_plan', payload, {
+        // Update existing plan using the same cURL structure as membership update
+        const payload = {
+          id: editingPlan.id,
+          plan_name: planData.name,
+          plan_description: planData.description,
+          plan_price: planData.price,
+          plan_validity: planData.validity,
+          type: 'edit',
+        };
+        response = await api.post('/groupSettings/update_mem_plan', payload, {
           headers: {
             'Client-Service': 'COHAPPRT',
             'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
             'uid': uid,
             'token': token,
             'rurl': 'login.etribes.in',
+            'Content-Type': 'application/json',
           }
         });
       } else {
-        // Create new plan
+        // Create new plan (unchanged)
+        const payload = {
+          plan_name: planData.name,
+          plan_description: planData.description,
+          plan_price: parseFloat(planData.price),
+          plan_validity: parseInt(planData.validity),
+          status: planData.status,
+        };
         response = await api.post('/groupSettings/create_membership_plan', payload, {
           headers: {
             'Client-Service': 'COHAPPRT',
@@ -177,7 +184,13 @@ export default function MembershipPlans() {
         throw new Error(response.data?.message || 'Failed to save membership plan');
       }
     } catch (err) {
-      console.error('Save membership plan error:', err);
+      console.error('Save membership plan error:', err, err.response?.data);
+      setError(
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        'Failed to save membership plan'
+      );
       throw err;
     } finally {
       setSubmitting(false);
@@ -306,14 +319,85 @@ export default function MembershipPlans() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Save Plan button clicked', form);
     try {
-      await savePlan(form);
+      // Attach cURL logic directly here for edit
+      if (editMode && editingPlan) {
+        const token = localStorage.getItem('token');
+        const uid = localStorage.getItem('uid');
+        const payload = {
+          id: editingPlan.id,
+          plan_name: form.name,
+          plan_description: form.description,
+          plan_price: form.price,
+          plan_validity: form.validity,
+          type: 'edit',
+        };
+        const response = await api.post('/groupSettings/update_mem_plan', payload, {
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'login.etribes.in',
+            'Content-Type': 'application/json',
+          }
+        });
+        if (response.data?.status === 'success' || (response.data?.message && response.data.message.toLowerCase().includes('success'))) {
+          await fetchPlans();
+          setSuccess(response.data?.message || 'Membership plan saved successfully!');
+          setError(null);
+          setTimeout(() => setSuccess(false), 3000);
+        } else {
+          setError(response.data?.message || 'Failed to save membership plan');
+          setSuccess(false);
+        }
     setAddMode(false);
       setEditMode(false);
       setEditingPlan(null);
+        setForm({ name: '', description: '', price: '', validity: '', status: 'active' });
+      } else {
+        // Add Plan using provided cURL
+        const token = localStorage.getItem('token');
+        const uid = localStorage.getItem('uid');
+        const payload = {
+          id: form.id || '', // If you want to auto-generate or leave blank, adjust as needed
+          plan_name: form.name,
+          plan_description: form.description,
+          plan_price: form.price,
+          plan_validity: form.validity
+        };
+        const response = await api.post('/groupSettings/add_mem_plan', payload, {
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'login.etribes.in',
+            'Content-Type': 'application/json',
+          }
+        });
+        if (response.data?.status === 'success' || (response.data?.message && response.data.message.toLowerCase().includes('success'))) {
+          await fetchPlans();
+          setSuccess(response.data?.message || 'Membership plan added successfully!');
       setError(null);
+          setTimeout(() => setSuccess(false), 3000);
+        } else {
+          setError(response.data?.message || 'Failed to add membership plan');
+          setSuccess(false);
+        }
+        setAddMode(false);
+        setEditMode(false);
+        setEditingPlan(null);
+        setForm({ name: '', description: '', price: '', validity: '', status: 'active' });
+      }
     } catch (err) {
       setError(err.message);
+      setSuccess(false);
+      setAddMode(false);
+      setEditMode(false);
+      setEditingPlan(null);
+      setForm({ name: '', description: '', price: '', validity: '', status: 'active' });
     }
   };
 
@@ -345,8 +429,20 @@ export default function MembershipPlans() {
           </div>
         </div>
 
+        {/* Success Message */}
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FiCheckCircle />
+              <span>{success}</span>
+            </div>
+            <button onClick={() => setSuccess(false)} className="text-green-500 hover:text-green-700">
+              <FiX size={16} />
+            </button>
+          </div>
+        )}
         {/* Error Message */}
-        {error && (
+        {error && !success && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FiAlertCircle />
@@ -358,277 +454,141 @@ export default function MembershipPlans() {
           </div>
         )}
 
-        {/* Success Message */}
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiCheckCircle />
-              <span>Membership plan saved successfully!</span>
-            </div>
-            <button onClick={() => setSuccess(false)} className="text-green-500 hover:text-green-700">
-              <FiX size={16} />
-            </button>
-          </div>
-        )}
-
-        <div className="rounded-2xl shadow-lg bg-white max-w-7xl w-full mx-auto">
-
+        <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Controls */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
               <div className="relative">
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search by plan name..."
-                  className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                  className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   style={{ minWidth: 250 }}
                 />
               </div>
-              
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                 <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, totalEntries)} of {totalEntries} entries</span>
               </div>
             </div>
-
             <div className="flex gap-2 items-center">
-              <button
-                className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
-                onClick={handleRefresh}
-                disabled={loading}
-                title="Refresh Plans"
-              >
-                <FiRefreshCw className={loading ? "animate-spin" : ""} />
-                Refresh
-              </button>
-              <button
-                className="flex items-center gap-1 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
-                onClick={handleAdd}
-              >
-                <FiPlus />
-                Add Plan
-              </button>
+              <button className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition" onClick={handleRefresh} disabled={loading} title="Refresh Plans"><FiRefreshCw className={loading ? "animate-spin" : ""} /> Refresh</button>
+              <button className="flex items-center gap-1 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition" onClick={handleAdd}><FiPlus /> Add Plan</button>
             </div>
           </div>
-
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
-              <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 text-gray-700 sticky top-0 z-10 shadow-sm">
-                <tr className="border-b-2 border-indigo-200">
-                  <th 
-                    className="p-3 text-center font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
-                    style={{ minWidth: '80px', width: '80px' }}
-                    onClick={() => handleSort('id')}
-                  >
+              <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
+                <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
+                  <th className="p-3 text-center font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors" style={{ minWidth: '80px', width: '80px' }} onClick={() => handleSort('id')}>
                     <div className="flex items-center justify-center gap-1">
                       Sr No
                       {sortField === 'id' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
+                        <span className="text-indigo-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                       )}
                     </div>
                   </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
-                    style={{ minWidth: '150px', width: '150px' }}
-                    onClick={() => handleSort('name')}
-                  >
+                  <th className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors" style={{ minWidth: '150px', width: '150px' }} onClick={() => handleSort('name')}>
                     <div className="flex items-center gap-1">
                       Plan Name
                       {sortField === 'name' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
+                        <span className="text-indigo-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                       )}
                     </div>
                   </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
-                    style={{ minWidth: '200px', width: '200px' }}
-                    onClick={() => handleSort('description')}
-                  >
+                  <th className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors" style={{ minWidth: '200px', width: '200px' }} onClick={() => handleSort('description')}>
                     <div className="flex items-center gap-1">
                       Description
                       {sortField === 'description' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
+                        <span className="text-indigo-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                       )}
                     </div>
                   </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
-                    style={{ minWidth: '120px', width: '120px' }}
-                    onClick={() => handleSort('price')}
-                  >
+                  <th className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors" style={{ minWidth: '120px', width: '120px' }} onClick={() => handleSort('price')}>
                     <div className="flex items-center gap-1">
                       Price
                       {sortField === 'price' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
+                        <span className="text-indigo-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                       )}
                     </div>
                   </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
-                    style={{ minWidth: '120px', width: '120px' }}
-                    onClick={() => handleSort('validity')}
-                  >
+                  <th className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors" style={{ minWidth: '120px', width: '120px' }} onClick={() => handleSort('validity')}>
                     <div className="flex items-center gap-1">
                       Validity
                       {sortField === 'validity' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
+                        <span className="text-indigo-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                       )}
                     </div>
                   </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors"
-                    style={{ minWidth: '100px', width: '100px' }}
-                    onClick={() => handleSort('status')}
-                  >
+                  <th className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors" style={{ minWidth: '100px', width: '100px' }} onClick={() => handleSort('status')}>
                     <div className="flex items-center gap-1">
                       Status
                       {sortField === 'status' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
+                        <span className="text-indigo-600">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                       )}
                     </div>
-                  </th>
-                  <th 
-                    className="p-3 text-center font-semibold whitespace-nowrap"
-                    style={{ minWidth: '100px', width: '100px' }}
-                  >
-                    Actions
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {paginated.map((plan, idx) => (
-                  <tr 
-                    key={plan.id} 
-                    className={`border-b border-gray-200 transition-colors ${
-                      idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                    } hover:bg-indigo-50 hover:shadow-sm`}
-                  >
-                    <td className="p-3 text-center font-semibold text-indigo-700 border-r border-gray-200">
-                      {startIdx + idx + 1}
-                    </td>
-                    <td className="p-3 text-left border-r border-gray-200">
+                  <tr key={plan.id} className={`border-b border-gray-200 dark:border-gray-700 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'} hover:bg-indigo-50 dark:hover:bg-gray-700 hover:shadow-sm`}>
+                    <td className="p-3 text-center font-semibold text-indigo-700 dark:text-indigo-300 border-r border-gray-200 dark:border-gray-700">{startIdx + idx + 1}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xs">
-                          {plan.name.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="font-medium text-gray-800">{plan.name}</span>
+                        <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 dark:from-indigo-800 dark:to-purple-900 rounded-full flex items-center justify-center text-white font-semibold text-xs">{plan.name.charAt(0).toUpperCase()}</div>
+                        <span className="font-medium text-gray-800 dark:text-gray-100">{plan.name}</span>
                       </div>
                     </td>
-                    <td className="p-3 text-left border-r border-gray-200 text-gray-600">
-                      {plan.description}
-                    </td>
-                    <td className="p-3 text-left border-r border-gray-200">
-                      <span className="flex items-center gap-1 text-green-600 font-medium">
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-100">{plan.description}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700">
+                      <span className="flex items-center gap-1 text-green-600 dark:text-green-300 font-medium">
                         <FiDollarSign size={14} />
                         {plan.price}
                       </span>
                     </td>
-                    <td className="p-3 text-left border-r border-gray-200">
-                      <span className="flex items-center gap-1 text-blue-600">
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700">
+                      <span className="flex items-center gap-1 text-blue-600 dark:text-blue-300">
                         <FiCalendar size={14} />
                         {plan.validity} months
                       </span>
                     </td>
-                    <td className="p-3 text-left border-r border-gray-200">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        plan.status === 'active' 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-red-100 text-red-700'
-                      }`}>
-                        {plan.status}
-                      </span>
-                    </td>
-                    <td className="p-3 text-center">
-                      <div className="flex gap-2 justify-center">
-                        <button
-                          onClick={() => handleEdit(plan)}
-                          className="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-100 transition-colors"
-                          title="Edit Plan"
-                        >
-                          <FiEdit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => deletePlan(plan.id)}
-                          className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition-colors"
-                          title="Delete Plan"
-                          disabled={submitting}
-                        >
-                          <FiTrash2 size={18} />
-                        </button>
-                      </div>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${plan.status === 'active' ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200'}`}>{plan.status}</span>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            
             {paginated.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <FiPackage className="mx-auto text-4xl mb-2 text-gray-300" />
+              <div className="text-center py-8 text-gray-500 dark:text-gray-300">
+                <FiPackage className="mx-auto text-4xl mb-2 text-gray-300 dark:text-gray-700" />
                 <p>No membership plans found</p>
           </div>
             )}
-            
-          {/* Pagination Controls */}
+          </div>
+          {/* Pagination Controls - moved outside scrollable area */}
             {!addMode && !editMode && totalEntries > 0 && (
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-t border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-t border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Show</span>
-              <select
-                    className="border rounded-lg px-3 py-1 text-sm bg-white text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                value={entriesPerPage}
-                onChange={handleEntriesChange}
-              >
+                <span className="text-sm text-gray-600 dark:text-gray-400">Show</span>
+                <select className="border rounded-lg px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors" value={entriesPerPage} onChange={handleEntriesChange}>
                     {[5, 10, 25, 50, 100].map(num => (
                   <option key={num} value={num}>{num}</option>
                 ))}
               </select>
-                  <span className="text-sm text-gray-600">entries per page</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">entries per page</span>
             </div>
-                
             <div className="flex items-center gap-2">
-              <button
-                onClick={handlePrev}
-                disabled={currentPage === 1}
-                    className={`px-3 py-1 rounded-lg text-indigo-600 hover:bg-indigo-100 transition-colors ${
-                      currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                title="Previous"
-              >
-                    Previous
-              </button>
-                  <span className="text-sm font-semibold text-gray-700">
-                    Page {currentPage} of {totalPages}
-                  </span>
-              <button
-                onClick={handleNext}
-                disabled={currentPage === totalPages}
-                    className={`px-3 py-1 rounded-lg text-indigo-600 hover:bg-indigo-100 transition-colors ${
-                      currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                title="Next"
-              >
-                    Next
-              </button>
-            </div>
+                <button onClick={handlePrev} disabled={currentPage === 1} className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`} title="Previous">Previous</button>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Page {currentPage} of {totalPages}</span>
+                <button onClick={handleNext} disabled={currentPage === totalPages} className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`} title="Next">Next</button>
+              </div>
               </div>
             )}
-          </div>
         </div>
 
         {/* Add/Edit Modal */}

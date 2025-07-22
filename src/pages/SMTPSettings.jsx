@@ -244,11 +244,46 @@ export default function SMTPSettings() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await saveSMTP(form);
-      setEditMode(false);
+      // Use the provided cURL logic for saving SMTP settings
+      setSubmitting(true);
       setError(null);
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid');
+      if (!token || !uid) {
+        throw new Error('Authentication required. Please log in.');
+      }
+      const payload = {
+        smtp_host: form.smtpHost,
+        smtp_user: form.smtpUser,
+        smtp_pass: form.smtpPassword,
+        smtp_protocol: form.smtpProtocol,
+        smtp_port: form.smtpPort,
+        sender_email: form.senderEmail,
+        sender_name: form.senderName,
+        reply_to: form.replyToEmail,
+      };
+      const response = await api.post('/groupSettings/smtp_setting', payload, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'login.etribes.in',
+          'Content-Type': 'application/json',
+        }
+      });
+      if (response.data?.status === 'success') {
+        setData({ ...form, smtpPassword: "********" });
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+        setEditMode(false);
+      } else {
+        setError(response.data?.message || 'Failed to save SMTP settings');
+      }
     } catch (err) {
       setError(err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -306,177 +341,128 @@ export default function SMTPSettings() {
           </div>
         )}
 
-        <div className="rounded-2xl shadow-lg bg-white max-w-7xl w-full mx-auto">
+        <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto border border-gray-200 dark:border-gray-700">
           {/* Header Controls */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <FiServer className="text-indigo-600 text-xl" />
-                <span className="text-lg font-semibold text-gray-800">SMTP Configuration</span>
+                <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">SMTP Configuration</span>
               </div>
-              
               {!editMode && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                   <FiSettings className="text-indigo-600" />
                   <span>Email server settings</span>
                 </div>
               )}
             </div>
-
             <div className="flex gap-2 items-center">
-              {!editMode && (
+            {!editMode && (
                 <>
-                  <button
-                    className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
-                    onClick={handleRefresh}
-                    disabled={loading}
-                    title="Refresh Settings"
-                  >
-                    <FiRefreshCw className={loading ? "animate-spin" : ""} />
-                    Refresh
-                  </button>
-                  <button
-                    className="flex items-center gap-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
-                    onClick={handleEdit}
-                  >
-                    <FiEdit2 />
-                    Edit Settings
-                  </button>
+                  <button className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition" onClick={handleRefresh} disabled={loading} title="Refresh Settings"><FiRefreshCw className={loading ? "animate-spin" : ""} /> Refresh</button>
+                  <button className="flex items-center gap-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition" onClick={handleEdit}><FiEdit2 /> Edit Settings</button>
                 </>
-              )}
+            )}
             </div>
           </div>
-
           {/* Content */}
           <div className="p-6">
             {loading ? (
-              <div className="flex items-center justify-center h-32 text-indigo-700">
-                <FiRefreshCw className="animate-spin text-indigo-600 text-xl mr-2" />
+              <div className="flex items-center justify-center h-32 text-indigo-700 dark:text-indigo-300">
+                <FiRefreshCw className="animate-spin text-indigo-600 dark:text-indigo-300 text-xl mr-2" />
                 Loading SMTP settings...
               </div>
             ) : !editMode ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
                       <FiServer className="text-indigo-600" />
                       Server Configuration
                     </h3>
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-600">SMTP Host</span>
-                        <span className="text-gray-800 font-mono text-sm">{data.smtpHost || "-"}</span>
+                        <span className="font-medium text-gray-600 dark:text-gray-300">SMTP Host</span>
+                        <span className="text-gray-800 dark:text-gray-100 font-mono text-sm">{data.smtpHost || "-"}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-600">SMTP Port</span>
-                        <span className="text-gray-800 font-mono text-sm">{data.smtpPort || "-"}</span>
+                        <span className="font-medium text-gray-600 dark:text-gray-300">SMTP Port</span>
+                        <span className="text-gray-800 dark:text-gray-100 font-mono text-sm">{data.smtpPort || "-"}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-600">Protocol</span>
-                        <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-medium">
-                          {data.smtpProtocol || "-"}
-                        </span>
+                        <span className="font-medium text-gray-600 dark:text-gray-300">Protocol</span>
+                        <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 rounded text-xs font-medium">{data.smtpProtocol || "-"}</span>
                       </div>
                     </div>
                   </div>
-
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
                       <FiMail className="text-indigo-600" />
                       Authentication
                     </h3>
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-600">SMTP User</span>
-                        <span className="text-gray-800 font-mono text-sm">{data.smtpUser || "-"}</span>
+                        <span className="font-medium text-gray-600 dark:text-gray-300">SMTP User</span>
+                        <span className="text-gray-800 dark:text-gray-100 font-mono text-sm">{data.smtpUser || "-"}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-600">SMTP Password</span>
-                        <span className="text-gray-800 font-mono text-sm">{data.smtpPassword}</span>
+                        <span className="font-medium text-gray-600 dark:text-gray-300">SMTP Password</span>
+                        <span className="text-gray-800 dark:text-gray-100 font-mono text-sm">{data.smtpPassword}</span>
                       </div>
                     </div>
-                  </div>
                 </div>
-
+                </div>
                 <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
                       <FiMail className="text-indigo-600" />
                       Sender Information
                     </h3>
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-600">Sender Email</span>
-                        <span className="text-gray-800 font-mono text-sm">{data.senderEmail || "-"}</span>
+                        <span className="font-medium text-gray-600 dark:text-gray-300">Sender Email</span>
+                        <span className="text-gray-800 dark:text-gray-100 font-mono text-sm">{data.senderEmail || "-"}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-600">Sender Name</span>
-                        <span className="text-gray-800 font-mono text-sm">{data.senderName || "-"}</span>
-                      </div>
+                        <span className="font-medium text-gray-600 dark:text-gray-300">Sender Name</span>
+                        <span className="text-gray-800 dark:text-gray-100 font-mono text-sm">{data.senderName || "-"}</span>
+                </div>
                       <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-600">Reply To Email</span>
-                        <span className="text-gray-800 font-mono text-sm">{data.replyToEmail || "-"}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <h3 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
-                      <FiSettings className="text-blue-600" />
+                        <span className="font-medium text-gray-600 dark:text-gray-300">Reply To Email</span>
+                        <span className="text-gray-800 dark:text-gray-100 font-mono text-sm">{data.replyToEmail || "-"}</span>
+                </div>
+                </div>
+                </div>
+                  <div className="bg-blue-50 dark:bg-blue-900/40 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
+                    <h3 className="font-semibold text-blue-700 dark:text-blue-200 mb-2 flex items-center gap-2">
+                      <FiSettings className="text-blue-600 dark:text-blue-200" />
                       Status
                     </h3>
-                    <p className="text-blue-600 text-sm">
-                      SMTP settings are configured and ready for email operations.
-                    </p>
-                  </div>
+                    <p className="text-blue-600 dark:text-blue-200 text-sm">SMTP settings are configured and ready for email operations.</p>
+                </div>
                 </div>
               </div>
             ) : (
               <form className="space-y-6" onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-4 flex items-center gap-2">
                         <FiServer className="text-indigo-600" />
                         Server Configuration
                       </h3>
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-gray-700 font-medium mb-2">SMTP Host</label>
-                          <input
-                            type="text"
-                            name="smtpHost"
-                            value={form.smtpHost}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                            placeholder="e.g., smtp.gmail.com"
-                            required
-                            disabled={submitting}
-                          />
+                          <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">SMTP Host</label>
+                          <input type="text" name="smtpHost" value={form.smtpHost} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" placeholder="e.g., smtp.gmail.com" required disabled={submitting} />
                         </div>
                         <div>
-                          <label className="block text-gray-700 font-medium mb-2">SMTP Port</label>
-                          <input
-                            type="text"
-                            name="smtpPort"
-                            value={form.smtpPort}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                            placeholder="e.g., 587, 465, 25"
-                            required
-                            disabled={submitting}
-                          />
+                          <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">SMTP Port</label>
+                          <input type="text" name="smtpPort" value={form.smtpPort} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" placeholder="e.g., 587, 465, 25" required disabled={submitting} />
                         </div>
                         <div>
-                          <label className="block text-gray-700 font-medium mb-2">SMTP Protocol</label>
-                          <select
-                            name="smtpProtocol"
-                            value={form.smtpProtocol}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                            required
-                            disabled={submitting}
-                          >
+                          <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">SMTP Protocol</label>
+                          <select name="smtpProtocol" value={form.smtpProtocol} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" required disabled={submitting}>
                             <option value="TLS">TLS</option>
                             <option value="SSL">SSL</option>
                             <option value="None">None</option>
@@ -484,98 +470,50 @@ export default function SMTPSettings() {
                         </div>
                       </div>
                     </div>
-
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-4 flex items-center gap-2">
                         <FiMail className="text-indigo-600" />
                         Authentication
                       </h3>
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-gray-700 font-medium mb-2">SMTP User</label>
-                          <input
-                            type="text"
-                            name="smtpUser"
-                            value={form.smtpUser}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                            placeholder="e.g., user@example.com"
-                            required
-                            disabled={submitting}
-                          />
+                          <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">SMTP User</label>
+                          <input type="text" name="smtpUser" value={form.smtpUser} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" placeholder="e.g., user@example.com" required disabled={submitting} />
                         </div>
                         <div>
-                          <label className="block text-gray-700 font-medium mb-2">SMTP Password</label>
-                          <input
-                            type="password"
-                            name="smtpPassword"
-                            value={form.smtpPassword}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                            placeholder="Enter SMTP password"
-                            required
-                            disabled={submitting}
-                          />
+                          <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">SMTP Password</label>
+                          <input type="password" name="smtpPassword" value={form.smtpPassword} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" placeholder="Enter SMTP password" required disabled={submitting} />
                         </div>
                       </div>
-                    </div>
-                  </div>
-
+                </div>
+                </div>
                   <div className="space-y-4">
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-4 flex items-center gap-2">
                         <FiMail className="text-indigo-600" />
                         Sender Information
                       </h3>
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-gray-700 font-medium mb-2">Sender Email</label>
-                          <input
-                            type="email"
-                            name="senderEmail"
-                            value={form.senderEmail}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                            placeholder="e.g., noreply@example.com"
-                            required
-                            disabled={submitting}
-                          />
+                          <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">Sender Email</label>
+                          <input type="email" name="senderEmail" value={form.senderEmail} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" placeholder="e.g., noreply@example.com" required disabled={submitting} />
                         </div>
                         <div>
-                          <label className="block text-gray-700 font-medium mb-2">Sender Name</label>
-                          <input
-                            type="text"
-                            name="senderName"
-                            value={form.senderName}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                            placeholder="e.g., Company Name"
-                            required
-                            disabled={submitting}
-                          />
+                          <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">Sender Name</label>
+                          <input type="text" name="senderName" value={form.senderName} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" placeholder="e.g., Company Name" required disabled={submitting} />
                         </div>
                         <div>
-                          <label className="block text-gray-700 font-medium mb-2">Reply To Email</label>
-                          <input
-                            type="email"
-                            name="replyToEmail"
-                            value={form.replyToEmail}
-                            onChange={handleChange}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                            placeholder="e.g., support@example.com"
-                            required
-                            disabled={submitting}
-                          />
+                          <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">Reply To Email</label>
+                          <input type="email" name="replyToEmail" value={form.replyToEmail} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" placeholder="e.g., support@example.com" required disabled={submitting} />
                         </div>
                       </div>
                     </div>
-
-                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                      <h3 className="font-semibold text-yellow-700 mb-2 flex items-center gap-2">
-                        <FiAlertCircle className="text-yellow-600" />
+                    <div className="bg-yellow-50 dark:bg-yellow-900/40 p-4 rounded-lg border border-yellow-200 dark:border-yellow-700">
+                      <h3 className="font-semibold text-yellow-700 dark:text-yellow-200 mb-2 flex items-center gap-2">
+                        <FiAlertCircle className="text-yellow-600 dark:text-yellow-200" />
                         Important Notes
                       </h3>
-                      <ul className="text-yellow-700 text-sm space-y-1">
+                      <ul className="text-yellow-700 dark:text-yellow-200 text-sm space-y-1">
                         <li>• Ensure SMTP credentials are correct</li>
                         <li>• Test settings before saving</li>
                         <li>• Keep password secure</li>
@@ -583,34 +521,10 @@ export default function SMTPSettings() {
                     </div>
                   </div>
                 </div>
-
                 {/* Form Actions */}
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                  <button
-                    type="button"
-                    className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors disabled:opacity-50"
-                    onClick={handleCancel}
-                    disabled={submitting}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition-colors disabled:opacity-50"
-                    disabled={submitting}
-                  >
-                    {submitting ? (
-                      <>
-                        <FiRefreshCw className="animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <FiSave />
-                        Save Settings
-                      </>
-                    )}
-                  </button>
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  <button type="button" className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50" onClick={handleCancel} disabled={submitting}>Cancel</button>
+                  <button type="submit" className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition-colors disabled:opacity-50" disabled={submitting}>{submitting ? (<><FiRefreshCw className="animate-spin" />Saving...</>) : (<><FiSave />Save Settings</>)}</button>
                 </div>
               </form>
             )}
