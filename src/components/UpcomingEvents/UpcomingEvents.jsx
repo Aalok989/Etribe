@@ -70,8 +70,7 @@ export default function UpcomingEvents() {
     };
 
     fetchUpcomingEvents();
-    const interval = setInterval(fetchUpcomingEvents, 30000);
-    return () => clearInterval(interval);
+    // Auto-refresh removed
   }, [selected]);
 
   if (loading) {

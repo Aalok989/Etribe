@@ -10,7 +10,7 @@ import TotalEventCard from "../components/TotalEventCard/TotalEventCard";
 export default function Dashboard() {
   return (
     <DashboardLayout>
-      <div className="grid grid-cols-3 gap-6 py-3 bg-transparent dark:bg-gray-900 transition-colors duration-300">
+      <div className="grid grid-cols-3 gap-6 py-3 bg-transparent dark:bg-gray-800 transition-colors duration-300">
         {/* Top Row: Status Cards */}
         <div className="col-span-3">
           <StatusCards />

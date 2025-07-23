@@ -4,14 +4,10 @@ import { FiDownload, FiFilter, FiEdit2, FiTrash2, FiChevronDown, FiChevronUp, Fi
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import api from "../api/axiosConfig";
-
-// No fallback data; only use live API data
+import { useContacts } from "../context/ContactsContext";
 
 export default function ImportantContactsPage() {
-  const [contactsData, setContactsData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { contactsData, loading, error, addContact, editContact: editContactAPI, deleteContact: deleteContactAPI, fetchContacts } = useContacts();
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [sortAsc, setSortAsc] = useState(true);
@@ -29,72 +25,7 @@ export default function ImportantContactsPage() {
     address: ""
   });
   const [deleteLoading, setDeleteLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchContacts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Fetch real data from contacts API
-        const token = localStorage.getItem('token');
-        const uid = localStorage.getItem('uid');
-        
-        const response = await api.get('/contact', {
-          headers: {
-            'Client-Service': 'COHAPPRT',
-            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-            'uid': uid,
-            'token': token,
-            'rurl': 'login.etribes.in',
-            'Content-Type': 'application/json',
-          }
-        });
-
-        let contacts = [];
-        // Handle the nested structure: response.data.data.contact
-        if (response.data?.data?.contact && Array.isArray(response.data.data.contact)) {
-          contacts = response.data.data.contact;
-        } else if (Array.isArray(response.data?.data)) {
-          contacts = response.data.data;
-        } else if (Array.isArray(response.data)) {
-          contacts = response.data;
-        } else if (response.data?.data && typeof response.data.data === 'object') {
-          contacts = Object.values(response.data.data);
-        } else if (response.data?.contacts && Array.isArray(response.data.contacts)) {
-          contacts = response.data.contacts;
-        } else if (response.data?.contact && Array.isArray(response.data.contact)) {
-          contacts = response.data.contact;
-        } else {
-          contacts = [];
-        }
-
-        // Map backend contacts to frontend format
-        const mappedContacts = contacts.map((contact, index) => {
-          return {
-            id: contact.id || contact.contact_id || contact.contactId || index + 1,
-            dept: contact.department || contact.dept || contact.role || contact.contact_department || 'General',
-            name: contact.name || contact.person_name || contact.contact_name || contact.contactName || `Contact ${index + 1}`,
-            contact: contact.contact || contact.phone || contact.phone_number || contact.mobile || contact.contact_number || contact.contact_no || '',
-            email: contact.email || contact.email_address || contact.contact_email || contact.email_id || '',
-            address: contact.address || contact.location || contact.contact_address || contact.address_line || '',
-          };
-        });
-
-        setContactsData(mappedContacts);
-        
-      } catch (err) {
-        setError('Failed to fetch contacts: ' + (err.response?.data?.message || err.message));
-        setContactsData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchContacts();
-    const interval = setInterval(fetchContacts, 60000); // Poll every minute
-    return () => clearInterval(interval);
-  }, []);
+  const [formError, setFormError] = useState(null);
 
   const departments = ["All", ...Array.from(new Set(contactsData.map(c => c.dept)))];
 
@@ -142,76 +73,26 @@ export default function ImportantContactsPage() {
     setEditForm({ ...editForm, [e.target.name]: e.target.value });
   };
 
-  // API call to edit a contact
-  const editContactInAPI = async (contact) => {
-    const token = localStorage.getItem('token');
-    const uid = localStorage.getItem('uid');
-    try {
-      const payload = {
-        id: contact.id,
-        department: contact.dept,
-        name: contact.name,
-        contact_no: contact.contact,
-        email_id: contact.email,
-        address: contact.address,
-      };
-      const response = await api.post('/contact/edit', payload, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        }
-      });
-      return response.data;
-    } catch (err) {
-      throw err.response?.data?.message || 'Failed to edit contact';
-    }
-  };
-
   const handleEditSave = async () => {
+    setFormError(null);
     try {
-      await editContactInAPI(editForm);
-    setContactsData(prev => prev.map(c => c.id === editForm.id ? editForm : c));
-    setEditContact(null);
+      await editContactAPI(editForm);
+      setEditContact(null);
     } catch (err) {
-      setError(err);
-    }
-  };
-
-  // API call to delete a contact
-  const deleteContactFromAPI = async (contactId) => {
-    const token = localStorage.getItem('token');
-    const uid = localStorage.getItem('uid');
-    try {
-      const response = await api.post('/contact/remove', { id: contactId }, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        }
-      });
-      return response.data;
-    } catch (err) {
-      throw err.response?.data?.message || 'Failed to delete contact';
+      setFormError(err.toString());
     }
   };
 
   const handleDelete = async () => {
     if (deleteConfirm.trim().toLowerCase() === "delete") {
       setDeleteLoading(true);
+      setFormError(null);
       try {
-        await deleteContactFromAPI(deleteContact.id);
-      setContactsData(prev => prev.filter(c => c.id !== deleteContact.id));
-    setDeleteContact(null);
-    setDeleteConfirm("");
+        await deleteContactAPI(deleteContact.id);
+        setDeleteContact(null);
+        setDeleteConfirm("");
       } catch (err) {
-        setError(err);
+        setFormError(err.toString());
       } finally {
         setDeleteLoading(false);
       }
@@ -223,49 +104,15 @@ export default function ImportantContactsPage() {
     setAddContactForm({ ...addContactForm, [e.target.name]: e.target.value });
   };
 
-  const addContactToAPI = async (contact) => {
-    const token = localStorage.getItem('token');
-    const uid = localStorage.getItem('uid');
-    try {
-      const payload = {
-        department: contact.dept,
-        name: contact.name,
-        contact_no: contact.contact,
-        email_id: contact.email,
-        address: contact.address,
-      };
-      const response = await api.post('/contact/add', payload, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        }
-      });
-      return response.data;
-    } catch (err) {
-      throw err.response?.data?.message || 'Failed to add contact';
-    }
-  };
-
   const handleAddContactSubmit = async (e) => {
     e.preventDefault();
+    setFormError(null);
     try {
-      const added = await addContactToAPI(addContactForm);
-      // Optionally, fetch the updated list from the API, or just add to local state:
-      setContactsData(prev => [
-        {
-          id: added.id || Math.max(0, ...prev.map(c => c.id)) + 1,
-      ...addContactForm
-        },
-        ...prev
-      ]);
-    setShowAddContactModal(false);
-    setAddContactForm({ dept: "", name: "", contact: "", email: "", address: "" });
+      await addContact(addContactForm);
+      setShowAddContactModal(false);
+      setAddContactForm({ dept: "", name: "", contact: "", email: "", address: "" });
     } catch (err) {
-      setError(err);
+      setFormError(err.toString());
     }
   };
 
@@ -341,7 +188,7 @@ export default function ImportantContactsPage() {
   };
 
   const handleRefresh = () => {
-    window.location.reload();
+    fetchContacts();
   };
 
   if (loading) {
@@ -505,6 +352,8 @@ export default function ImportantContactsPage() {
                 <p className="text-gray-600 text-sm mt-1">Create a new important contact</p>
               </div>
               
+              {formError && <p className="text-red-500 text-sm bg-red-100 p-2 rounded-lg">{formError}</p>}
+              
               <form className="space-y-4" onSubmit={handleAddContactSubmit}>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -621,6 +470,8 @@ export default function ImportantContactsPage() {
                 <p className="text-gray-600 text-sm mt-1">Update contact information</p>
               </div>
               
+               {formError && <p className="text-red-500 text-sm bg-red-100 p-2 rounded-lg">{formError}</p>}
+              
               <form className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -733,6 +584,8 @@ export default function ImportantContactsPage() {
                 <p className="text-gray-600 text-sm mt-1">This action cannot be undone</p>
               </div>
               
+              {formError && <p className="text-red-500 text-sm bg-red-100 p-2 rounded-lg">{formError}</p>}
+              
               <div className="space-y-4">
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <p className="text-sm text-red-700">
@@ -769,10 +622,9 @@ export default function ImportantContactsPage() {
                         : 'bg-gray-400 text-white cursor-not-allowed'
                     }`}
                 onClick={handleDelete}
-                disabled={deleteConfirm.trim().toLowerCase() !== 'delete'}
+                disabled={deleteConfirm.trim().toLowerCase() !== 'delete' || deleteLoading}
               >
-                    <FiTrash2 />
-                    Delete Contact
+                    {deleteLoading ? 'Deleting...' : <><FiTrash2 /> Delete Contact</>}
               </button>
                 </div>
               </div>

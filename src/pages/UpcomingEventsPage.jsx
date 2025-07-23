@@ -5,6 +5,8 @@ import api from "../api/axiosConfig";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 
 
 // Helper to decode HTML entities
@@ -22,13 +24,19 @@ export default function UpcomingEventsPage() {
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [showViewEventModal, setShowViewEventModal] = useState(false);
   const [selectedEventIdx, setSelectedEventIdx] = useState(null);
+  // Replace add event state and logic
   const [addEventForm, setAddEventForm] = useState({
     event: "",
     agenda: "",
     venue: "",
-    datetime: "",
-    imageUrl: ""
+    date: "",
+    time: "",
+    reminder: "Yes",
+    sendReminderTo: "Only Approved Members",
+    invitationImage: null
   });
+  const [formErrors, setFormErrors] = useState({});
+  const [showAddEventForm, setShowAddEventForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -37,6 +45,7 @@ export default function UpcomingEventsPage() {
   const [imageError, setImageError] = useState(false);
   const [sortField, setSortField] = useState("datetime");
   const [sortDirection, setSortDirection] = useState("asc");
+
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -147,47 +156,89 @@ export default function UpcomingEventsPage() {
   // Add Event Modal
   const openAddEventModal = () => {
     setAddEventForm({ event: "", agenda: "", venue: "", datetime: "", imageUrl: "" });
+    setFormErrors({}); // Clear previous errors
     setShowAddEventModal(true);
   };
   const closeAddEventModal = () => setShowAddEventModal(false);
-  const handleAddEventChange = (e) => setAddEventForm({ ...addEventForm, [e.target.name]: e.target.value });
+  const handleAddEventChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === 'invitationImage') {
+      setAddEventForm({ ...addEventForm, invitationImage: files[0] });
+    } else {
+      setAddEventForm({ ...addEventForm, [name]: value });
+      setFormErrors({ ...formErrors, [name]: undefined });
+    }
+  };
+  const handleAgendaChange = (event, editor) => {
+    const data = editor.getData();
+    setAddEventForm({ ...addEventForm, agenda: data });
+    setFormErrors({ ...formErrors, agenda: undefined });
+  };
+  const validateForm = () => {
+    const errors = {};
+    if (!addEventForm.event.trim()) errors.event = 'The Event Title field is required.';
+    if (!addEventForm.agenda || !addEventForm.agenda.replace(/<[^>]*>/g, '').trim()) errors.agenda = 'The Agenda field is required.';
+    if (!addEventForm.venue.trim()) errors.venue = 'The Venue field is required.';
+    if (!addEventForm.date.trim()) errors.date = 'The Date field is required.';
+    if (!addEventForm.time.trim()) errors.time = 'The Time field is required.';
+    return errors;
+  };
   const handleAddEventSubmit = async (e) => {
     e.preventDefault();
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
     setSaveLoading(true);
     setSaveError(null);
     setSaveSuccess(null);
     try {
-      // Prepare payload for backend
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid');
-      const payload = {
-        event_title: addEventForm.event,
-        event_description: addEventForm.agenda,
-        event_venue: addEventForm.venue,
-        event_date: addEventForm.datetime.split('T')[0],
-        event_time: addEventForm.datetime.split('T')[1] || '',
-        event_image: addEventForm.imageUrl
-      };
-      await api.post('/event/add', payload, {
+      const formData = new FormData();
+      formData.append('event_title', addEventForm.event);
+      formData.append('event_description', addEventForm.agenda);
+      formData.append('event_venue', addEventForm.venue);
+      formData.append('event_time', addEventForm.time);
+      formData.append('event_date', addEventForm.date);
+      if (addEventForm.invitationImage) {
+        formData.append('event_image', addEventForm.invitationImage);
+      }
+      await fetch('/api/event/add', {
+        method: 'POST',
         headers: {
           'Client-Service': 'COHAPPRT',
           'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
           'uid': uid,
           'token': token,
           'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        }
+          'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || ''),
+        },
+        credentials: 'include',
+        body: formData,
       });
-      setShowAddEventModal(false);
       setSaveSuccess('Event added successfully!');
-      // Optionally, refresh events
+      setAddEventForm({
+        event: "",
+        agenda: "",
+        venue: "",
+        date: "",
+        time: "",
+        reminder: "Yes",
+        sendReminderTo: "Only Approved Members",
+        invitationImage: null
+      });
       setTimeout(() => setSaveSuccess(null), 3000);
+      setShowAddEventForm(false);
     } catch (err) {
-      setSaveError(err.response?.data?.message || 'Failed to add event');
+      setSaveError('Failed to add event');
     } finally {
       setSaveLoading(false);
     }
   };
+  const handleShowAddEventForm = () => setShowAddEventForm(true);
+  const handleHideAddEventForm = () => setShowAddEventForm(false);
 
   // View Event Modal
   const openViewEventModal = (idx) => {
@@ -367,7 +418,7 @@ export default function UpcomingEventsPage() {
               </button>
               <button
                 className="flex items-center gap-1 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
-                onClick={openAddEventModal}
+                onClick={handleShowAddEventForm}
               >
                 <FiPlus />
                 Add Event
@@ -536,147 +587,150 @@ export default function UpcomingEventsPage() {
           </div>
         </div>
 
-        {/* Add Event Modal */}
-        {showAddEventModal && (
+        {showAddEventForm && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-2xl mx-4 relative max-h-[90vh] overflow-y-auto">
               <button
                 className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
-                onClick={closeAddEventModal}
+                onClick={handleHideAddEventForm}
                 title="Close"
               >
                 <FiX size={24} />
               </button>
-              
               <div className="mb-6">
-                <h2 className="text-xl font-bold text-indigo-700 flex items-center gap-2">
-                  <FiPlus className="text-indigo-600" />
+                <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+                  <FiPlus className="text-indigo-600 dark:text-indigo-300" />
                   Add New Event
                 </h2>
-                <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">Create a new upcoming event with details, venue, and schedule</p>
+                <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">Create a new event with details, venue, and schedule</p>
               </div>
-              
               <form className="space-y-6" onSubmit={handleAddEventSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Event Name <span className="text-red-500">*</span>
-            </label>
-            <input
+                    </label>
+                    <input
                       type="text"
-              name="event"
+                      name="event"
                       value={addEventForm.event}
                       onChange={handleAddEventChange}
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                      className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-400 dark:focus:ring-orange-300 focus:border-transparent transition-colors ${formErrors.event ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'}`}
                       placeholder="Enter event name"
-              required
-            />
-          </div>
-                  
+                    />
+                    {formErrors.event && <div className="text-red-600 text-xs mt-1">{formErrors.event}</div>}
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Venue <span className="text-red-500">*</span>
-            </label>
+                    </label>
                     <input
                       type="text"
                       name="venue"
                       value={addEventForm.venue}
                       onChange={handleAddEventChange}
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                      className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-400 dark:focus:ring-orange-300 focus:border-transparent transition-colors ${formErrors.venue ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'}`}
                       placeholder="Enter venue"
-              required
-            />
-          </div>
-                  
+                    />
+                    {formErrors.venue && <div className="text-red-600 text-xs mt-1">{formErrors.venue}</div>}
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Date & Time <span className="text-red-500">*</span>
-            </label>
-            <input
-                      type="datetime-local"
-                      name="datetime"
-                      value={addEventForm.datetime}
+                      Date <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={addEventForm.date}
                       onChange={handleAddEventChange}
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
-              required
-            />
-          </div>
-                  
+                      className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-400 dark:focus:ring-orange-300 focus:border-transparent transition-colors ${formErrors.date ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'}`}
+                      placeholder="Select date"
+                    />
+                    {formErrors.date && <div className="text-red-600 text-xs mt-1">{formErrors.date}</div>}
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Image URL
-              </label>
-              <input
-                      type="text"
-                      name="imageUrl"
-                      value={addEventForm.imageUrl}
+                      Time <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      name="time"
+                      value={addEventForm.time}
                       onChange={handleAddEventChange}
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
-                      placeholder="https://example.com/image.jpg"
-              />
-            </div>
-                  
+                      className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-400 dark:focus:ring-orange-300 focus:border-transparent transition-colors ${formErrors.time ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'}`}
+                      placeholder="Select time"
+                    />
+                    {formErrors.time && <div className="text-red-600 text-xs mt-1">{formErrors.time}</div>}
+                  </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Agenda <span className="text-red-500">*</span>
-              </label>
-                    <textarea
-                      name="agenda"
-                      value={addEventForm.agenda}
+                    </label>
+                    <div className={`rounded-lg p-1 bg-white dark:bg-gray-700 dark:text-gray-100 ${formErrors.agenda ? 'border border-red-500' : ''}`}>
+                      <CKEditor
+                        editor={ClassicEditor}
+                        data={addEventForm.agenda}
+                        onChange={handleAgendaChange}
+                        config={{
+                          placeholder: 'Describe the event agenda and details',
+                        }}
+                      />
+                    </div>
+                    {formErrors.agenda && <div className="text-red-600 text-xs mt-1">{formErrors.agenda}</div>}
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Invitation Image
+                    </label>
+                    <input
+                      type="file"
+                      name="invitationImage"
+                      accept="image/*"
                       onChange={handleAddEventChange}
-                      rows="4"
-                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
-                      placeholder="Describe the event agenda and details"
-                required
-              />
-            </div>
-          </div>
-                
+                      className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-400 dark:focus:ring-orange-300 focus:border-transparent transition-colors border-gray-200 dark:border-gray-600"
+                    />
+                  </div>
+                </div>
                 {saveError && (
-                  <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded-lg">
+                  <div className="bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded-lg">
                     {saveError}
                   </div>
                 )}
-                
                 {saveSuccess && (
-                  <div className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-200 px-4 py-3 rounded-lg">
+                  <div className="bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-200 px-4 py-3 rounded-lg">
                     {saveSuccess}
-            </div>
+                  </div>
                 )}
-                
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <div className="flex gap-4 mt-4">
                   <button
                     type="button"
                     className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                    onClick={closeAddEventModal}
+                    onClick={handleHideAddEventForm}
+                    disabled={saveLoading}
                   >
                     Cancel
                   </button>
-            <button
-              type="submit"
+                  <button
+                    type="submit"
                     disabled={saveLoading}
-                    className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors ${
-                      saveLoading 
-                        ? 'bg-gray-400 cursor-not-allowed text-white' 
-                        : 'bg-green-600 text-white hover:bg-green-700'
-                    }`}
+                    className={`flex items-center gap-2 px-8 py-2 rounded-lg font-medium transition-colors text-white ${saveLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
                   >
                     {saveLoading ? (
                       <>
                         <FiRefreshCw className="animate-spin" />
-                        Adding...
+                        Saving...
                       </>
                     ) : (
                       <>
-                        <FiPlus />
-                        Add Event
+                        <span className="text-lg">✔</span>
+                        Save
                       </>
                     )}
-            </button>
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </form>
-      </div>
-    </div>
         )}
 
         {/* View Event Modal */}

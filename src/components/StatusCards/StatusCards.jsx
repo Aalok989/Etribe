@@ -61,12 +61,7 @@ export default function StatusCards() {
     fetchActiveCount();
     fetchInactiveCount();
     fetchExpiredCount();
-    const interval = setInterval(() => {
-      fetchActiveCount();
-      fetchInactiveCount();
-      fetchExpiredCount();
-    }, 10000); // Poll every 10 seconds
-    return () => clearInterval(interval);
+    // Auto-refresh removed
   }, []);
 
 const statusData = [

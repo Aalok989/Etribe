@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { FiDownload, FiFilter, FiEdit2, FiTrash2, FiUser, FiMail, FiPhone, FiMapPin, FiRefreshCw, FiSearch, FiCopy, FiPlus, FiFileText, FiFile, FiX } from "react-icons/fi";
-import api from "../../api/axiosConfig";
+import { useContacts } from "../../context/ContactsContext";
 
 export default function ImportantContacts() {
-  const [contactsData, setContactsData] = useState([]);
+  const { contactsData, loading, error, editContact: editContactAPI, deleteContact: deleteContactAPI, fetchContacts } = useContacts();
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [editContact, setEditContact] = useState(null);
   const [deleteContact, setDeleteContact] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState("");
@@ -19,82 +17,7 @@ export default function ImportantContacts() {
     email: "",
     address: ""
   });
-
-  useEffect(() => {
-    const fetchContacts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Fetch real data from contacts API
-        const token = localStorage.getItem('token');
-        const uid = localStorage.getItem('uid');
-        
-        console.log('Component: Fetching contacts with token:', token, 'uid:', uid);
-        
-        const response = await api.get('/contact', {
-          headers: {
-            'Client-Service': 'COHAPPRT',
-            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-            'uid': uid,
-            'token': token,
-            'rurl': 'login.etribes.in',
-            'Content-Type': 'application/json',
-          }
-        });
-
-        console.log('Component: API Response:', response.data);
-
-        let contacts = [];
-        // Handle the nested structure: response.data.data.contact
-        if (response.data?.data?.contact && Array.isArray(response.data.data.contact)) {
-          contacts = response.data.data.contact;
-        } else if (Array.isArray(response.data?.data)) {
-          contacts = response.data.data;
-        } else if (Array.isArray(response.data)) {
-          contacts = response.data;
-        } else if (response.data?.data && typeof response.data.data === 'object') {
-          contacts = Object.values(response.data.data);
-        } else if (response.data?.contacts && Array.isArray(response.data.contacts)) {
-          contacts = response.data.contacts;
-        } else if (response.data?.contact && Array.isArray(response.data.contact)) {
-          contacts = response.data.contact;
-        } else {
-          contacts = [];
-        }
-
-        console.log('Component: Extracted contacts:', contacts);
-
-        // Map backend contacts to frontend format
-        const mappedContacts = contacts.map((contact, index) => {
-          console.log('Component: Processing contact:', contact);
-          return {
-            id: contact.id || contact.contact_id || contact.contactId || index + 1,
-            dept: contact.department || contact.dept || contact.role || contact.contact_department || 'General',
-            name: contact.name || contact.person_name || contact.contact_name || contact.contactName || `Contact ${index + 1}`,
-            contact: contact.contact || contact.phone || contact.phone_number || contact.mobile || contact.contact_number || contact.contact_no || '',
-            email: contact.email || contact.email_address || contact.contact_email || contact.email_id || '',
-            address: contact.address || contact.location || contact.contact_address || contact.address_line || '',
-          };
-        });
-
-        console.log('Component: Mapped contacts:', mappedContacts);
-        setContactsData(mappedContacts);
-        
-      } catch (err) {
-        console.error('Component: Fetch contacts error:', err);
-        console.error('Component: Error details:', err.response?.data);
-        setError('Failed to fetch contacts: ' + (err.response?.data?.message || err.message));
-        setContactsData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchContacts();
-    const interval = setInterval(fetchContacts, 60000); // Poll every minute
-    return () => clearInterval(interval);
-  }, []);
+  const [formError, setFormError] = useState(null);
 
   const departments = ["All", ...Array.from(new Set(contactsData.map(c => c.dept)))];
   
@@ -120,36 +43,27 @@ export default function ImportantContacts() {
     setEditForm({ ...editForm, [e.target.name]: e.target.value });
   };
 
-  const handleEditSave = () => {
-    // Update the contact in the local state
-    setContactsData(prev => prev.map(c => c.id === editForm.id ? editForm : c));
-    setEditContact(null);
-  };
-
-  const handleDelete = () => {
-    if (deleteConfirm === "DELETE") {
-      // Remove the contact from the local state
-      setContactsData(prev => prev.filter(c => c.id !== deleteContact.id));
-      setDeleteContact(null);
-      setDeleteConfirm("");
+  const handleEditSave = async () => {
+    setFormError(null);
+    try {
+      await editContactAPI(editForm);
+      setEditContact(null);
+    } catch (err) {
+      setFormError(err.toString());
     }
   };
 
-  // Add contact handlers
-  const handleAddContactChange = (e) => {
-    setAddContactForm({ ...addContactForm, [e.target.name]: e.target.value });
-  };
-
-  const handleAddContactSubmit = (e) => {
-    e.preventDefault();
-    // Add the contact to the local state
-    const newContact = {
-      id: Math.max(...contactsData.map(c => c.id)) + 1,
-      ...addContactForm
-    };
-    setContactsData(prev => [...prev, newContact]);
-    setShowAddContactModal(false);
-    setAddContactForm({ dept: "", name: "", contact: "", email: "", address: "" });
+  const handleDelete = async () => {
+    if (deleteConfirm.trim().toLowerCase() === "delete") {
+      setFormError(null);
+      try {
+        await deleteContactAPI(deleteContact.id);
+        setDeleteContact(null);
+        setDeleteConfirm("");
+      } catch (err) {
+        setFormError(err.toString());
+      }
+    }
   };
 
   // Export handlers
@@ -184,7 +98,7 @@ export default function ImportantContacts() {
   };
 
   const handleRefresh = () => {
-    window.location.reload();
+    fetchContacts();
   };
 
   if (loading) {
@@ -207,7 +121,7 @@ export default function ImportantContacts() {
     <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
       <div className="rounded-t-2xl inset-0 bg-gradient-to-r from-indigo-300 via-blue-200 to-blue-300 dark:from-indigo-900 dark:via-blue-900 dark:to-gray-900 px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="flex items-center gap-4">
-        <h2 className="text-xl font-bold text-white tracking-wide">Important Contacts</h2>
+        <h2 className="text-xl font-bold text-gray-800 dark:text-white tracking-wide">Important Contacts</h2>
           <div className="flex items-center gap-2 text-sm text-white">
             <FiUser className="text-white" />
             <span>Total: {contactsData.length}</span>
@@ -317,6 +231,172 @@ export default function ImportantContacts() {
           </table>
         </div>
       </div>
+       {editContact && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 relative">
+            <button
+              className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+              onClick={() => setEditContact(null)}
+              title="Close"
+            >
+              <FiX size={24} />
+            </button>
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-indigo-700 flex items-center gap-2">
+                <FiEdit2 className="text-indigo-600" />
+                Edit Contact
+              </h2>
+              <p className="text-gray-600 text-sm mt-1">Update contact information</p>
+            </div>
+            {formError && <p className="text-red-500 text-sm bg-red-100 p-2 rounded-lg">{formError}</p>}
+            <form className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Department <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="dept"
+                  value={editForm.dept}
+                  onChange={handleEditChange}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Person Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={editForm.name}
+                  onChange={handleEditChange}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Contact <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="contact"
+                  value={editForm.contact}
+                  onChange={handleEditChange}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email ID <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={editForm.email}
+                  onChange={handleEditChange}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  name="address"
+                  value={editForm.address}
+                  onChange={handleEditChange}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors"
+                  onClick={() => setEditContact(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 px-6 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors"
+                  onClick={handleEditSave}
+                >
+                  <FiEdit2 />
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {deleteContact && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 relative">
+            <button
+              className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+              onClick={() => setDeleteContact(null)}
+              title="Close"
+            >
+              <FiX size={24} />
+            </button>
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-red-600 flex items-center gap-2">
+                <FiTrash2 className="text-red-600" />
+                Delete Contact
+              </h2>
+              <p className="text-gray-600 text-sm mt-1">This action cannot be undone</p>
+            </div>
+            {formError && <p className="text-red-500 text-sm bg-red-100 p-2 rounded-lg">{formError}</p>}
+            <div className="space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-sm text-red-700">
+                  Type <span className="font-mono bg-red-100 px-2 py-1 rounded">delete</span> to confirm deletion of <span className="font-semibold">{deleteContact.name}</span>.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirmation
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-transparent transition-colors"
+                  value={deleteConfirm}
+                  onChange={e => setDeleteConfirm(e.target.value)}
+                  placeholder="Type 'delete' to confirm"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <button
+                  type="button"
+                  className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors"
+                  onClick={() => setDeleteContact(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={`flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors ${
+                    deleteConfirm.trim().toLowerCase() === 'delete'
+                      ? 'bg-red-600 text-white hover:bg-red-700'
+                      : 'bg-gray-400 text-white cursor-not-allowed'
+                  }`}
+                  onClick={handleDelete}
+                  disabled={deleteConfirm.trim().toLowerCase() !== 'delete'}
+                >
+                  <FiTrash2 />
+                  Delete Contact
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

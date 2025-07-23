@@ -146,8 +146,7 @@ export default function AnalyticsGraph() {
 
   useEffect(() => {
     fetchAnalytics(true); // Initial load with spinner
-    const interval = setInterval(() => fetchAnalytics(false), 300000); // 5 min auto-refresh, no spinner
-    return () => clearInterval(interval);
+    // Auto-refresh removed
   }, []);
 
   const handleRefresh = () => {
@@ -329,7 +328,7 @@ export default function AnalyticsGraph() {
           <div className="p-2 bg-white/20 dark:bg-gray-800/40 rounded-lg backdrop-blur-sm">
             <FiTrendingUp className="w-6 h-6 text-white dark:text-indigo-200" />
           </div>
-          <h2 className="text-xl font-bold text-white dark:text-indigo-100 tracking-wide">Member Analytics</h2>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-indigo-100 tracking-wide">Member Analytics</h2>
         </div>
       </div>
 
