@@ -531,14 +531,6 @@ export default function UserRoles() {
                       >
                           <FiEdit2 size={16} />
                         </button>
-                        <button
-                          className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition-colors border border-red-200 dark:border-red-700 hover:border-red-300"
-                          onClick={() => handleDeleteRole(idx)}
-                          title="Delete Role"
-                          disabled={submitting}
-                        >
-                          <FiTrash2 size={16} />
-                      </button>
                       </div>
                     </td>
                   </tr>

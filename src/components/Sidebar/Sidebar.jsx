@@ -1,8 +1,19 @@
-import React, { useState } from "react";
-import { FiGrid, FiUsers, FiUserCheck, FiCalendar, FiBookOpen, FiSettings, FiLogOut, FiMenu, FiUser, FiChevronDown } from "react-icons/fi";
+import React, { useState, useEffect } from "react";
+import {
+  FiGrid,
+  FiUsers,
+  FiUserCheck,
+  FiCalendar,
+  FiBookOpen,
+  FiSettings,
+  FiLogOut,
+  FiMenu,
+  FiChevronDown,
+} from "react-icons/fi";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import companyLogo from "../../assets/company-logo/parent.jpg";
+import api from "../../api/axiosConfig";
 
+// Menu structure
 const menuItems = [
   {
     label: "Dashboard",
@@ -13,8 +24,8 @@ const menuItems = [
   {
     label: "Membership Management",
     icon: <FiUsers size={20} />,
-    path: "#", // Changed from a path to a toggle-only indicator
-    basePath: "/membership-management", // Used for checking active state of sub-items
+    path: "#",
+    basePath: "/membership-management",
     dropdown: true,
     subItems: [
       { label: "Active Members", path: "/membership-management/active" },
@@ -74,73 +85,129 @@ export default function Sidebar({ className = "", collapsed, setCollapsed }) {
   const [openDropdown, setOpenDropdown] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
+  const [signatureUrl, setSignatureUrl] = useState("");
 
-  // Open the dropdown if a sub-item is active on page load
-  React.useEffect(() => {
-    const activeItem = menuItems.find(item => item.subItems?.some(sub => sub.path === location.pathname));
+  // Fetch logo URL
+  useEffect(() => {
+    const fetchSignature = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const uid = localStorage.getItem("uid");
+        if (!token) return;
+        const response = await api.post(
+          "/groupSettings",
+          {},
+          {
+            headers: {
+              "Client-Service": "COHAPPRT",
+              "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
+              uid,
+              token,
+              rurl: "login.etribes.in",
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const backendData = response.data?.data || response.data || {};
+        if (backendData.signature) {
+          setSignatureUrl(
+            backendData.signature.startsWith("http")
+              ? backendData.signature
+              : `https://api.etribes.in/${backendData.signature}`
+          );
+        }
+      } catch {
+        setSignatureUrl("");
+      }
+    };
+    fetchSignature();
+  }, []);
+
+  // Open the relevant dropdown if inside a nested path
+  useEffect(() => {
+    const activeItem = menuItems.find((item) =>
+      item.subItems?.some((sub) => sub.path === location.pathname)
+    );
     if (activeItem) {
       setOpenDropdown(activeItem.label);
     }
   }, [location.pathname]);
 
   return (
-    <aside className={`bg-blue-50 dark:bg-gray-800 flex flex-col transition-all duration-200 ${collapsed ? 'w-20' : 'w-72'} shadow-lg ${className}`}>
-      {/* Header with logo and collapse button */}
+    <aside
+      className={`bg-blue-50 dark:bg-gray-800 flex flex-col transition-all duration-200 ${
+        collapsed ? "w-20" : "w-72"
+      } shadow-lg ${className}`}
+    >
+      {/* Top bar with logo */}
       <div className="flex items-center gap-3 p-4 border-b border-blue-100 dark:border-gray-700">
-        <div className="flex items-center">
-          <img 
-            src={companyLogo} 
-            alt="Company Logo" 
-            className={`rounded-lg object-cover ${collapsed ? 'w-16 h-6' : 'w-32 h-8'}`}
+        {signatureUrl && (
+          <img
+            src={signatureUrl}
+            alt="Signature Logo"
+            className={`object-contain ${collapsed ? "w-16 h-6" : "w-32 h-8"}`}
           />
-        </div>
+        )}
         <button
-          className="ml-auto text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-400 transition-colors duration-150"
+          className="ml-auto text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-500 transition-colors"
           onClick={() => setCollapsed((prev) => !prev)}
-          aria-label="Toggle sidebar"
         >
           <FiMenu size={20} />
         </button>
       </div>
-      
+
+      {/* Nav Menu */}
       <nav className="flex-1 px-2 pt-4">
         <ul className="space-y-1">
           {menuItems.map((item) => {
-            // Check if any subitem is active for dropdowns
-            const isParentOfActive = item.subItems && item.subItems.some(sub => location.pathname === sub.path);
+            const isParentActive = item.subItems?.some(
+              (sub) => location.pathname === sub.path
+            );
 
-            // This logic is for items that are pure toggles (like Membership Management)
-            if (item.path === "#") {
+            if (item.dropdown) {
               return (
                 <li key={item.label}>
                   <button
-                    onClick={() => setOpenDropdown(openDropdown === item.label ? "" : item.label)}
-                    className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-150 text-left font-medium text-blue-900 dark:text-gray-100 hover:bg-blue-100 dark:hover:bg-gray-700 hover:text-blue-900 dark:hover:text-white whitespace-nowrap ${
-                      isParentOfActive ? 'bg-green-500 text-white dark:bg-green-600' : ''
-                    }`}
+                    onClick={() =>
+                      setOpenDropdown(
+                        openDropdown === item.label ? "" : item.label
+                      )
+                    }
+                    className={`w-full flex items-center gap-3 px-4 py-2 font-medium text-left whitespace-nowrap rounded-lg transition-colors
+                      ${
+                        isParentActive
+                          ? "text-blue-800 dark:text-blue-300"
+                          : "text-gray-500 dark:text-gray-400"
+                      } hover:text-blue-900 dark:hover:text-blue-400`}
                   >
                     <span>{item.icon}</span>
-                    <span className={`${collapsed ? 'hidden' : ''} whitespace-nowrap flex-1`}>{item.label}</span>
-                    {!collapsed && item.dropdown && (
-                      <span className="flex items-center ml-auto">
+                    <span className={`${collapsed ? "hidden" : "flex-1"}`}>
+                      {item.label}
+                    </span>
+                    {!collapsed && (
+                      <span className="ml-auto">
                         <FiChevronDown
-                          className={`transition-transform duration-200 ${openDropdown === item.label ? 'rotate-180' : ''}`}
                           size={20}
+                          className={`transition-transform ${
+                            openDropdown === item.label ? "rotate-180" : ""
+                          }`}
                         />
                       </span>
                     )}
                   </button>
-                  {/* Dropdown sub-menu */}
-                  {item.dropdown && openDropdown === item.label && !collapsed && (
-                    <ul className="ml-8 mt-1 bg-blue-100 dark:bg-gray-700 rounded-lg shadow-inner py-2">
+                  {openDropdown === item.label && !collapsed && (
+                    <ul className="ml-8 mt-1 space-y-1">
                       {item.subItems.map((sub) => (
-                        <li key={sub.label}>
+                        <li key={sub.path}>
                           <NavLink
                             to={sub.path}
                             className={({ isActive }) =>
-                              `block px-4 py-1 text-blue-900 dark:text-gray-100 text-sm rounded hover:bg-blue-200 dark:hover:bg-gray-600 cursor-pointer ${
-                                isActive ? 'font-bold text-indigo-700 dark:text-indigo-300' : ''
-                              }`
+                              `block text-sm px-3 py-1 rounded whitespace-nowrap transition-colors
+                                ${
+                                  isActive
+                                    ? "text-blue-800 dark:text-blue-300"
+                                    : "text-gray-500 dark:text-gray-400"
+                                } hover:text-blue-900 dark:hover:text-blue-400`
                             }
                           >
                             {sub.label}
@@ -153,72 +220,39 @@ export default function Sidebar({ className = "", collapsed, setCollapsed }) {
               );
             }
 
-            // This is for all other linkable menu items
             return (
               <li key={item.label}>
-                <div className="relative">
-                  <NavLink
-                    to={item.path}
-                    className={({ isActive }) =>
-                      `w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-150 text-left font-medium text-blue-900 dark:text-gray-100 hover:bg-blue-100 dark:hover:bg-gray-700 hover:text-blue-900 dark:hover:text-white whitespace-nowrap ${
-                        isActive ? 'bg-green-500 text-white dark:bg-green-600' : ''
-                      }`
-                    }
-                    end={item.path === "/dashboard"}
-                  >
-                    <span>{item.icon}</span>
-                    <span className={`${collapsed ? 'hidden' : ''} whitespace-nowrap`}>{item.label}</span>
-                    {!collapsed && item.dropdown && (
-                      <button
-                        type="button"
-                        className={`ml-auto transition-transform duration-200 ${
-                          openDropdown === item.label ? 'rotate-180' : ''
-                        }`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setOpenDropdown(openDropdown === item.label ? '' : item.label);
-                        }}
-                        tabIndex={-1}
-                      >
-                        <FiChevronDown />
-                      </button>
-                    )}
-                  </NavLink>
-                  {/* Dropdown sub-menu */}
-                  {item.dropdown && openDropdown === item.label && !collapsed && (
-                    <ul className="ml-8 mt-1 bg-blue-100 dark:bg-gray-700 rounded-lg shadow-inner py-2">
-                      {item.subItems.map((sub) => (
-                        <li key={sub.label}>
-                           <NavLink
-                            to={sub.path}
-                            className={({ isActive }) =>
-                              `block px-4 py-1 text-blue-900 dark:text-gray-100 text-sm rounded hover:bg-blue-200 dark:hover:bg-gray-600 cursor-pointer ${
-                                isActive ? 'font-bold text-indigo-700 dark:text-indigo-300' : ''
-                              }`
-                            }
-                          >
-                            {sub.label}
-                          </NavLink>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                <NavLink
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `w-full flex items-center gap-3 px-4 py-2 font-medium rounded-lg transition-colors whitespace-nowrap
+                      ${
+                        isActive
+                          ? "text-blue-800 dark:text-blue-300"
+                          : "text-gray-500 dark:text-gray-400"
+                      } hover:text-blue-900 dark:hover:text-blue-400`
+                  }
+                  end={item.path === "/dashboard"}
+                >
+                  <span>{item.icon}</span>
+                  <span className={`${collapsed ? "hidden" : ""}`}>
+                    {item.label}
+                  </span>
+                </NavLink>
               </li>
             );
           })}
         </ul>
       </nav>
-      
-      {/* Logout button */}
+
+      {/* Logout */}
       <div className="p-4 border-t border-blue-100 dark:border-gray-700">
-        <button 
-          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-150 text-left font-medium text-blue-900 dark:text-gray-100 hover:bg-red-100 dark:hover:bg-gray-700 hover:text-red-600 dark:hover:text-red-400"
-          title="Logout"
+        <button
           onClick={() => {
-            localStorage.removeItem('token');
-            navigate('/login', { replace: true });
+            localStorage.removeItem("token");
+            navigate("/login", { replace: true });
           }}
+          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
         >
           <FiLogOut size={20} />
           {!collapsed && <span className="whitespace-nowrap">Logout</span>}
@@ -226,4 +260,4 @@ export default function Sidebar({ className = "", collapsed, setCollapsed }) {
       </div>
     </aside>
   );
-} 
+}

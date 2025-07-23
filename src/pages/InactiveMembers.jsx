@@ -418,7 +418,7 @@ export default function InactiveMembers() {
               <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
                 <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
                   <th 
-                    className="p-3 text-center font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
+                    className="p-3 text-center font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '80px', width: '80px' }}
                     onClick={() => handleSort('id')}
                   >
@@ -432,7 +432,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '150px', width: '150px' }}
                     onClick={() => handleSort('name')}
                   >
@@ -446,7 +446,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '120px', width: '120px' }}
                     onClick={() => handleSort('phone_num')}
                   >
@@ -460,7 +460,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '180px', width: '180px' }}
                     onClick={() => handleSort('email')}
                   >
@@ -474,7 +474,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '200px', width: '200px' }}
                     onClick={() => handleSort('address')}
                   >
@@ -488,7 +488,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '120px', width: '120px' }}
                     onClick={() => handleSort('ad1')}
                   >
@@ -502,7 +502,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '130px', width: '130px' }}
                     onClick={() => handleSort('ad2')}
                   >
@@ -516,7 +516,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '120px', width: '120px' }}
                     onClick={() => handleSort('ad3')}
                   >
@@ -530,7 +530,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '100px', width: '100px' }}
                     onClick={() => handleSort('ad4')}
                   >
@@ -544,7 +544,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '150px', width: '150px' }}
                     onClick={() => handleSort('company_name')}
                   >
@@ -558,7 +558,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '120px', width: '120px' }}
                     onClick={() => handleSort('ad5')}
                   >
@@ -572,7 +572,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 transition-colors dark:bg-gray-800 dark:text-gray-100"
+                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
                     style={{ minWidth: '140px', width: '140px' }}
                     onClick={() => handleSort('plan')}
                   >
@@ -586,7 +586,7 @@ export default function InactiveMembers() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-center font-semibold whitespace-nowrap dark:bg-gray-800 dark:text-gray-100"
+                    className="p-3 text-center font-semibold whitespace-nowrap"
                     style={{ minWidth: '100px', width: '100px' }}
                   >
                     Actions

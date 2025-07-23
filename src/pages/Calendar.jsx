@@ -468,8 +468,7 @@ export default function Calendar() {
       }
     };
     fetchCounts();
-    interval = setInterval(fetchCounts, 10000);
-    return () => clearInterval(interval);
+    return () => {};
   }, []);
 
   // Fetch events from backend and poll every 10 seconds
@@ -552,8 +551,7 @@ export default function Calendar() {
       }
     };
     fetchEvents();
-    interval = setInterval(fetchEvents, 10000);
-    return () => clearInterval(interval);
+    return () => {};
   }, []);
 
   useEffect(() => {

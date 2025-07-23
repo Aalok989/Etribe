@@ -77,11 +77,7 @@ export default function EventsSection() {
 
     fetchPastEvents();
     fetchTotalEvents();
-    const interval = setInterval(() => {
-      fetchPastEvents();
-      fetchTotalEvents();
-    }, 10000); // Poll every 10 seconds
-    return () => clearInterval(interval);
+    return () => {};
   }, []);
 
 const eventsStats = [

@@ -12,6 +12,7 @@ export default function TopBar() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const notificationsRef = useRef(null);
+  const [groupLogo, setGroupLogo] = useState("");
 
   useEffect(() => {
     if (theme === "dark") {
@@ -104,8 +105,6 @@ export default function TopBar() {
 
   useEffect(() => {
     fetchNotifications();
-    const intervalId = setInterval(fetchNotifications, 15000);
-    return () => clearInterval(intervalId);
   }, []);
 
   useEffect(() => {
@@ -164,6 +163,7 @@ export default function TopBar() {
             name: backendData.name || "Admin",
             email: backendData.email || "admin@company.com"
           });
+          setGroupLogo(backendData.logo ? (backendData.logo.startsWith('http') ? backendData.logo : `https://api.etribes.in/${backendData.logo}`) : "");
         }
       } catch (err) {
         if (isMounted) setError('Failed to fetch profile');
@@ -172,8 +172,7 @@ export default function TopBar() {
       }
     };
     fetchProfile();
-    const interval = setInterval(fetchProfile, 300000); // 5 min auto-refresh
-    return () => { isMounted = false; clearInterval(interval); };
+    return () => { isMounted = false; };
   }, []);
 
   const toggleTheme = () => {
@@ -184,9 +183,7 @@ export default function TopBar() {
 
   return (
     <header className="flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow px-6 py-3 mb-8 rounded-xl">
-      <div className="font-bold text-xl text-gray-800 dark:text-gray-100">
-        Dashboard Overview
-      </div>
+      <div className="font-bold text-xl text-gray-800 dark:text-gray-100">Dashboard Overview</div>
       <div className="flex items-center gap-4">
         <button
           className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
@@ -263,8 +260,12 @@ export default function TopBar() {
         </div>
         <div className="h-8 w-px bg-gray-200 dark:bg-gray-700"></div>
         <div className="flex items-center gap-3">
-          <div className="bg-blue-100 dark:bg-gray-700 rounded-full p-2">
-            <FiUser className="text-blue-500 dark:text-blue-300" size={20} />
+          <div>
+            {groupLogo ? (
+              <img src={groupLogo} alt="Group Logo" className="h-8 w-8 rounded-full object-cover border border-gray-300 dark:border-gray-700" />
+            ) : (
+              <FiUser className="text-blue-500 dark:text-blue-300" size={20} />
+            )}
           </div>
           <div className="hidden sm:block text-right">
             {loading ? (

@@ -43,8 +43,7 @@ export default function PastEventCard() {
     };
 
     fetchPastEvents();
-    const interval = setInterval(fetchPastEvents, 10000); // Poll every 10 seconds
-    return () => clearInterval(interval);
+    return () => {};
   }, []);
 
   return (

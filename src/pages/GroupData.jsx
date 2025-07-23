@@ -5,20 +5,7 @@ import defaultSignature from "../assets/company-logo/parent.jpg";
 import { FiEdit2, FiX, FiUpload, FiCheckCircle } from "react-icons/fi";
 import api from "../api/axiosConfig";
 
-const initialData = {
-  name: "Admin Name",
-  email: "admin@company.com",
-  contact: "9876543210",
-  address: "123 Main Street",
-  city: "Tech City",
-  state: "Innovation State",
-  pincode: "123456",
-  country: "India",
-  signatureName: "Admin Name",
-  signatureDesignation: "Administrator",
-  logo: etribeLogo,
-  signature: defaultSignature,
-};
+const initialData = {};
 
 export default function GroupData() {
   const [data, setData] = useState(initialData);
@@ -58,18 +45,18 @@ export default function GroupData() {
         });
         const backendData = response.data?.data || response.data || {};
         const mappedData = {
-          name: backendData.name || initialData.name,
-          email: backendData.email || initialData.email,
-          contact: backendData.contact || initialData.contact,
-          address: backendData.address || initialData.address,
-          city: backendData.city || initialData.city,
-          state: backendData.state || initialData.state,
-          pincode: backendData.pincode || initialData.pincode,
-          country: backendData.country || initialData.country,
-          signatureName: backendData.signatory_name || initialData.signatureName,
-          signatureDesignation: backendData.signatory_designation || initialData.signatureDesignation,
-          logo: backendData.logo ? `https://api.etribes.in/${backendData.logo}` : initialData.logo,
-          signature: backendData.signature ? `https://api.etribes.in/${backendData.signature}` : initialData.signature,
+          name: backendData.name || '',
+          email: backendData.email || '',
+          contact: backendData.contact || '',
+          address: backendData.address || '',
+          city: backendData.city || '',
+          state: backendData.state || '',
+          pincode: backendData.pincode || '',
+          country: backendData.country || '',
+          signatureName: backendData.signatory_name || '',
+          signatureDesignation: backendData.signatory_designation || '',
+          logo: backendData.logo ? `https://api.etribes.in/${backendData.logo}` : '',
+          signature: backendData.signature ? `https://api.etribes.in/${backendData.signature}` : '',
         };
         if (isMounted) {
           setData(mappedData);
@@ -84,8 +71,7 @@ export default function GroupData() {
       }
     };
     fetchGroupData(true); // Initial load with spinner
-    const interval = setInterval(() => fetchGroupData(false), 300000); // 5 min auto-refresh, no spinner
-    return () => { isMounted = false; clearInterval(interval); };
+    return () => { isMounted = false; };
   }, []);
 
   // Manual refresh button handler
@@ -113,27 +99,109 @@ export default function GroupData() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result);
-        setForm((prev) => ({ ...prev, logo: reader.result }));
-      };
-      reader.readAsDataURL(file);
+  // Add uploadLogo function
+  const uploadLogo = async (file) => {
+    setSaveLoading(true);
+    setSaveError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid');
+      const formData = new FormData();
+      formData.append('id', uid || '1');
+      formData.append('file', file);
+      const response = await api.post('/GroupSettings/upload_logo', formData, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'login.etribes.in',
+          'Content-Type': 'multipart/form-data',
+        },
+        withCredentials: true,
+      });
+      // The backend should return the new logo path
+      const newLogo = response.data?.data?.logo || response.data?.logo || '';
+      if (newLogo) {
+        const logoUrl = newLogo.startsWith('http') ? newLogo : `https://api.etribes.in/${newLogo}`;
+        setLogoPreview(logoUrl);
+        setForm((prev) => ({ ...prev, logo: logoUrl }));
+        setData((prev) => ({ ...prev, logo: logoUrl }));
+      }
+      setSaveSuccess('Logo updated successfully!');
+      setTimeout(() => setSaveSuccess(null), 2000);
+    } catch (err) {
+      setSaveError(err.response?.data?.message || 'Failed to upload logo');
+    } finally {
+      setSaveLoading(false);
     }
   };
 
+  // Update handleLogoChange to upload the logo in real time
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Show preview immediately
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+      // Upload to backend
+      uploadLogo(file);
+    }
+  };
+
+  // Add uploadSignature function
+  const uploadSignature = async (file) => {
+    setSaveLoading(true);
+    setSaveError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid');
+      const formData = new FormData();
+      formData.append('id', uid || '1');
+      formData.append('file', file);
+      const response = await api.post('/groupSettings/upload_signature', formData, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'login.etribes.in',
+          'Content-Type': 'multipart/form-data',
+        },
+        withCredentials: true,
+      });
+      // The backend should return the new signature path
+      const newSignature = response.data?.data?.signature || response.data?.signature || '';
+      if (newSignature) {
+        const signatureUrl = newSignature.startsWith('http') ? newSignature : `https://api.etribes.in/${newSignature}`;
+        setSignaturePreview(signatureUrl);
+        setForm((prev) => ({ ...prev, signature: signatureUrl }));
+        setData((prev) => ({ ...prev, signature: signatureUrl }));
+      }
+      setSaveSuccess('Signature updated successfully!');
+      setTimeout(() => setSaveSuccess(null), 2000);
+    } catch (err) {
+      setSaveError(err.response?.data?.message || 'Failed to upload signature');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // Update handleSignatureChange to upload the signature in real time
   const handleSignatureChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Show preview immediately
       const reader = new FileReader();
       reader.onloadend = () => {
         setSignaturePreview(reader.result);
-        setForm((prev) => ({ ...prev, signature: reader.result }));
       };
       reader.readAsDataURL(file);
+      // Upload to backend
+      uploadSignature(file);
     }
   };
 

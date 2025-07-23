@@ -43,8 +43,7 @@ export default function TotalEventCard() {
     };
 
     fetchTotalEvents();
-    const interval = setInterval(fetchTotalEvents, 10000); // Poll every 10 seconds
-    return () => clearInterval(interval);
+    return () => {};
   }, []);
 
   return (
