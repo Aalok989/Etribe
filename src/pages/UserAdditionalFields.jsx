@@ -158,7 +158,6 @@ export default function UserAdditionalFields() {
 
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid');
-      
       if (!token || !uid) {
         throw new Error('Authentication required. Please log in.');
       }
@@ -177,15 +176,14 @@ export default function UserAdditionalFields() {
         ad10: fieldsData.additionalField10,
       };
 
-      console.log('Saving user additional fields:', payload);
-      
-      const response = await api.post('/groupSettings/update_user_additional_fields', payload, {
+      const response = await api.post('/groupSettings/user_additional_fields_setting', payload, {
         headers: {
           'Client-Service': 'COHAPPRT',
           'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
           'uid': uid,
           'token': token,
           'rurl': 'login.etribes.in',
+          'Content-Type': 'application/json',
         }
       });
 

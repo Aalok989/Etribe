@@ -27,21 +27,18 @@ export default function UserRoles() {
     try {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid') || '1';
-      
       if (!token) {
         throw new Error('Please log in to view user roles');
       }
-
       const response = await api.post('/userRole', {}, {
         headers: {
-          'token': token,
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
           'uid': uid,
+          'token': token,
+          'Content-Type': 'application/json',
         }
       });
-
-      console.log('User Roles Response:', response.data);
-      
-      // Handle different response formats
       let rolesData = [];
       if (Array.isArray(response.data)) {
         rolesData = response.data;
@@ -50,22 +47,17 @@ export default function UserRoles() {
       } else if (response.data?.roles && Array.isArray(response.data.roles)) {
         rolesData = response.data.roles;
       } else {
-        // If no roles found, return empty array
         rolesData = [];
       }
-
-      // Transform data to match expected format
       const transformedRoles = rolesData.map((role, index) => ({
         id: role.id || role.role_id || index,
         role: role.name || role.role_name || role.role || `Role ${index + 1}`
       }));
-
       setRoles(transformedRoles);
     } catch (err) {
       console.error('Fetch roles error:', err);
       const errorMessage = err.message || 'Failed to fetch user roles';
       setError(errorMessage);
-      
       if (errorMessage.toLowerCase().includes('token') || errorMessage.toLowerCase().includes('unauthorized') || errorMessage.toLowerCase().includes('log in')) {
         localStorage.removeItem('token');
         localStorage.removeItem('uid');
@@ -82,28 +74,22 @@ export default function UserRoles() {
     try {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid') || '1';
-      
       if (!token) {
         throw new Error('Please log in to add user roles');
       }
-
       const payload = {
-        role_name: roleData.role
+        name: roleData.role
       };
-
-      console.log('Adding new user role:', payload);
-      
-      const response = await api.post('/userRole/add', payload, {
+      const response = await api.post('/userRole/add_role', payload, {
         headers: {
-          'token': token,
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
           'uid': uid,
+          'token': token,
+          'Content-Type': 'application/json',
         }
       });
-
-      console.log('Add role response:', response.data);
-      
-      if (response.data?.status === 'success' || response.data?.message?.includes('success')) {
-        // Refresh the roles list
+      if (response.data?.status === 'success' || response.data?.message?.toLowerCase().includes('success')) {
         await fetchRoles();
         setSuccess("Role added successfully!");
         setTimeout(() => setSuccess(null), 3000);
@@ -132,15 +118,19 @@ export default function UserRoles() {
 
       const payload = {
         role_id: roleId,
-        role_name: roleData.role
+        name: roleData.role
       };
 
       console.log('Updating user role:', payload);
       
-      const response = await api.post('/userRole/update', payload, {
+      const response = await api.post('/userRole/update_role/', payload, {
         headers: {
-          'token': token,
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
           'uid': uid,
+          'token': token,
+          'rurl': 'login.etribes.in',
+          'Content-Type': 'application/json',
         }
       });
 
@@ -400,7 +390,7 @@ export default function UserRoles() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter:</label>
+                <label className="text-sm font-medium text-gray-700">Filter:</label>
                 <div className="relative">
             <input
               type="text"
@@ -415,7 +405,7 @@ export default function UserRoles() {
               </div>
               
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Show:</label>
+                <label className="text-sm font-medium text-gray-700">Show:</label>
                 <select
                   className="px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
                   value={entriesPerPage}
@@ -471,9 +461,9 @@ export default function UserRoles() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
-                <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
+                <tr className="border-b-2 border-indigo-200">
                   <th 
-                    className="p-3 text-center font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
+                    className="p-3 text-center font-semibold cursor-pointer hover:bg-indigo-200 transition-colors border-r border-indigo-200 whitespace-nowrap"
                     onClick={() => handleSort("id")}
                     style={{ minWidth: '80px', width: '80px' }}
                   >
@@ -486,7 +476,7 @@ export default function UserRoles() {
                     </div>
                   </th>
                   <th 
-                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
+                    className="p-3 text-left font-semibold cursor-pointer hover:bg-indigo-200 transition-colors border-r border-indigo-200 whitespace-nowrap"
                     onClick={() => handleSort("role")}
                     style={{ minWidth: '300px', width: '300px' }}
                   >
@@ -520,7 +510,7 @@ export default function UserRoles() {
                       idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'
                     } hover:bg-indigo-50 dark:hover:bg-gray-700 hover:shadow-sm`}
                   >
-                    <td className="p-3 text-center font-semibold text-indigo-700 dark:text-indigo-300 border-r border-gray-200 dark:border-gray-700">
+                    <td className="p-3 text-center font-semibold text-indigo-700 border-r border-gray-200 dark:border-gray-700">
                       {startIdx + idx + 1}
                     </td>
                     <td className="p-3 font-medium text-gray-900 dark:text-gray-100 border-r border-gray-200 dark:border-gray-700">
@@ -528,13 +518,13 @@ export default function UserRoles() {
                         <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xs">
                           {role.role.charAt(0).toUpperCase()}
                         </div>
-                        <span className="dark:text-gray-100">{role.role}</span>
+                        <span>{role.role}</span>
                       </div>
                     </td>
                     <td className="p-3">
                       <div className="flex items-center justify-center gap-2">
                       <button
-                          className="p-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-100 dark:text-indigo-300 dark:hover:bg-gray-700 rounded-lg transition-colors border border-indigo-200 hover:border-indigo-300"
+                          className="p-2 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-100 rounded-lg transition-colors border border-indigo-200 dark:border-indigo-700 hover:border-indigo-300"
                         onClick={() => openEditModal(idx)}
                         title="Edit Role"
                           disabled={submitting}
@@ -542,7 +532,7 @@ export default function UserRoles() {
                           <FiEdit2 size={16} />
                         </button>
                         <button
-                          className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 dark:text-red-300 dark:hover:bg-gray-700 rounded-lg transition-colors border border-red-200 hover:border-red-300"
+                          className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition-colors border border-red-200 dark:border-red-700 hover:border-red-300"
                           onClick={() => handleDeleteRole(idx)}
                           title="Delete Role"
                           disabled={submitting}
@@ -556,9 +546,23 @@ export default function UserRoles() {
               </tbody>
             </table>
           </div>
-          {/* Pagination Controls - moved outside scrollable area */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 py-4 border-t border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+
+          {/* Empty State */}
+          {paginated.length === 0 && !loading && (
+            <div className="text-center py-12 text-gray-500">
+              <FiUser className="mx-auto text-4xl text-gray-300 mb-4" />
+              <p className="text-lg font-medium">
+                {search ? 'No roles found matching your search.' : 'No user roles found.'}
+              </p>
+              <p className="text-sm text-gray-400 mt-2">
+                {search ? 'Try adjusting your search terms.' : 'Add your first role to get started.'}
+              </p>
+            </div>
+          )}
+
+          {/* Enhanced Pagination */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 py-4 border-t border-gray-100">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
               <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, totalEntries)} of {totalEntries} entries</span>
               </div>
             <div className="flex items-center gap-4">
@@ -566,18 +570,18 @@ export default function UserRoles() {
                 <button
                   onClick={handlePrev}
                   disabled={currentPage === 1}
-                  className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`px-3 py-1 rounded-lg text-indigo-600 hover:bg-indigo-100 transition dark:text-indigo-300 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                   title="Previous"
                 >
                   &lt;
                 </button>
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <span className="text-sm font-semibold text-gray-700 px-3 py-1 bg-gray-100 rounded-lg">
                   Page {currentPage} of {totalPages}
                 </span>
                 <button
                   onClick={handleNext}
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`px-3 py-1 rounded-lg text-indigo-600 hover:bg-indigo-100 transition dark:text-indigo-300 ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
                   title="Next"
                 >
                   &gt;
@@ -604,19 +608,19 @@ export default function UserRoles() {
                   <FiEdit2 size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Update Role</h2>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm">Modify role information</p>
+                  <h2 className="text-xl font-bold text-gray-800">Update Role</h2>
+                  <p className="text-gray-600 text-sm">Modify role information</p>
                 </div>
               </div>
               <form className="flex flex-col gap-6" onSubmit={handleEditSubmit}>
                 <div className="flex flex-col gap-2">
-                  <label className="font-medium text-gray-700 dark:text-gray-300">Role Name</label>
+                  <label className="font-medium text-gray-700">Role Name</label>
                   <input
                     type="text"
                     name="role"
                     value={editForm.role}
                     onChange={handleEditChange}
-                    className="px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Enter role name"
                     required
                     disabled={submitting}
@@ -661,19 +665,19 @@ export default function UserRoles() {
                   <FiPlus size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Add New Role</h2>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm">Create a new user role</p>
+                  <h2 className="text-xl font-bold text-gray-800">Add New Role</h2>
+                  <p className="text-gray-600 text-sm">Create a new user role</p>
                 </div>
               </div>
               <form className="flex flex-col gap-6" onSubmit={handleAddSubmit}>
                 <div className="flex flex-col gap-2">
-                  <label className="font-medium text-gray-700 dark:text-gray-300">Role Name</label>
+                  <label className="font-medium text-gray-700">Role Name</label>
                   <input
                     type="text"
                     name="role"
                     value={addForm.role}
                     onChange={handleAddChange}
-                    className="px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Enter role name"
                     required
                     disabled={submitting}

@@ -164,9 +164,9 @@ export default function MessageSettings() {
         throw new Error('Authentication required. Please log in.');
       }
 
-      const response = await api.post('/groupSettings/update_message_setting', {
+      const response = await api.post('/GroupSettings/message_setting', {
         message_url: settingsData.messageUrl,
-        mobile_no_key: settingsData.mobileNoKey,
+        mobile_key: settingsData.mobileNoKey,
         message_key: settingsData.messageKey,
       }, {
         headers: {
@@ -175,6 +175,7 @@ export default function MessageSettings() {
           'uid': uid,
           'token': token,
           'rurl': 'login.etribes.in',
+          'Content-Type': 'application/json',
         }
       });
 

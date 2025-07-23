@@ -237,7 +237,7 @@ export default function TopBar() {
                         className="ml-2 px-2 py-1 text-xs rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 font-medium hover:bg-emerald-200 dark:hover:bg-emerald-800 transition"
                       >
                         Mark as read
-                      </button>
+        </button>
                     </div>
                   ))
                 ) : (

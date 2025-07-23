@@ -6,5 +6,5 @@ body {
   background-color: #f9fafb; /* Tailwind gray-50 */
 }
 .dark body {
-  background-color: #111827; /* Tailwind gray-900 */
+  background-color: #1a202c; /* Tailwind gray-900 */
 }

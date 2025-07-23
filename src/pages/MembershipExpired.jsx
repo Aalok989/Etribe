@@ -6,16 +6,6 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const planOptions = [
-  "Basic",
-  "Standard",
-  "Premium",
-  "Platinum",
-  "Diamond",
-  "Gold",
-  "Voice over plan",
-];
-
 // Fetch plans for dropdown
 function useMembershipPlans() {
   const [plans, setPlans] = React.useState([]);
@@ -41,6 +31,46 @@ function useMembershipPlans() {
   }, []);
   return plans;
 }
+
+// Get plan ID from plan name
+const getPlanId = (planName) => {
+  const planMapping = {
+    "Basic": "1",
+    "Standard": "2",
+    "Premium": "3",
+    "Platinum": "4",
+    "Diamond": "5",
+    "Gold": "6",
+    "Voice over plan": "7",
+  };
+  return planMapping[planName] || "1";
+};
+
+// Activate membership via API
+const activateMembership = async ({ company_detail_id, membership_plan_id, valid_upto }) => {
+  const token = localStorage.getItem('token');
+  const uid = localStorage.getItem('uid');
+  if (!token || !uid) {
+    throw new Error('Authentication required');
+  }
+  const payload = {
+    company_detail_id: String(company_detail_id),
+    membership_plan_id: String(membership_plan_id),
+    valid_upto: valid_upto,
+  };
+  const response = await api.post('/UserDetail/activate_membership', payload, {
+    headers: {
+      'Client-Service': 'COHAPPRT',
+      'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+      'uid': uid,
+      'token': token,
+      'rurl': 'login.etribes.in',
+      'Content-Type': 'application/json',
+    },
+    timeout: 15000,
+  });
+  return response.data;
+};
 
 export default function MembershipExpired() {
   const plans = useMembershipPlans();
@@ -151,55 +181,46 @@ export default function MembershipExpired() {
 
   const handleUpdate = async () => {
     if (!modifyMember) return;
-    if (!form.plan || !form.validUpto) {
-      setUpdateError('Please select a plan and enter a valid date.');
+    // Validation
+    if (!form.plan) {
+      setUpdateError('Please select a membership plan.');
+      return;
+    }
+    if (!form.validUpto) {
+      setUpdateError('Please select a valid until date.');
+      return;
+    }
+    // Check if date is in future
+    const selectedDate = new Date(form.validUpto);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (selectedDate <= today) {
+      setUpdateError('Please select a future date for membership validity.');
       return;
     }
     setUpdateLoading(true);
     setUpdateError(null);
     setUpdateSuccess(null);
     try {
-      const token = localStorage.getItem('token');
-      const uid = localStorage.getItem('uid');
-      // Find selected plan details
-      const selectedPlan = plans.find(p => String(p.id || p.plan_id) === String(form.plan));
-      if (!selectedPlan) throw new Error('Please select a valid plan.');
-      const payload = {
-        membership_plan_id: selectedPlan.id || selectedPlan.plan_id,
-        plan_name: selectedPlan.plan_name || selectedPlan.name,
-        plan_description: selectedPlan.plan_description || selectedPlan.description,
-        plan_price: selectedPlan.plan_price || selectedPlan.price,
+      await activateMembership({
+        company_detail_id: modifyMember.company_detail_id || modifyMember.id,
+        membership_plan_id: form.plan, // Use the selected plan's ID
         valid_upto: form.validUpto,
-        type: 'add',
-        company_detail_id: modifyMember.id
-      };
-      await api.post('/groupSettings/update_mem_plan', payload, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        }
       });
-      setUpdateSuccess('Membership updated successfully!');
+      setUpdateSuccess(`Member ${modifyMember.name} has been reactivated successfully!`);
+      setMembers(prevMembers => prevMembers.filter(member => member.id !== modifyMember.id));
+      setTimeout(() => {
     closeModify();
-      // Refresh members
-      const response = await api.post('/userDetail/membership_expired', { uid }, {
-        headers: {
-          'token': token,
-          'uid': uid,
-        }
-      });
-      setMembers(Array.isArray(response.data) ? response.data : response.data.data || []);
+      }, 2000);
     } catch (err) {
-      setUpdateError(
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        'Failed to update membership.'
-      );
+      if (err.response) {
+        const errorMessage = err.response.data?.message || err.response.data?.error || 'Failed to activate membership';
+        setUpdateError(errorMessage);
+      } else if (err.request) {
+        setUpdateError('Network error. Please check your connection.');
+      } else {
+        setUpdateError('Failed to activate membership. Please try again.');
+      }
     } finally {
       setUpdateLoading(false);
     }
@@ -665,7 +686,7 @@ export default function MembershipExpired() {
         {/* Enhanced Modify Membership Modal */}
         {modifyMember && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-lg relative">
+            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg relative">
               <button
                 className="absolute top-4 right-4 text-gray-400 hover:text-rose-500 transition-colors"
                 onClick={closeModify}
@@ -673,20 +694,33 @@ export default function MembershipExpired() {
               >
                 <FiX size={24} />
               </button>
-              
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xl">
-                  {modifyMember.name.charAt(0).toUpperCase()}
+                <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-600 rounded-full flex items-center justify-center text-white font-semibold text-xl">
+                  {modifyMember.name ? modifyMember.name.charAt(0).toUpperCase() : 'N'}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Renew Membership</h2>
-                  <p className="text-gray-600 dark:text-gray-300">Update membership for {modifyMember.name}</p>
+                  <h2 className="text-2xl font-bold text-gray-800">Renew Membership</h2>
+                  <p className="text-gray-600">Update membership for {modifyMember.name || 'Unknown Member'}</p>
                 </div>
               </div>
-              
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={e => e.preventDefault()}>
                 <div>
-                  <label className="block text-gray-700 dark:text-gray-200 font-semibold mb-2">Valid Until</label>
+                  <label className="block text-gray-700 font-semibold mb-2">Membership Plan *</label>
+                  <select
+                    name="plan"
+                    value={form.plan}
+                    onChange={handleFormChange}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                    required
+                  >
+                    <option value="">Select Plan</option>
+                    {plans.map(plan => (
+                      <option key={plan.id} value={plan.id}>{plan.plan_name || plan.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gray-700 font-semibold mb-2">Valid Until *</label>
                   <div className="relative">
                     <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     <input
@@ -694,28 +728,12 @@ export default function MembershipExpired() {
                       name="validUpto"
                       value={form.validUpto}
                       onChange={handleDateChange}
+                      min={new Date().toISOString().split('T')[0]}
                       className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                      placeholder="Enter Validity"
+                      required
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-gray-700 dark:text-gray-200 font-semibold mb-2">Membership Plan</label>
-                  <select
-                    name="plan"
-                    value={form.plan}
-                    onChange={handleFormChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                  >
-                    <option value="">Select Plan</option>
-                    {plans.map(plan => (
-                      <option key={plan.id || plan.plan_id} value={plan.id || plan.plan_id}>
-                        {plan.plan_name || plan.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
                 {updateError && (
                   <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                     <div className="flex items-center gap-2">
@@ -724,7 +742,6 @@ export default function MembershipExpired() {
                     </div>
                   </div>
                 )}
-                
                 {updateSuccess && (
                   <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
                     <div className="flex items-center gap-2">
@@ -733,7 +750,6 @@ export default function MembershipExpired() {
                     </div>
                   </div>
                 )}
-                
                 <div className="flex gap-4 justify-end pt-4 border-t border-gray-100">
                   <button
                     type="button"
@@ -745,10 +761,11 @@ export default function MembershipExpired() {
                   </button>
                   <button
                     type="button"
-                    className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                    className="px-6 py-2 rounded-lg bg-orange-600 text-white font-semibold hover:bg-orange-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                     onClick={handleUpdate}
-                    disabled={updateLoading}
+                    disabled={updateLoading || !form.plan || !form.validUpto}
                   >
+                    {updateLoading && <FiRefreshCw className="animate-spin" size={16} />}
                     {updateLoading ? 'Updating...' : 'Update Membership'}
                   </button>
                 </div>
@@ -759,4 +776,4 @@ export default function MembershipExpired() {
       </div>
     </DashboardLayout>
   );
-} 
+};

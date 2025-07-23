@@ -33,8 +33,6 @@ export default function UpcomingEvents() {
           backendEvents = response.data;
         } else if (response.data?.data && typeof response.data.data === 'object') {
           backendEvents = Object.values(response.data.data);
-        } else {
-          backendEvents = [];
         }
 
         const BASE_URL = "https://api.etribes.in";
@@ -42,7 +40,7 @@ export default function UpcomingEvents() {
           const eventDate = e.event_date && e.event_time
             ? new Date(`${e.event_date}T${e.event_time}`)
             : e.datetime ? new Date(e.datetime) : new Date();
-          
+
           return {
             id: e.id || idx,
             day: eventDate.toLocaleDateString('en-US', { weekday: 'short' }),
@@ -65,7 +63,6 @@ export default function UpcomingEvents() {
         }
       } catch (err) {
         console.error('Fetch upcoming events error:', err);
-        // Fallback to empty array
         setEvents([]);
       } finally {
         setLoading(false);
@@ -73,11 +70,10 @@ export default function UpcomingEvents() {
     };
 
     fetchUpcomingEvents();
-    const interval = setInterval(fetchUpcomingEvents, 30000); // Poll every 30 seconds
+    const interval = setInterval(fetchUpcomingEvents, 30000);
     return () => clearInterval(interval);
   }, [selected]);
 
-  // If no events, show a message
   if (loading) {
     return (
       <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 h-full w-full flex flex-col">
@@ -126,66 +122,49 @@ export default function UpcomingEvents() {
           Upcoming Events
         </h2>
       </div>
-      <div className="p-5 flex-1 flex flex-col justify-between">
-        <div>
-          <div className="flex space-x-3 overflow-visible pb-2 mb-3">
-            {events.map((event) => (
-              <button
-                key={event.id}
-                className={`relative flex flex-col items-center px-3 py-2 rounded-lg border-2 transition-colors duration-150 min-w-[65px] shadow-sm font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400/60 mx-1 overflow-hidden ${
+
+      {/* Main Content Area */}
+      <div className="flex flex-col flex-1 p-5 space-y-3">
+        {/* Horizontal Scroll Date Row */}
+        <div className="rounded-xl overflow-x-auto bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 flex-nowrap flex gap-3 px-2 py-2 scrollbar-thin scrollbar-thumb-blue-200 dark:scrollbar-thumb-indigo-900">
+          {events.map((event) => (
+            <button
+              key={event.id}
+              className={`flex flex-col items-center min-w-[72px] px-3 py-2 rounded-xl border-2 transition-all duration-150 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400/60
+                ${
                   selected?.id === event.id
-                    ? "bg-gradient-to-br from-indigo-100 via-blue-50 to-blue-100 dark:from-indigo-900 dark:via-blue-900 dark:to-gray-900 border-indigo-400 scale-105 z-10"
-                    : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-100 hover:bg-indigo-100 dark:hover:bg-gray-700 hover:border-indigo-400"
+                    ? "bg-gradient-to-br from-indigo-100 via-blue-50 to-blue-100 dark:from-indigo-900 dark:via-blue-900 dark:to-gray-900 border-indigo-400 text-indigo-700 dark:text-indigo-300 shadow-md"
+                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-indigo-100 dark:hover:bg-gray-700 hover:border-indigo-400"
                 }`}
-                onClick={() => setSelected(event)}
-              >
-                {selected?.id === event.id ? (
-                  <>
-                    <div className="absolute inset-0 bg-white/30 dark:bg-gray-800/40 backdrop-blur-md border border-white/30 dark:border-gray-700 rounded-lg pointer-events-none" />
-                    <div className="relative z-10 w-full h-full flex flex-col items-center justify-center">
-                      <span className="font-bold text-sm text-gray-900 dark:text-gray-100">
-                        {event.day}
-                      </span>
-                      <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                        {event.date}
-                      </span>
-                      <span className="text-xs text-gray-900 dark:text-gray-100">
-                        {event.month}
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <span className="font-bold text-sm text-gray-700 dark:text-gray-100">{event.day}</span>
-                    <span className="text-xl font-bold text-gray-900 dark:text-gray-100">{event.date}</span>
-                    <span className="text-xs text-gray-700 dark:text-gray-100">{event.month}</span>
-                  </>
-                )}
-              </button>
-            ))}
+              onClick={() => setSelected(event)}
+            >
+              <span className="font-bold text-sm">{event.day}</span>
+              <span className="text-xl font-bold">{event.date}</span>
+              <span className="text-xs">{event.month}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Description Box — full height width */}
+        <div className="flex-1 w-full min-h-[200px] rounded-xl bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900 dark:to-gray-900 border border-gray-100 dark:border-gray-700 shadow-inner text-sm p-4 overflow-auto flex flex-col justify-start">
+          <h3 className="text-base font-bold mb-2 text-indigo-700 dark:text-indigo-300">{selected.title}</h3>
+
+          <div className="mb-1 text-gray-700 dark:text-gray-300">
+            <span className="font-semibold">Date:</span> {selected.day}, {selected.date} {selected.month} {selected.year}
           </div>
 
-          {selected && (
-            <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900 dark:to-gray-900 rounded-lg border border-indigo-100 dark:border-gray-700 shadow-inner h-72 overflow-y-auto custom-scroll">
-              <h3 className="text-base font-bold mb-1 text-indigo-700 dark:text-indigo-200">
-                {selected.title}
-              </h3>
-              <div className="text-xs mb-1 text-gray-700 dark:text-gray-200">
-                <span className="font-semibold">Date:</span> {selected.day},{" "}
-                {selected.date} {selected.month} {selected.year}
-              </div>
-              <div className="text-xs mb-1 text-gray-700 dark:text-gray-200">
-                <span className="font-semibold">Time:</span> {selected.time}
-              </div>
-              <div className="text-xs mb-1 text-gray-700 dark:text-gray-200">
-                <span className="font-semibold">Venue:</span> {selected.venue}
-              </div>
-              <div className="text-xs text-gray-700 dark:text-gray-200 whitespace-pre-line">
-                <span className="font-semibold">Description:</span>{" "}
-                {selected.description}
-              </div>
-            </div>
-          )}
+          <div className="mb-1 text-gray-700 dark:text-gray-300">
+            <span className="font-semibold">Time:</span> {selected.time}
+          </div>
+
+          <div className="mb-1 text-gray-700 dark:text-gray-300">
+            <span className="font-semibold">Venue:</span> {selected.venue}
+          </div>
+
+          <div className="mt-2 overflow-x-auto whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+            <span className="font-semibold">Description:</span>{" "}
+            {selected.description}
+          </div>
         </div>
       </div>
     </div>

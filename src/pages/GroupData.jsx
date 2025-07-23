@@ -193,150 +193,150 @@ export default function GroupData() {
   return (
     <DashboardLayout>
       <div className="relative w-full flex flex-col md:flex-row gap-8 items-start">
-        {/* Floating Edit Button */}
-        {!editMode && (
-          <button
+          {/* Floating Edit Button */}
+          {!editMode && (
+              <button
             className="absolute top-0 right-0 p-2 rounded-full bg-indigo-50 dark:bg-gray-700 text-indigo-600 dark:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-gray-600 hover:text-indigo-800 dark:hover:text-indigo-100 shadow transition"
-            onClick={handleEdit}
-            disabled={loading}
-            title="Edit Profile"
-          >
-            <FiEdit2 size={22} />
-          </button>
-        )}
+                onClick={handleEdit}
+              disabled={loading}
+              title="Edit Profile"
+              >
+              <FiEdit2 size={22} />
+              </button>
+          )}
 
-        {/* Left: Logo and Signature */}
+          {/* Left: Logo and Signature */}
         <div className="flex flex-col items-center gap-6 min-w-[220px] w-full md:w-[220px]">
-          <div className="relative">
-            <img
-              src={logoPreview}
-              alt="Admin Logo"
+            <div className="relative">
+              <img
+                src={logoPreview}
+                alt="Admin Logo"
               className="w-28 h-28 rounded-full object-cover border-2 border-gray-300 dark:border-gray-700 shadow-md bg-gray-100 dark:bg-gray-800"
-            />
-            {editMode && (
-              <button
-                type="button"
-                className="absolute bottom-2 right-2 bg-indigo-600 text-white p-2 rounded-full shadow hover:bg-indigo-700"
-                onClick={() => logoInputRef.current.click()}
-                title="Change Logo"
-              >
-                <FiUpload size={16} />
-              </button>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              ref={logoInputRef}
-              className="hidden"
-              onChange={handleLogoChange}
-            />
-          </div>
-          <div className="relative">
-            <img
-              src={signaturePreview}
-              alt="Signature"
+              />
+        {editMode && (
+                      <button
+                        type="button"
+                  className="absolute bottom-2 right-2 bg-indigo-600 text-white p-2 rounded-full shadow hover:bg-indigo-700"
+                        onClick={() => logoInputRef.current.click()}
+                  title="Change Logo"
+                      >
+                        <FiUpload size={16} />
+                      </button>
+              )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        ref={logoInputRef}
+                        className="hidden"
+                        onChange={handleLogoChange}
+                      />
+                    </div>
+            <div className="relative">
+                      <img
+                        src={signaturePreview}
+                alt="Signature"
               className="w-40 h-14 object-contain rounded-lg border-2 border-gray-300 dark:border-gray-700 shadow-md bg-gray-100 dark:bg-gray-800"
-            />
-            {editMode && (
-              <button
-                type="button"
-                className="absolute bottom-2 right-2 bg-indigo-600 text-white p-2 rounded-full shadow hover:bg-indigo-700"
-                onClick={() => signatureInputRef.current.click()}
-                title="Change Signature"
-              >
-                <FiUpload size={16} />
-              </button>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              ref={signatureInputRef}
-              className="hidden"
-              onChange={handleSignatureChange}
-            />
-          </div>
-          <div className="text-center">
+                      />
+              {editMode && (
+                      <button
+                        type="button"
+                  className="absolute bottom-2 right-2 bg-indigo-600 text-white p-2 rounded-full shadow hover:bg-indigo-700"
+                        onClick={() => signatureInputRef.current.click()}
+                  title="Change Signature"
+                      >
+                        <FiUpload size={16} />
+                      </button>
+              )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        ref={signatureInputRef}
+                        className="hidden"
+                        onChange={handleSignatureChange}
+                      />
+                    </div>
+            <div className="text-center">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mt-2">{data.name}</h2>
             <div className="text-sm text-gray-500 dark:text-gray-300 font-medium">{data.signatureDesignation || 'Administrator'}</div>
             <div className="text-sm text-gray-400 dark:text-gray-400">{data.email}</div>
             <span className="text-xs text-gray-400 dark:text-gray-400 italic mt-1 block">{data.signatureName}, {data.signatureDesignation}</span>
-          </div>
-        </div>
+            </div>
+                  </div>
 
-        {/* Right: Details Table or Edit Form */}
-        <div className="flex-1 w-full">
-          {/* Loading/Error/Success Banners */}
-          {loading && (
+          {/* Right: Details Table or Edit Form */}
+          <div className="flex-1 w-full">
+            {/* Loading/Error/Success Banners */}
+            {loading && (
             <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex items-center justify-center rounded-2xl z-20">
               <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-200">
                 <svg className="animate-spin h-6 w-6 mr-2 text-indigo-600 dark:text-indigo-200" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" /><path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" className="opacity-75" /></svg>
-                Loading profile...
+                  Loading profile...
+                </div>
               </div>
-            </div>
-          )}
-          {error && (
+            )}
+            {error && (
             <div className="mb-4 flex items-center gap-2 text-red-600 bg-red-50 dark:bg-red-900/40 dark:text-red-200 rounded-lg px-4 py-2">
-              <FiX /> {error}
-            </div>
-          )}
-          {saveSuccess && (
+                <FiX /> {error}
+              </div>
+            )}
+            {saveSuccess && (
             <div className="mb-4 flex items-center gap-2 text-green-600 bg-green-50 dark:bg-green-900/40 dark:text-green-200 rounded-lg px-4 py-2">
-              <FiCheckCircle /> {saveSuccess}
-            </div>
-          )}
-          <div className="overflow-x-auto">
+                <FiCheckCircle /> {saveSuccess}
+              </div>
+            )}
+            <div className="overflow-x-auto">
             <table className="min-w-full border border-gray-200 dark:border-gray-700 rounded-xl">
-              <tbody>
-                {[
-                  { label: 'Contact No', key: 'contact' },
-                  { label: 'Address', key: 'address' },
-                  { label: 'City', key: 'city' },
-                  { label: 'Pincode', key: 'pincode' },
-                  { label: 'Country', key: 'country' },
+                <tbody>
+                  {[
+                    { label: 'Contact No', key: 'contact' },
+                    { label: 'Address', key: 'address' },
+                    { label: 'City', key: 'city' },
+                    { label: 'Pincode', key: 'pincode' },
+                    { label: 'Country', key: 'country' },
                   { label: 'State', key: 'state' },
-                  { label: 'Signature Name', key: 'signatureName' },
-                  { label: 'Signature Designation', key: 'signatureDesignation' },
-                ].map(({ label, key }) => (
+                    { label: 'Signature Name', key: 'signatureName' },
+                    { label: 'Signature Designation', key: 'signatureDesignation' },
+                  ].map(({ label, key }) => (
                   <tr key={key} className="border-b last:border-b-0 border-gray-200 dark:border-gray-700">
                     <td className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-900/50 w-48 align-top">{label}</td>
                     <td className="px-6 py-4 bg-white dark:bg-gray-800">
-                      {!editMode ? (
+                        {!editMode ? (
                         <span className="text-gray-900 dark:text-gray-100 text-base font-normal">{data[key]}</span>
-                      ) : (
-                        <input
-                          type="text"
-                          name={key}
-                          value={form[key]}
-                          onChange={handleChange}
+                        ) : (
+                          <input
+                            type="text"
+                            name={key}
+                            value={form[key]}
+                            onChange={handleChange}
                           className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400"
-                          required
-                        />
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {/* Save/Cancel Buttons in Edit Mode */}
-          {editMode && (
+                            required
+                          />
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Save/Cancel Buttons in Edit Mode */}
+            {editMode && (
             <form onSubmit={handleSubmit} className="flex justify-end gap-4 mt-6">
-              <button
-                type="button"
+                <button
+                  type="button"
                 className="px-6 py-2 rounded-lg font-semibold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
-                onClick={handleCancel}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-8 py-2 rounded-lg font-semibold bg-indigo-600 text-white shadow hover:bg-indigo-700 transition"
+                  onClick={handleCancel}
+                >
+                  Cancel
+                </button>
+                  <button
+                    type="submit"
+                  className="px-8 py-2 rounded-lg font-semibold bg-indigo-600 text-white shadow hover:bg-indigo-700 transition"
                 disabled={saveLoading}
-              >
-                Save
-              </button>
+                  >
+                    Save
+                  </button>
             </form>
-          )}
+            )}
         </div>
       </div>
     </DashboardLayout>

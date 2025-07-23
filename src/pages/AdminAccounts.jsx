@@ -43,7 +43,7 @@ const getRoleColor = (role) => {
 };
 
 export default function AdminAccounts() {
-  const [systemUsers, setSystemUsers] = useState(initialSystemUsers);
+  const [systemUsers, setSystemUsers] = useState([]);
   const [userRoles, setUserRoles] = useState(defaultUserRoles);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -126,12 +126,49 @@ export default function AdminAccounts() {
     }
   };
 
-  // Load roles on component mount
+  // Fetch system users from API
+  const fetchSystemUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid') || '1';
+      if (!token) {
+        setError('Please log in to view system users');
+        window.location.href = '/login';
+        return;
+      }
+      const response = await api.post('/userDetail', {}, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'login.etribes.in',
+          'Content-Type': 'application/json',
+        }
+      });
+      let usersData = [];
+      if (Array.isArray(response.data)) {
+        usersData = response.data;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        usersData = response.data.data;
+      } else if (response.data?.users && Array.isArray(response.data.users)) {
+        usersData = response.data.users;
+      }
+      setSystemUsers(usersData);
+    } catch (err) {
+      setError('Failed to fetch system users.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchRoles();
-    
-    // Set up polling every 30 seconds to keep data fresh
-    const interval = setInterval(fetchRoles, 30000);
+    fetchSystemUsers();
+    const interval = setInterval(() => {
+      fetchRoles();
+      fetchSystemUsers();
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -187,16 +224,44 @@ export default function AdminAccounts() {
   };
   const closePasswordModal = () => setShowPasswordModal(false);
   const handlePasswordChange = (e) => setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value });
-  const handlePasswordSave = (e) => {
+  const handlePasswordSave = async (e) => {
     e.preventDefault();
+    setError(null);
+    setSuccess(null);
     if (passwordForm.password !== passwordForm.confirmPassword) {
       setError("Passwords don't match");
       return;
     }
-    // Here you would update the password in your backend
-    setSuccess("Password updated successfully!");
+    try {
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid') || (selectedUser && selectedUser.id);
+      if (!token || !uid) {
+        setError('Authentication required. Please log in.');
+        return;
+      }
+      const response = await api.post('/userDetail/update_password', {
+        id: selectedUser.id,
+        password: passwordForm.password,
+        confirm_password: passwordForm.confirmPassword
+      }, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'Content-Type': 'application/json',
+        }
+      });
+      if (response.data?.status === 'success' || response.data?.message?.toLowerCase().includes('success')) {
+        setSuccess('Password updated successfully!');
     setTimeout(() => setSuccess(null), 3000);
     setShowPasswordModal(false);
+      } else {
+        setError(response.data?.message || 'Failed to update password.');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Failed to update password.');
+    }
   };
 
   // View User Modal

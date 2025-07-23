@@ -6,6 +6,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import api from "../api/axiosConfig";
 
+// No fallback data; only use live API data
+
 export default function ImportantContactsPage() {
   const [contactsData, setContactsData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +28,7 @@ export default function ImportantContactsPage() {
     email: "",
     address: ""
   });
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     const fetchContacts = async () => {
@@ -37,8 +40,6 @@ export default function ImportantContactsPage() {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
         
-        console.log('Fetching contacts with token:', token, 'uid:', uid);
-        
         const response = await api.get('/contact', {
           headers: {
             'Client-Service': 'COHAPPRT',
@@ -49,8 +50,6 @@ export default function ImportantContactsPage() {
             'Content-Type': 'application/json',
           }
         });
-
-        console.log('API Response:', response.data);
 
         let contacts = [];
         // Handle the nested structure: response.data.data.contact
@@ -70,11 +69,8 @@ export default function ImportantContactsPage() {
           contacts = [];
         }
 
-        console.log('Extracted contacts:', contacts);
-
         // Map backend contacts to frontend format
         const mappedContacts = contacts.map((contact, index) => {
-          console.log('Processing contact:', contact);
           return {
             id: contact.id || contact.contact_id || contact.contactId || index + 1,
             dept: contact.department || contact.dept || contact.role || contact.contact_department || 'General',
@@ -85,12 +81,9 @@ export default function ImportantContactsPage() {
           };
         });
 
-        console.log('Mapped contacts:', mappedContacts);
         setContactsData(mappedContacts);
         
       } catch (err) {
-        console.error('Fetch contacts error:', err);
-        console.error('Error details:', err.response?.data);
         setError('Failed to fetch contacts: ' + (err.response?.data?.message || err.message));
         setContactsData([]);
       } finally {
@@ -149,18 +142,79 @@ export default function ImportantContactsPage() {
     setEditForm({ ...editForm, [e.target.name]: e.target.value });
   };
 
-  const handleEditSave = () => {
-    // Update the contact in the local state
-    setContactsData(prev => prev.map(c => c.id === editForm.id ? editForm : c));
-    setEditContact(null);
+  // API call to edit a contact
+  const editContactInAPI = async (contact) => {
+    const token = localStorage.getItem('token');
+    const uid = localStorage.getItem('uid');
+    try {
+      const payload = {
+        id: contact.id,
+        department: contact.dept,
+        name: contact.name,
+        contact_no: contact.contact,
+        email_id: contact.email,
+        address: contact.address,
+      };
+      const response = await api.post('/contact/edit', payload, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'login.etribes.in',
+          'Content-Type': 'application/json',
+        }
+      });
+      return response.data;
+    } catch (err) {
+      throw err.response?.data?.message || 'Failed to edit contact';
+    }
   };
 
-  const handleDelete = () => {
-    if (deleteConfirm === "DELETE") {
-      // Remove the contact from the local state
+  const handleEditSave = async () => {
+    try {
+      await editContactInAPI(editForm);
+    setContactsData(prev => prev.map(c => c.id === editForm.id ? editForm : c));
+    setEditContact(null);
+    } catch (err) {
+      setError(err);
+    }
+  };
+
+  // API call to delete a contact
+  const deleteContactFromAPI = async (contactId) => {
+    const token = localStorage.getItem('token');
+    const uid = localStorage.getItem('uid');
+    try {
+      const response = await api.post('/contact/remove', { id: contactId }, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'login.etribes.in',
+          'Content-Type': 'application/json',
+        }
+      });
+      return response.data;
+    } catch (err) {
+      throw err.response?.data?.message || 'Failed to delete contact';
+    }
+  };
+
+  const handleDelete = async () => {
+    if (deleteConfirm.trim().toLowerCase() === "delete") {
+      setDeleteLoading(true);
+      try {
+        await deleteContactFromAPI(deleteContact.id);
       setContactsData(prev => prev.filter(c => c.id !== deleteContact.id));
     setDeleteContact(null);
     setDeleteConfirm("");
+      } catch (err) {
+        setError(err);
+      } finally {
+        setDeleteLoading(false);
+      }
     }
   };
 
@@ -169,16 +223,50 @@ export default function ImportantContactsPage() {
     setAddContactForm({ ...addContactForm, [e.target.name]: e.target.value });
   };
 
-  const handleAddContactSubmit = (e) => {
+  const addContactToAPI = async (contact) => {
+    const token = localStorage.getItem('token');
+    const uid = localStorage.getItem('uid');
+    try {
+      const payload = {
+        department: contact.dept,
+        name: contact.name,
+        contact_no: contact.contact,
+        email_id: contact.email,
+        address: contact.address,
+      };
+      const response = await api.post('/contact/add', payload, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'login.etribes.in',
+          'Content-Type': 'application/json',
+        }
+      });
+      return response.data;
+    } catch (err) {
+      throw err.response?.data?.message || 'Failed to add contact';
+    }
+  };
+
+  const handleAddContactSubmit = async (e) => {
     e.preventDefault();
-    // Add the contact to the local state
-    const newContact = {
-      id: Math.max(...contactsData.map(c => c.id)) + 1,
+    try {
+      const added = await addContactToAPI(addContactForm);
+      // Optionally, fetch the updated list from the API, or just add to local state:
+      setContactsData(prev => [
+        {
+          id: added.id || Math.max(0, ...prev.map(c => c.id)) + 1,
       ...addContactForm
-    };
-    setContactsData(prev => [...prev, newContact]);
+        },
+        ...prev
+      ]);
     setShowAddContactModal(false);
     setAddContactForm({ dept: "", name: "", contact: "", email: "", address: "" });
+    } catch (err) {
+      setError(err);
+    }
   };
 
   // Copy handler
@@ -265,7 +353,7 @@ export default function ImportantContactsPage() {
           </div>
           <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto p-8">
             <div className="flex items-center justify-center">
-              <div className="text-center text-gray-600 dark:text-gray-300">
+              <div className="text-center text-gray-600">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-2"></div>
                 <p>Loading contacts...</p>
               </div>
@@ -312,6 +400,13 @@ export default function ImportantContactsPage() {
               <button className="flex items-center gap-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition" onClick={handleExportCSV} title="Export CSV"><FiDownload /> CSV</button>
               <button className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition" onClick={handleExportExcel} title="Export Excel"><FiFile /> Excel</button>
               <button className="flex items-center gap-1 bg-rose-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-rose-600 transition" onClick={handleExportPDF} title="Export PDF"><FiFile /> PDF</button>
+              <button
+                className="flex items-center gap-1 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
+                onClick={() => setShowAddContactModal(true)}
+              >
+                <FiPlus />
+                Add Contact
+              </button>
             </div>
           </div>
           {/* Table */}

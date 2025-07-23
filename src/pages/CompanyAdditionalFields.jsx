@@ -4,16 +4,16 @@ import { FiEdit2, FiX, FiRefreshCw, FiSave, FiHome, FiAlertCircle, FiCheckCircle
 import api from "../api/axiosConfig";
 
 const initialData = {
-  companyField1: "GST No",
-  companyField2: "IEC No",
-  companyField3: "PAN",
-  companyField4: "CIN No",
-  companyField5: "Website",
-  companyField6: "Helpline",
-  companyField7: "Aadhar No",
-  companyField8: "TAN No",
-  companyField9: "MSME No",
-  companyField10: "FSSAI No",
+  companyField1: "",
+  companyField2: "",
+  companyField3: "",
+  companyField4: "",
+  companyField5: "",
+  companyField6: "",
+  companyField7: "",
+  companyField8: "",
+  companyField9: "",
+  companyField10: "",
 };
 
 export default function CompanyAdditionalFields() {
@@ -158,13 +158,25 @@ export default function CompanyAdditionalFields() {
 
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid');
-      
       if (!token || !uid) {
         throw new Error('Authentication required. Please log in.');
       }
 
-      // Use the provided cURL: POST to get_company_additional_fields with headers and empty data
-      const response = await api.post('/groupSettings/get_company_additional_fields', {}, {
+      // Prepare payload for backend
+      const payload = {
+        ad1: fieldsData.companyField1,
+        ad2: fieldsData.companyField2,
+        ad3: fieldsData.companyField3,
+        ad4: fieldsData.companyField4,
+        ad5: fieldsData.companyField5,
+        ad6: fieldsData.companyField6,
+        ad7: fieldsData.companyField7,
+        ad8: fieldsData.companyField8,
+        ad9: fieldsData.companyField9,
+        ad10: fieldsData.companyField10,
+      };
+
+      const response = await api.post('/GroupSettings/company_additional_fields_setting', payload, {
         headers: {
           'Client-Service': 'COHAPPRT',
           'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
@@ -175,10 +187,11 @@ export default function CompanyAdditionalFields() {
         }
       });
 
-      if (response.data?.status === 'success' || (response.data?.message && response.data.message.toLowerCase().includes('success'))) {
+      if (response.data?.status === 'success') {
+        // Update the data with new values
         setData(fieldsData);
         setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
+        setTimeout(() => setSuccess(false), 3000); // Hide success message after 3 seconds
         return { success: true };
       } else {
         throw new Error(response.data?.message || 'Failed to save company additional fields');

@@ -14,11 +14,11 @@ export default function DashboardLayout({ children }) {
         {/* TopBar and content centered */}
         <div className="max-w-7xl mx-auto w-full px-4 pt-8 flex flex-col flex-1">
           <div className="mt-4">
-            <TopBar />
+          <TopBar />
           </div>
           <div className="flex-1 py-4">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-              {children}
+            {children}
             </div>
           </div>
         </div>

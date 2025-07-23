@@ -459,7 +459,7 @@ export default function SMTPSettings() {
                         <div>
                           <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">SMTP Port</label>
                           <input type="text" name="smtpPort" value={form.smtpPort} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" placeholder="e.g., 587, 465, 25" required disabled={submitting} />
-                        </div>
+                </div>
                         <div>
                           <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">SMTP Protocol</label>
                           <select name="smtpProtocol" value={form.smtpProtocol} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" required disabled={submitting}>
@@ -479,11 +479,11 @@ export default function SMTPSettings() {
                         <div>
                           <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">SMTP User</label>
                           <input type="text" name="smtpUser" value={form.smtpUser} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" placeholder="e.g., user@example.com" required disabled={submitting} />
-                        </div>
+                </div>
                         <div>
                           <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">SMTP Password</label>
                           <input type="password" name="smtpPassword" value={form.smtpPassword} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" placeholder="Enter SMTP password" required disabled={submitting} />
-                        </div>
+                </div>
                       </div>
                 </div>
                 </div>
@@ -497,11 +497,11 @@ export default function SMTPSettings() {
                         <div>
                           <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">Sender Email</label>
                           <input type="email" name="senderEmail" value={form.senderEmail} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" placeholder="e.g., noreply@example.com" required disabled={submitting} />
-                        </div>
+                </div>
                         <div>
                           <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">Sender Name</label>
                           <input type="text" name="senderName" value={form.senderName} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" placeholder="e.g., Company Name" required disabled={submitting} />
-                        </div>
+                </div>
                         <div>
                           <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">Reply To Email</label>
                           <input type="email" name="replyToEmail" value={form.replyToEmail} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" placeholder="e.g., support@example.com" required disabled={submitting} />
