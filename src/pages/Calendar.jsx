@@ -4,6 +4,7 @@ import { FiCalendar, FiPlus, FiClock, FiUsers, FiMapPin, FiSearch, FiFilter, FiR
 import api from "../api/axiosConfig";
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import { toast } from 'react-toastify';
 
 // Helper functions
 function isSameDay(d1, d2) {
@@ -225,9 +226,11 @@ export default function Calendar() {
         invitationImage: null
       });
       setShowAddEventForm(false);
+      toast.success('Event added successfully!');
       // Optionally, refresh events here
     } catch (err) {
       setFormErrors({ api: 'Failed to add event' });
+      toast.error('Failed to add event.');
     } finally {
       setLoading(false);
     }
@@ -338,13 +341,14 @@ export default function Calendar() {
         body: formData,
       });
       setEditSuccess('Event updated successfully!');
-      setTimeout(() => setEditSuccess(null), 2000);
+      toast.success('Event updated successfully!');
       setShowEditEventModal(false);
       // Refresh events
       setLoading(true);
       // (re-fetch events logic here, or optimistically update if desired)
     } catch (err) {
       setEditError('Failed to update event');
+      toast.error('Failed to update event.');
     } finally {
       setEditLoading(false);
     }
@@ -373,8 +377,10 @@ export default function Calendar() {
         body: JSON.stringify({ id: eventId }),
       });
       setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
+      toast.success('Event deleted successfully!');
     } catch (err) {
       setDeleteError('Failed to delete event');
+      toast.error('Failed to delete event.');
     } finally {
       setDeleteLoading(false);
     }
@@ -546,6 +552,7 @@ export default function Calendar() {
         setEvents(mappedEvents);
       } catch (err) {
         setError(err.response?.data?.message || err.message || 'Failed to fetch events');
+        toast.error('Failed to fetch events.');
       } finally {
         setLoading(false);
       }

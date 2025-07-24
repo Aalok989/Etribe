@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FiDownload, FiFilter, FiEdit2, FiTrash2, FiUser, FiMail, FiPhone, FiMapPin, FiRefreshCw, FiSearch, FiCopy, FiPlus, FiFileText, FiFile, FiX } from "react-icons/fi";
 import { useContacts } from "../../context/ContactsContext";
+import { toast } from "react-toastify";
 
 export default function ImportantContacts() {
   const { contactsData, loading, error, editContact: editContactAPI, deleteContact: deleteContactAPI, fetchContacts } = useContacts();
@@ -48,8 +49,10 @@ export default function ImportantContacts() {
     try {
       await editContactAPI(editForm);
       setEditContact(null);
+      toast.success("Contact updated successfully!");
     } catch (err) {
       setFormError(err.toString());
+      toast.error("Failed to update contact.");
     }
   };
 
@@ -60,8 +63,10 @@ export default function ImportantContacts() {
         await deleteContactAPI(deleteContact.id);
         setDeleteContact(null);
         setDeleteConfirm("");
+        toast.success("Contact deleted successfully!");
       } catch (err) {
         setFormError(err.toString());
+        toast.error("Failed to delete contact.");
       }
     }
   };
@@ -78,16 +83,19 @@ export default function ImportantContacts() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success("Contacts exported to CSV!");
   };
 
   const handleExportExcel = () => {
     // This would require XLSX library - simplified for component
     alert('Excel export would be implemented here');
+    toast.info("Excel export functionality is not yet available.");
   };
 
   const handleExportPDF = () => {
     // This would require jsPDF library - simplified for component
     alert('PDF export would be implemented here');
+    toast.info("PDF export functionality is not yet available.");
   };
 
   const handleCopyToClipboard = () => {
@@ -95,10 +103,12 @@ export default function ImportantContacts() {
       `${c.dept},${c.name},${c.contact},${c.email},${c.address}`
     ).join('\n');
     navigator.clipboard.writeText(data);
+    toast.success("Contacts copied to clipboard!");
   };
 
   const handleRefresh = () => {
     fetchContacts();
+    toast.info("Refreshing contacts...");
   };
 
   if (loading) {

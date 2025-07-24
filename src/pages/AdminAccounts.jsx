@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
 import { FiEdit2, FiPlus, FiKey, FiX, FiFileText, FiFile, FiEye, FiRefreshCw, FiTrash2, FiUser, FiMail, FiPhone, FiMapPin, FiShield, FiCheckCircle, FiAlertCircle, FiCopy, FiDownload } from "react-icons/fi";
 import api from "../api/axiosConfig";
+import { toast } from 'react-toastify';
 
 // Default roles fallback
 const defaultUserRoles = [
@@ -12,6 +13,20 @@ const defaultUserRoles = [
   "HR",
   "IT",
   "Super Admin",
+];
+
+// Updated data to match System Users table
+const initialSystemUsers = [
+  { id: 1, name: "Rohit Arya", contact: "7017064745", email: "rohit@30days.in", address: "Shiv Murti Gandhi Chowk Shamli", city: "Shamli", district: "Shamli", state: "Uttar Pradesh", country: "India", role: "Admin", status: "active" },
+  { id: 2, name: "Parveen", contact: "9876543220", email: "parveen@30dats.in", address: "nangloi", city: "delhi", district: "nangloi", state: "Gujarat", country: "India", role: "Manager", status: "active" },
+  { id: 3, name: "naman", contact: "7876467065", email: "arya.rohi13@gmail.com", address: "test", city: "Rohtak", district: "rohtak", state: "Uttar Pradesh", country: "India", role: "Support", status: "active" },
+  { id: 4, name: "sourav", contact: "9876543210", email: "namanjain@30days.in", address: "test address", city: "Delhi", district: "Central Delhi", state: "Delhi", country: "India", role: "Finance", status: "active" },
+  { id: 5, name: "Test User", contact: "1234567890", email: "test@gmail.com", address: "test address line", city: "Mumbai", district: "Mumbai", state: "Maharashtra", country: "India", role: "HR", status: "active" },
+  { id: 6, name: "Amit Kumar", contact: "5551234567", email: "amit@company.com", address: "789 Tech Park", city: "Bangalore", district: "Bangalore Urban", state: "Karnataka", country: "India", role: "IT", status: "active" },
+  { id: 7, name: "Neha Verma", contact: "4445556666", email: "neha@company.com", address: "321 Business Ave", city: "Chennai", district: "Chennai", state: "Tamil Nadu", country: "India", role: "Super Admin", status: "active" },
+  { id: 8, name: "Suresh Patel", contact: "3332221111", email: "suresh@company.com", address: "654 Main Road", city: "Hyderabad", district: "Hyderabad", state: "Telangana", country: "India", role: "Admin", status: "active" },
+  { id: 9, name: "Meena Joshi", contact: "8889990000", email: "meena@company.com", address: "987 Market Lane", city: "Pune", district: "Pune", state: "Maharashtra", country: "India", role: "Manager", status: "active" },
+  { id: 10, name: "Vikas Sharma", contact: "1112223333", email: "vikas@company.com", address: "159 Tech Blvd", city: "Ahmedabad", district: "Ahmedabad", state: "Gujarat", country: "India", role: "Support", status: "active" },
 ];
 
 // Role color mapping
@@ -30,7 +45,7 @@ const getRoleColor = (role) => {
 
 export default function AdminAccounts() {
   const [systemUsers, setSystemUsers] = useState([]);
-  const [userRoles, setUserRoles] = useState(defaultUserRoles);
+  const [userRoles, setUserRoles] = useState([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(100);
@@ -40,7 +55,9 @@ export default function AdminAccounts() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [passwordForm, setPasswordForm] = useState({ password: "", confirmPassword: "" });
   const [addUserForm, setAddUserForm] = useState({
-    role: defaultUserRoles[0],
+    role_id: '',
+    pincode: '',
+    country: '',
     name: "",
     contact: "",
     email: "",
@@ -50,13 +67,13 @@ export default function AdminAccounts() {
     city: "",
     district: "",
     state: "",
-    country: "",
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState("asc");
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+  const isCountriesFetched = useRef(false);
 
   // Fetch roles from API
   const fetchRoles = async () => {
@@ -65,7 +82,7 @@ export default function AdminAccounts() {
       const uid = localStorage.getItem('uid') || '1';
       
       if (!token) {
-        setError('Please log in to view system users');
+        toast.error('Please log in to view system users');
         window.location.href = '/login';
         return;
       }
@@ -87,21 +104,16 @@ export default function AdminAccounts() {
         rolesData = response.data.data;
       } else if (response.data?.roles && Array.isArray(response.data.roles)) {
         rolesData = response.data.roles;
-      } else {
-        // If no roles found, use default roles
-        rolesData = defaultUserRoles.map(role => ({ role }));
       }
-
-      // Transform data to match expected format
-      const transformedRoles = rolesData.map((role, index) => 
-        role.role || role.role_name || role.name || `Role ${index + 1}`
-      );
-
+      // Transform data to match expected format (id and name)
+      const transformedRoles = rolesData.map((role, index) => ({
+        id: role.id || role.role_id,
+        name: role.role || role.role_name || role.name || `Role ${index + 1}`
+      }));
       setUserRoles(transformedRoles);
-      
-      // Update addUserForm role if current role is not in new list
-      if (addUserForm.role && !transformedRoles.includes(addUserForm.role)) {
-        setAddUserForm(prev => ({ ...prev, role: transformedRoles[0] || defaultUserRoles[0] }));
+      // Update addUserForm role_id if current role_id is not in new list
+      if (addUserForm.role_id && !transformedRoles.some(r => r.id === addUserForm.role_id)) {
+        setAddUserForm(prev => ({ ...prev, role_id: transformedRoles[0]?.id || '' }));
       }
     } catch (err) {
       console.error('Fetch roles error:', err);
@@ -118,7 +130,7 @@ export default function AdminAccounts() {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid') || '1';
       if (!token) {
-        setError('Please log in to view system users');
+        toast.error('Please log in to view system users');
         window.location.href = '/login';
         return;
       }
@@ -140,17 +152,58 @@ export default function AdminAccounts() {
       } else if (response.data?.users && Array.isArray(response.data.users)) {
         usersData = response.data.users;
       }
-      setSystemUsers(usersData);
+      // Map backend fields to frontend expected fields
+      const mappedUsers = usersData.map(user => ({
+        id: user.id,
+        name: user.name,
+        contact: user.phone_num || user.contact || '',
+        email: user.email,
+        address: user.address,
+        city: user.city,
+        district: user.district,
+        state: user.state,
+        country: user.country,
+        role: user.role_name || user.role || '',
+        status: user.is_active === '1' ? 'active' : 'inactive',
+        profile_image: user.profile_image,
+      }));
+      setSystemUsers(mappedUsers);
     } catch (err) {
-      setError('Failed to fetch system users.');
+      toast.error('Failed to fetch system users.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch countries from API
+  const fetchCountries = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      // You may need to use the correct token/header for Authorization
+      const response = await api.post('/common/countries', {}, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'rurl': 'login.etribes.in',
+          // 'Authorization': 'Bearer ' + token, // Uncomment if needed
+        }
+      });
+      if (response.data && Array.isArray(response.data.data)) {
+        setCountries(response.data.data);
+        console.log('Fetched countries:', response.data.data);
+      }
+    } catch (err) {
+      // Optionally handle error
     }
   };
 
   useEffect(() => {
     fetchRoles();
     fetchSystemUsers();
+    if (!isCountriesFetched.current) {
+      fetchCountries();
+      isCountriesFetched.current = true;
+    }
     const interval = setInterval(() => {
       fetchRoles();
       fetchSystemUsers();
@@ -212,17 +265,15 @@ export default function AdminAccounts() {
   const handlePasswordChange = (e) => setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value });
   const handlePasswordSave = async (e) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
     if (passwordForm.password !== passwordForm.confirmPassword) {
-      setError("Passwords don't match");
+      toast.error("Passwords don't match");
       return;
     }
     try {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid') || (selectedUser && selectedUser.id);
       if (!token || !uid) {
-        setError('Authentication required. Please log in.');
+        toast.error('Authentication required. Please log in.');
         return;
       }
       const response = await api.post('/userDetail/update_password', {
@@ -239,14 +290,14 @@ export default function AdminAccounts() {
         }
       });
       if (response.data?.status === 'success' || response.data?.message?.toLowerCase().includes('success')) {
-        setSuccess('Password updated successfully!');
-    setTimeout(() => setSuccess(null), 3000);
+        toast.success('Password updated successfully!');
+    setTimeout(() => toast.dismiss(), 3000);
     setShowPasswordModal(false);
       } else {
-        setError(response.data?.message || 'Failed to update password.');
+        toast.error(response.data?.message || 'Failed to update password.');
       }
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to update password.');
+      toast.error(err.response?.data?.message || err.message || 'Failed to update password.');
     }
   };
 
@@ -261,15 +312,17 @@ export default function AdminAccounts() {
   const handleDeleteUser = (userId) => {
     if (window.confirm("Are you sure you want to delete this system user?")) {
       setSystemUsers(systemUsers.filter(user => user.id !== userId));
-      setSuccess("System user deleted successfully!");
-      setTimeout(() => setSuccess(null), 3000);
+      toast.success("System user deleted successfully!");
+      setTimeout(() => toast.dismiss(), 3000);
     }
   };
 
   // Add System User Modal
   const openAddUserModal = () => {
     setAddUserForm({
-      role: userRoles[0] || defaultUserRoles[0],
+      role_id: userRoles[0]?.id || '',
+      pincode: '',
+      country: '',
       name: "",
       contact: "",
       email: "",
@@ -279,35 +332,59 @@ export default function AdminAccounts() {
       city: "",
       district: "",
       state: "",
-      country: "",
     });
     setShowAddUserModal(true);
   };
   const closeAddUserModal = () => setShowAddUserModal(false);
   const handleAddUserChange = (e) => setAddUserForm({ ...addUserForm, [e.target.name]: e.target.value });
-  const handleAddUserSubmit = (e) => {
+  const handleAddUserSubmit = async (e) => {
     e.preventDefault();
     if (addUserForm.password !== addUserForm.confirmPassword) {
-      setError("Passwords don't match");
+      toast.error("Passwords don't match");
       return;
     }
-    const newUser = {
-      id: Date.now(),
+    try {
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid') || '1';
+      if (!token) {
+        toast.error('Please log in to add a system user');
+        window.location.href = '/login';
+        return;
+      }
+      const payload = {
+        role_id: addUserForm.role_id,
         name: addUserForm.name,
-        contact: addUserForm.contact,
+        phone_num: addUserForm.contact,
         email: addUserForm.email,
+        password: addUserForm.password,
+        confirm_password: addUserForm.confirmPassword,
         address: addUserForm.address,
         city: addUserForm.city,
         district: addUserForm.district,
-        state: addUserForm.state,
+        pincode: addUserForm.pincode,
         country: addUserForm.country,
-        role: addUserForm.role,
-      status: "active",
-    };
-    setSystemUsers([...systemUsers, newUser]);
-    setSuccess("System user created successfully!");
-    setTimeout(() => setSuccess(null), 3000);
-    setShowAddUserModal(false);
+        area_id: addUserForm.state, // state id
+      };
+      const response = await api.post('/userDetail/add_user', payload, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'login.etribes.in',
+          'Content-Type': 'application/json',
+        }
+      });
+      if (response.data?.status === 'success' || response.data?.message?.toLowerCase().includes('success')) {
+        toast.success('System user created successfully!');
+        setShowAddUserModal(false);
+        await fetchSystemUsers();
+      } else {
+        toast.error(response.data?.message || 'Failed to create system user.');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to create system user.');
+    }
   };
 
   // Export functions
@@ -320,15 +397,13 @@ export default function AdminAccounts() {
     const fullData = headers + '\n' + tableData;
     
     navigator.clipboard.writeText(fullData).then(() => {
-      setSuccess("Data copied to clipboard!");
-      setTimeout(() => setSuccess(null), 3000);
+      toast.success("Data copied to clipboard!");
     });
   };
 
   const handleExportExcel = () => {
     // Excel export logic
-    setSuccess("Excel export functionality would be implemented here!");
-    setTimeout(() => setSuccess(null), 3000);
+    toast.info("Excel export functionality would be implemented here!");
   };
 
   const handleExportCSV = () => {
@@ -353,15 +428,41 @@ export default function AdminAccounts() {
     link.click();
     document.body.removeChild(link);
     
-    setSuccess("CSV exported successfully!");
-    setTimeout(() => setSuccess(null), 3000);
+    toast.success("CSV exported successfully!");
   };
 
   const handleExportPDF = () => {
     // PDF export logic
-    setSuccess("PDF export functionality would be implemented here!");
-    setTimeout(() => setSuccess(null), 3000);
+    toast.info("PDF export functionality would be implemented here!");
   };
+
+  // Fetch states when country changes
+  useEffect(() => {
+    if (addUserForm.country) {
+      const fetchStates = async () => {
+        try {
+          const response = await api.post('/common/states', { country: addUserForm.country }, {
+            headers: {
+              'Client-Service': 'COHAPPRT',
+              'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+              'rurl': 'login.etribes.in',
+              'Content-Type': 'application/json',
+            }
+          });
+          if (response.data && Array.isArray(response.data.data)) {
+            setStates(response.data.data); // [{ id, state }]
+          } else {
+            setStates([]);
+          }
+        } catch (err) {
+          setStates([]);
+        }
+      };
+      fetchStates();
+    } else {
+      setStates([]);
+    }
+  }, [addUserForm.country]);
 
   if (loading) {
     return (
@@ -388,31 +489,6 @@ export default function AdminAccounts() {
             <FiPlus /> Add System User
           </button>
         </div>
-
-        {/* Success/Error Messages */}
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiCheckCircle />
-              <span>{success}</span>
-            </div>
-            <button onClick={() => setSuccess(null)} className="text-green-500 hover:text-green-700">
-              <FiX size={16} />
-            </button>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiAlertCircle />
-              <span>{error}</span>
-            </div>
-            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
-              <FiX size={16} />
-            </button>
-          </div>
-        )}
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Filter and Export Controls */}
@@ -814,14 +890,15 @@ export default function AdminAccounts() {
                 <div className="md:col-span-2">
                   <label className="font-medium text-gray-700 dark:text-gray-300">User Role *</label>
                   <select
-                    name="role"
-                    value={addUserForm.role}
+                    name="role_id"
+                    value={addUserForm.role_id}
                     onChange={handleAddUserChange}
                     className="w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     required
                   >
-                    {userRoles.map((role, idx) => (
-                      <option key={idx} value={role}>{role}</option>
+                    <option value="">Select Role</option>
+                    {userRoles.map((role) => (
+                      <option key={role.id} value={role.id}>{role.name}</option>
                     ))}
                   </select>
                 </div>
@@ -926,29 +1003,47 @@ export default function AdminAccounts() {
                     placeholder="Enter district"
                   />
                 </div>
-                
                 <div>
-                  <label className="font-medium text-gray-700 dark:text-gray-300">State</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-300">Pincode</label>
                   <input
                     type="text"
-                    name="state"
-                    value={addUserForm.state}
+                    name="pincode"
+                    value={addUserForm.pincode}
                     onChange={handleAddUserChange}
                     className="w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
-                    placeholder="Enter state"
+                    placeholder="Enter Pincode"
                   />
                 </div>
                 
                 <div>
-                  <label className="font-medium text-gray-700 dark:text-gray-300">Country</label>
-                  <input
-                    type="text"
+                  <label className="font-medium text-gray-700 dark:text-gray-300">Country *</label>
+                  <select
                     name="country"
-                    value={addUserForm.country}
+                    value={addUserForm.country || ''}
                     onChange={handleAddUserChange}
                     className="w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
-                    placeholder="Enter country"
-                  />
+                    required
+                  >
+                    <option value="">Select Country</option>
+                    {countries.map((country, idx) => (
+                      <option key={country.country || idx} value={country.country}>{country.country}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="font-medium text-gray-700 dark:text-gray-300">State *</label>
+                  <select
+                    name="state"
+                    value={addUserForm.state || ''}
+                    onChange={handleAddUserChange}
+                    className="w-full px-4 py-3 rounded-lg border bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    required
+                  >
+                    <option value="">Select State</option>
+                    {states.map((state, idx) => (
+                      <option key={state.id || idx} value={state.id}>{state.state}</option>
+                    ))}
+                  </select>
                 </div>
                 
                 <div className="md:col-span-2 flex justify-end gap-4 mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">

@@ -3,6 +3,7 @@ import DashboardLayout from "../components/Layout/DashboardLayout";
 import { FiPlus, FiX, FiEdit2, FiTrash2, FiRefreshCw, FiSave, FiAlertCircle, FiCheckCircle, FiDollarSign, FiCalendar, FiPackage, FiSearch, FiFilter } from "react-icons/fi";
 import { BiRupee } from "react-icons/bi";
 import api from "../api/axiosConfig";
+import { toast } from 'react-toastify';
 
 export default function MembershipPlans() {
   const [plans, setPlans] = useState([]);
@@ -20,8 +21,6 @@ export default function MembershipPlans() {
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortField, setSortField] = useState("name");
@@ -30,7 +29,6 @@ export default function MembershipPlans() {
   // Fetch membership plans from API
   const fetchPlans = async () => {
     setLoading(true);
-    setError(null);
     try {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid');
@@ -68,7 +66,6 @@ export default function MembershipPlans() {
     } catch (err) {
       console.error('Fetch membership plans error:', err);
       const errorMessage = err.message || 'Failed to fetch membership plans';
-      setError(errorMessage);
       
       if (errorMessage.toLowerCase().includes('token') || errorMessage.toLowerCase().includes('unauthorized') || errorMessage.toLowerCase().includes('log in')) {
         localStorage.removeItem('token');
@@ -119,7 +116,6 @@ export default function MembershipPlans() {
   // Save membership plan to API
   const savePlan = async (planData) => {
     setSubmitting(true);
-    setError(null);
     try {
       // Validate plan before saving
       const validationErrors = validatePlan(planData);
@@ -178,15 +174,14 @@ export default function MembershipPlans() {
       if (response.data?.status === 'success') {
         // Refresh plans after successful save
         await fetchPlans();
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
+        toast.success('Membership plan saved successfully!');
         return { success: true };
       } else {
         throw new Error(response.data?.message || 'Failed to save membership plan');
       }
     } catch (err) {
       console.error('Save membership plan error:', err, err.response?.data);
-      setError(
+      toast.error(
         err.response?.data?.message ||
         err.response?.data?.error ||
         err.message ||
@@ -205,7 +200,6 @@ export default function MembershipPlans() {
     }
 
     setSubmitting(true);
-    setError(null);
     try {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid');
@@ -226,14 +220,13 @@ export default function MembershipPlans() {
 
       if (response.data?.status === 'success') {
         await fetchPlans();
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
+        toast.success('Membership plan deleted successfully!');
       } else {
         throw new Error(response.data?.message || 'Failed to delete membership plan');
       }
     } catch (err) {
       console.error('Delete membership plan error:', err);
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setSubmitting(false);
     }
@@ -292,7 +285,7 @@ export default function MembershipPlans() {
     setAddMode(true);
     setEditMode(false);
     setEditingPlan(null);
-    setError(null);
+    // No need to clear error with toast
   };
 
   const handleEdit = (plan) => {
@@ -306,14 +299,14 @@ export default function MembershipPlans() {
     setEditMode(true);
     setAddMode(false);
     setEditingPlan(plan);
-    setError(null);
+    // No need to clear error with toast
   };
 
   const handleCancel = () => {
     setAddMode(false);
     setEditMode(false);
     setEditingPlan(null);
-    setError(null);
+    // No need to clear error with toast
   };
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -346,12 +339,9 @@ export default function MembershipPlans() {
         });
         if (response.data?.status === 'success' || (response.data?.message && response.data.message.toLowerCase().includes('success'))) {
           await fetchPlans();
-          setSuccess(response.data?.message || 'Membership plan saved successfully!');
-          setError(null);
-          setTimeout(() => setSuccess(false), 3000);
+          toast.success(response.data?.message || 'Membership plan saved successfully!');
         } else {
-          setError(response.data?.message || 'Failed to save membership plan');
-          setSuccess(false);
+          toast.error(response.data?.message || 'Failed to save membership plan');
         }
     setAddMode(false);
       setEditMode(false);
@@ -380,12 +370,9 @@ export default function MembershipPlans() {
         });
         if (response.data?.status === 'success' || (response.data?.message && response.data.message.toLowerCase().includes('success'))) {
           await fetchPlans();
-          setSuccess(response.data?.message || 'Membership plan added successfully!');
-      setError(null);
-          setTimeout(() => setSuccess(false), 3000);
-        } else {
-          setError(response.data?.message || 'Failed to add membership plan');
-          setSuccess(false);
+          toast.success(response.data?.message || 'Membership plan added successfully!');
+      } else {
+          toast.error(response.data?.message || 'Failed to add membership plan');
         }
         setAddMode(false);
         setEditMode(false);
@@ -393,8 +380,7 @@ export default function MembershipPlans() {
         setForm({ name: '', description: '', price: '', validity: '', status: 'active' });
       }
     } catch (err) {
-      setError(err.message);
-      setSuccess(false);
+      toast.error(err.message);
       setAddMode(false);
       setEditMode(false);
       setEditingPlan(null);
@@ -429,31 +415,6 @@ export default function MembershipPlans() {
             <span>Total Plans: {plans.length}</span>
           </div>
         </div>
-
-        {/* Success Message */}
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiCheckCircle />
-              <span>{success}</span>
-            </div>
-            <button onClick={() => setSuccess(false)} className="text-green-500 hover:text-green-700">
-              <FiX size={16} />
-            </button>
-          </div>
-        )}
-        {/* Error Message */}
-        {error && !success && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiAlertCircle />
-              <span>{error}</span>
-            </div>
-            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
-              <FiX size={16} />
-            </button>
-          </div>
-        )}
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Controls */}

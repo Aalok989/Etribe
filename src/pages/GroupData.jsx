@@ -4,6 +4,7 @@ import etribeLogo from "../assets/Etribe-logo.jpg";
 import defaultSignature from "../assets/company-logo/parent.jpg";
 import { FiEdit2, FiX, FiUpload, FiCheckCircle } from "react-icons/fi";
 import api from "../api/axiosConfig";
+import { toast } from 'react-toastify';
 
 const initialData = {};
 
@@ -65,7 +66,7 @@ export default function GroupData() {
           setSignaturePreview(mappedData.signature);
         }
       } catch (err) {
-        if (isMounted) setError(err.response?.data?.message || 'Failed to fetch group data');
+        if (isMounted) toast.error('Failed to fetch group data.');
       } finally {
         if (showLoading && isMounted) setLoading(false);
       }
@@ -128,10 +129,9 @@ export default function GroupData() {
         setForm((prev) => ({ ...prev, logo: logoUrl }));
         setData((prev) => ({ ...prev, logo: logoUrl }));
       }
-      setSaveSuccess('Logo updated successfully!');
-      setTimeout(() => setSaveSuccess(null), 2000);
+      toast.success('Logo uploaded successfully!');
     } catch (err) {
-      setSaveError(err.response?.data?.message || 'Failed to upload logo');
+      toast.error('Failed to upload logo.');
     } finally {
       setSaveLoading(false);
     }
@@ -181,10 +181,9 @@ export default function GroupData() {
         setForm((prev) => ({ ...prev, signature: signatureUrl }));
         setData((prev) => ({ ...prev, signature: signatureUrl }));
       }
-      setSaveSuccess('Signature updated successfully!');
-      setTimeout(() => setSaveSuccess(null), 2000);
+      toast.success('Signature uploaded successfully!');
     } catch (err) {
-      setSaveError(err.response?.data?.message || 'Failed to upload signature');
+      toast.error('Failed to upload signature.');
     } finally {
       setSaveLoading(false);
     }
@@ -210,7 +209,7 @@ export default function GroupData() {
     console.log('Save button clicked', form);
     setSaveLoading(true);
     setSaveError(null);
-    setSaveSuccess(null);
+    // No need to clear error/success with toast
     
     try {
       const token = localStorage.getItem('token');
@@ -246,13 +245,13 @@ export default function GroupData() {
 
     setData(form);
     setEditMode(false);
-      setSaveSuccess('Group data updated successfully!');
+      toast.success('Group data updated successfully!');
       setTimeout(() => {
-        setSaveSuccess(null);
+        toast.success(null);
       }, 3000);
     } catch (err) {
       console.error('Save group data error:', err);
-      setSaveError(err.response?.data?.message || 'Failed to save group data');
+      toast.error('Failed to update group data.');
     } finally {
       setSaveLoading(false);
     }

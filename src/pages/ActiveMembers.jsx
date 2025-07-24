@@ -5,6 +5,7 @@ import api from "../api/axiosConfig";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { toast } from 'react-toastify';
 
 export default function ActiveMembers() {
   const [members, setMembers] = useState([]);
@@ -14,21 +15,20 @@ export default function ActiveMembers() {
   const [viewMember, setViewMember] = useState(null);
   const [loading, setLoading] = useState(true);
   const [firstLoad, setFirstLoad] = useState(true);
-  const [error, setError] = useState(null);
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState("asc");
 
   useEffect(() => {
     const fetchActiveMembers = async (isFirst = false) => {
       if (isFirst) setLoading(true);
-      setError(null);
+      // No need to clear error/success with toast
       try {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid') || '1'; // Fallback to '1' as per cURL
         console.log('Token:', token);
         console.log('UID:', uid);
         if (!token) {
-          setError('Please log in to view active members');
+          toast.error('Please log in to view active members');
           window.location.href = '/'; // Redirect to login
           return;
         }
@@ -47,7 +47,7 @@ export default function ActiveMembers() {
           data: err.response?.data,
         });
         const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch active members';
-        setError(errorMessage);
+        toast.error(errorMessage);
         if (errorMessage.toLowerCase().includes('token')) {
           localStorage.removeItem('token');
           localStorage.removeItem('uid');
@@ -182,7 +182,7 @@ export default function ActiveMembers() {
       doc.save("active_members.pdf");
     } catch (err) {
       console.error("autoTable failed:", err);
-      alert("PDF export failed: " + err.message);
+      toast.error("PDF export failed: " + err.message);
     }
   };
 
@@ -230,19 +230,6 @@ export default function ActiveMembers() {
             <span>Total Members: {members.length}</span>
           </div>
         </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiAlertCircle />
-              <span>{error}</span>
-            </div>
-            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
-              <FiX size={16} />
-            </button>
-          </div>
-        )}
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Controls */}

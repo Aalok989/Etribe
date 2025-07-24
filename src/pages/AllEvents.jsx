@@ -7,6 +7,7 @@ import autoTable from "jspdf-autotable";
 import api from "../api/axiosConfig";
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import { toast } from 'react-toastify';
 
 export default function AllEvents() {
   const [events, setEvents] = useState([]);
@@ -27,7 +28,6 @@ export default function AllEvents() {
     invitationImage: null
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(null);
@@ -60,7 +60,6 @@ export default function AllEvents() {
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true);
-      setError(null);
       try {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
@@ -103,7 +102,7 @@ export default function AllEvents() {
         }));
         setEvents(mappedEvents);
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch all events');
+        toast.error('Failed to fetch all events');
       } finally {
         setLoading(false);
       }
@@ -230,7 +229,7 @@ export default function AllEvents() {
         credentials: 'include',
         body: formData,
       });
-      setSaveSuccess('Event added successfully!');
+      toast.success('Event added successfully!');
       setAddEventForm({
         event: "",
         agenda: "",
@@ -241,10 +240,10 @@ export default function AllEvents() {
         sendReminderTo: "Only Approved Members",
         invitationImage: null
       });
-      setTimeout(() => setSaveSuccess(null), 3000);
+      setTimeout(() => toast.dismiss(), 3000);
       setShowAddEventForm(false); // Hide form after save
     } catch (err) {
-      setSaveError('Failed to add event');
+      toast.error('Failed to add event');
     } finally {
       setSaveLoading(false);
     }
@@ -276,6 +275,7 @@ export default function AllEvents() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success('Events exported successfully!');
   };
 
   const handleExportExcel = () => {
@@ -291,6 +291,7 @@ export default function AllEvents() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "All Events");
     XLSX.writeFile(wb, "all_events.xlsx");
+    toast.success('Events exported successfully!');
   };
 
   const handleExportPDF = () => {
@@ -318,8 +319,9 @@ export default function AllEvents() {
         headStyles: { fillColor: [41, 128, 185] }
       });
       doc.save("all_events.pdf");
+      toast.success('Events exported successfully!');
     } catch (err) {
-      alert("PDF export failed: " + err.message);
+      toast.error("PDF export failed: " + err.message);
     }
   };
 
@@ -328,6 +330,7 @@ export default function AllEvents() {
       `${e.event},${e.agenda},${e.venue},${e.datetime ? new Date(e.datetime).toLocaleString() : ""}`
     ).join('\n');
     navigator.clipboard.writeText(data);
+    toast.success('Events copied to clipboard!');
   };
 
   const handleRefresh = () => {
@@ -421,8 +424,8 @@ export default function AllEvents() {
         credentials: 'include',
         body: formData,
       });
-      setEditSuccess('Event updated successfully!');
-      setTimeout(() => setEditSuccess(null), 2000);
+      toast.success('Event updated successfully!');
+      setTimeout(() => toast.dismiss(), 2000);
       setShowEditEventModal(false);
       // Refresh events
       setLoading(true);
@@ -465,7 +468,7 @@ export default function AllEvents() {
       }));
       setEvents(mappedEvents);
     } catch (err) {
-      setEditError('Failed to update event');
+      toast.error('Failed to update event');
     } finally {
       setEditLoading(false);
     }
@@ -495,6 +498,7 @@ export default function AllEvents() {
       });
       // Optimistically remove the event from the UI
       setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
+      toast.success('Event deleted successfully!');
       // Optionally, re-fetch in the background for consistency
       (async () => {
         try {
@@ -539,7 +543,7 @@ export default function AllEvents() {
         } catch {}
       })();
     } catch (err) {
-      setDeleteError('Failed to delete event');
+      toast.error('Failed to delete event');
     } finally {
       setDeleteLoading(false);
     }

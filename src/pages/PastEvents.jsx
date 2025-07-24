@@ -7,6 +7,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import { toast } from 'react-toastify';
 
 
 // Helper to decode HTML entities
@@ -35,10 +36,7 @@ export default function PastEvents() {
     invitationImage: null
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [saveError, setSaveError] = useState(null);
-  const [saveSuccess, setSaveSuccess] = useState(null);
   const [imageError, setImageError] = useState(false);
   const [sortField, setSortField] = useState("datetime");
   const [sortDirection, setSortDirection] = useState("desc");
@@ -48,7 +46,6 @@ export default function PastEvents() {
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true);
-      setError(null);
       try {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
@@ -91,7 +88,7 @@ export default function PastEvents() {
         }));
         setEvents(mappedEvents);
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch past events');
+        toast.error('Failed to fetch past events.');
       } finally {
         setLoading(false);
       }
@@ -189,8 +186,6 @@ export default function PastEvents() {
       return;
     }
     setSaveLoading(true);
-    setSaveError(null);
-    setSaveSuccess(null);
     try {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid');
@@ -203,8 +198,7 @@ export default function PastEvents() {
       if (addEventForm.invitationImage) {
         formData.append('event_image', addEventForm.invitationImage);
       }
-      await fetch('/api/event/add', {
-        method: 'POST',
+      await api.post('/event/add', formData, {
         headers: {
           'Client-Service': 'COHAPPRT',
           'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
@@ -214,9 +208,8 @@ export default function PastEvents() {
           'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || ''),
         },
         credentials: 'include',
-        body: formData,
       });
-      setSaveSuccess('Event added successfully!');
+      toast.success('Event added successfully!');
       setAddEventForm({
         event: "",
         agenda: "",
@@ -227,10 +220,10 @@ export default function PastEvents() {
         sendReminderTo: "Only Approved Members",
         invitationImage: null
       });
-      setTimeout(() => setSaveSuccess(null), 3000);
+      setTimeout(() => toast.dismiss(), 3000);
       setShowAddEventForm(false);
     } catch (err) {
-      setSaveError('Failed to add event');
+      toast.error('Failed to add event');
     } finally {
       setSaveLoading(false);
     }
@@ -248,7 +241,10 @@ export default function PastEvents() {
 
   // Export Handlers (CSV, Excel, PDF)
   const handleExportCSV = () => {
-    if (!events.length) return;
+    if (!events.length) {
+      toast.error('No events to export.');
+      return;
+    }
     const headers = ["Event", "Agenda", "Venue", "Date & Time"];
     const rows = events.map(e => [
       e.event,
@@ -264,10 +260,14 @@ export default function PastEvents() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success('Events exported successfully!');
   };
 
   const handleExportExcel = () => {
-    if (!events.length) return;
+    if (!events.length) {
+      toast.error('No events to export.');
+      return;
+    }
     const ws = XLSX.utils.json_to_sheet(
       events.map(e => ({
         Event: e.event,
@@ -279,10 +279,14 @@ export default function PastEvents() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Past Events");
     XLSX.writeFile(wb, "past_events.xlsx");
+    toast.success('Events exported successfully!');
   };
 
   const handleExportPDF = () => {
-    if (!events.length) return;
+    if (!events.length) {
+      toast.error('No events to export.');
+      return;
+    }
     const doc = new jsPDF({
       orientation: "portrait",
       unit: "pt",
@@ -306,8 +310,9 @@ export default function PastEvents() {
         headStyles: { fillColor: [41, 128, 185] }
       });
       doc.save("past_events.pdf");
+      toast.success('Events exported successfully!');
     } catch (err) {
-      alert("PDF export failed: " + err.message);
+      toast.error('PDF export failed: ' + err.message);
     }
   };
 
@@ -674,17 +679,8 @@ export default function PastEvents() {
                   </div>
                 </div>
                 
-                {saveError && (
-                  <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded-lg">
-                    {saveError}
-                  </div>
-                )}
-                
-                {saveSuccess && (
-                  <div className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-200 px-4 py-3 rounded-lg">
-                    {saveSuccess}
-                  </div>
-                )}
+                {/* Error Message */}
+                {/* Success Message */}
                 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
                   <button

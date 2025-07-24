@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
 import { FiEdit2, FiX, FiRefreshCw, FiSave, FiHome, FiAlertCircle, FiCheckCircle, FiSettings, FiPlus, FiBriefcase } from "react-icons/fi";
 import api from "../api/axiosConfig";
+import { toast } from 'react-toastify';
 
 const initialData = {
   companyField1: "",
@@ -21,14 +22,11 @@ export default function CompanyAdditionalFields() {
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState(initialData);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   // Fetch company additional fields from API
   const fetchCompanyAdditionalFields = async () => {
     setLoading(true);
-    setError(null);
     try {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid');
@@ -99,7 +97,7 @@ export default function CompanyAdditionalFields() {
     } catch (err) {
       console.error('Fetch company additional fields error:', err);
       const errorMessage = err.message || 'Failed to fetch company additional fields';
-      setError(errorMessage);
+      toast.error(errorMessage);
       
       if (errorMessage.toLowerCase().includes('token') || errorMessage.toLowerCase().includes('unauthorized') || errorMessage.toLowerCase().includes('log in')) {
         localStorage.removeItem('token');
@@ -148,7 +146,6 @@ export default function CompanyAdditionalFields() {
   // Save company additional fields to API
   const saveCompanyAdditionalFields = async (fieldsData) => {
     setSubmitting(true);
-    setError(null);
     try {
       // Validate fields before saving
       const validationErrors = validateFields(fieldsData);
@@ -190,15 +187,14 @@ export default function CompanyAdditionalFields() {
       if (response.data?.status === 'success') {
         // Update the data with new values
         setData(fieldsData);
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000); // Hide success message after 3 seconds
+        toast.success('Company additional fields saved successfully!');
         return { success: true };
       } else {
-        throw new Error(response.data?.message || 'Failed to save company additional fields');
+        toast.error(response.data?.message || 'Failed to save company additional fields');
       }
     } catch (err) {
       console.error('Save company additional fields error:', err);
-      throw err;
+      toast.error(err.message);
     } finally {
       setSubmitting(false);
     }
@@ -216,12 +212,12 @@ export default function CompanyAdditionalFields() {
   const handleEdit = () => {
     setForm(data);
     setEditMode(true);
-    setError(null);
+    // No need to clear error with toast
   };
 
   const handleCancel = () => {
     setEditMode(false);
-    setError(null);
+    // No need to clear error with toast
     // Reset form to current data
     setForm(data);
   };
@@ -233,9 +229,9 @@ export default function CompanyAdditionalFields() {
     try {
       await saveCompanyAdditionalFields(form);
     setEditMode(false);
-      setError(null);
+      // No need to clear error with toast
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -269,32 +265,6 @@ export default function CompanyAdditionalFields() {
             <span>Configured: {configuredFields}/10 fields</span>
           </div>
         </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiAlertCircle />
-              <span>{error}</span>
-            </div>
-            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
-              <FiX size={16} />
-            </button>
-          </div>
-        )}
-
-        {/* Success Message */}
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiCheckCircle />
-              <span>Company additional fields saved successfully!</span>
-            </div>
-            <button onClick={() => setSuccess(false)} className="text-green-500 hover:text-green-700">
-              <FiX size={16} />
-            </button>
-          </div>
-        )}
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto border border-gray-200 dark:border-gray-700">
           {/* Header Controls */}

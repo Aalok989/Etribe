@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
 import { FiEdit2, FiPlus, FiFileText, FiFile, FiX, FiTrash2, FiRefreshCw, FiUser, FiShield, FiCheckCircle, FiAlertCircle, FiCopy, FiDownload } from "react-icons/fi";
 import api from "../api/axiosConfig";
+import { toast } from 'react-toastify';
 
 export default function UserRoles() {
   const [roles, setRoles] = useState([]);
@@ -14,8 +15,6 @@ export default function UserRoles() {
   const [editForm, setEditForm] = useState({ role: "" });
   const [addForm, setAddForm] = useState({ role: "" });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [sortField, setSortField] = useState("role");
   const [sortDirection, setSortDirection] = useState("asc");
@@ -23,7 +22,6 @@ export default function UserRoles() {
   // Fetch roles from API
   const fetchRoles = async () => {
     setLoading(true);
-    setError(null);
     try {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid') || '1';
@@ -57,7 +55,7 @@ export default function UserRoles() {
     } catch (err) {
       console.error('Fetch roles error:', err);
       const errorMessage = err.message || 'Failed to fetch user roles';
-      setError(errorMessage);
+      toast.error(errorMessage);
       if (errorMessage.toLowerCase().includes('token') || errorMessage.toLowerCase().includes('unauthorized') || errorMessage.toLowerCase().includes('log in')) {
         localStorage.removeItem('token');
         localStorage.removeItem('uid');
@@ -72,21 +70,11 @@ export default function UserRoles() {
   const addRole = async (roleData) => {
     setSubmitting(true);
     try {
-      // Check if role with same name already exists
-      const roleExists = roles.some(role => 
-        role.role.toLowerCase() === roleData.role.toLowerCase()
-      );
-      
-      if (roleExists) {
-        throw new Error('A role with this name already exists');
-      }
-      
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid') || '1';
       if (!token) {
         throw new Error('Please log in to add user roles');
       }
-      
       const payload = {
         name: roleData.role
       };
@@ -101,15 +89,15 @@ export default function UserRoles() {
       });
       if (response.data?.status === 'success' || response.data?.message?.toLowerCase().includes('success')) {
         await fetchRoles();
-        setSuccess("Role added successfully!");
-        setTimeout(() => setSuccess(null), 3000);
+        toast.success("Role added successfully!");
+        setTimeout(() => toast.dismiss(), 3000);
         return { success: true };
       } else {
         throw new Error(response.data?.message || 'Failed to add role');
       }
     } catch (err) {
       console.error('Add role error:', err);
-      throw err;
+      toast.error(err.message);
     } finally {
       setSubmitting(false);
     }
@@ -119,16 +107,6 @@ export default function UserRoles() {
   const updateRole = async (roleId, roleData) => {
     setSubmitting(true);
     try {
-      // Check if role with same name already exists (excluding the current role)
-      const roleExists = roles.some(role => 
-        role.role.toLowerCase() === roleData.role.toLowerCase() && 
-        role.id !== roleId
-      );
-      
-      if (roleExists) {
-        throw new Error('A role with this name already exists');
-      }
-      
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid') || '1';
       
@@ -159,15 +137,15 @@ export default function UserRoles() {
       if (response.data?.status === 'success' || response.data?.message?.includes('success')) {
         // Refresh the roles list
         await fetchRoles();
-        setSuccess("Role updated successfully!");
-        setTimeout(() => setSuccess(null), 3000);
+        toast.success("Role updated successfully!");
+        setTimeout(() => toast.dismiss(), 3000);
         return { success: true };
       } else {
         throw new Error(response.data?.message || 'Failed to update role');
       }
     } catch (err) {
       console.error('Update role error:', err);
-      throw err;
+      toast.error(err.message);
     } finally {
       setSubmitting(false);
     }
@@ -202,15 +180,15 @@ export default function UserRoles() {
       if (response.data?.status === 'success' || response.data?.message?.includes('success')) {
         // Refresh the roles list
         await fetchRoles();
-        setSuccess("Role deleted successfully!");
-        setTimeout(() => setSuccess(null), 3000);
+        toast.success("Role deleted successfully!");
+        setTimeout(() => toast.dismiss(), 3000);
         return { success: true };
       } else {
         throw new Error(response.data?.message || 'Failed to delete role');
       }
     } catch (err) {
       console.error('Delete role error:', err);
-      throw err;
+      toast.error(err.message);
     } finally {
       setSubmitting(false);
     }
@@ -278,9 +256,8 @@ export default function UserRoles() {
       const role = roles[startIdx + selectedRoleIdx];
       await updateRole(role.id, editForm);
     setShowEditModal(false);
-      setError(null);
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -298,9 +275,8 @@ export default function UserRoles() {
     try {
       await addRole(addForm);
     setShowAddModal(false);
-      setError(null);
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -310,9 +286,8 @@ export default function UserRoles() {
       try {
         const role = roles[startIdx + idx];
         await deleteRole(role.id);
-        setError(null);
       } catch (err) {
-        setError(err.message);
+        toast.error(err.message);
       }
     }
   };
@@ -324,8 +299,8 @@ export default function UserRoles() {
     const fullData = headers + '\n' + tableData;
     
     navigator.clipboard.writeText(fullData).then(() => {
-      setSuccess("Data copied to clipboard!");
-      setTimeout(() => setSuccess(null), 3000);
+      toast.success("Data copied to clipboard!");
+      setTimeout(() => toast.dismiss(), 3000);
     });
   };
 
@@ -342,18 +317,18 @@ export default function UserRoles() {
     link.click();
     document.body.removeChild(link);
     
-    setSuccess("CSV exported successfully!");
-    setTimeout(() => setSuccess(null), 3000);
+    toast.success("CSV exported successfully!");
+    setTimeout(() => toast.dismiss(), 3000);
   };
 
   const handleExportExcel = () => {
-    setSuccess("Excel export functionality would be implemented here!");
-    setTimeout(() => setSuccess(null), 3000);
+    toast.info("Excel export functionality would be implemented here!");
+    setTimeout(() => toast.dismiss(), 3000);
   };
 
   const handleExportPDF = () => {
-    setSuccess("PDF export functionality would be implemented here!");
-    setTimeout(() => setSuccess(null), 3000);
+    toast.info("PDF export functionality would be implemented here!");
+    setTimeout(() => toast.dismiss(), 3000);
   };
 
   if (loading && roles.length === 0) {
@@ -379,31 +354,6 @@ export default function UserRoles() {
             <span>Total Roles: {roles.length}</span>
           </div>
         </div>
-
-        {/* Success/Error Messages */}
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiCheckCircle />
-              <span>{success}</span>
-            </div>
-            <button onClick={() => setSuccess(null)} className="text-green-500 hover:text-green-700">
-              <FiX size={16} />
-            </button>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiAlertCircle />
-              <span>{error}</span>
-            </div>
-            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
-              <FiX size={16} />
-            </button>
-          </div>
-        )}
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Filter and Export Controls */}
@@ -472,7 +422,7 @@ export default function UserRoles() {
                 onClick={openAddModal}
                 disabled={submitting}
               >
-                <FiPlus />Add Role
+                <FiPlus /> + Add Role
               </button>
             </div>
           </div>
@@ -719,4 +669,4 @@ export default function UserRoles() {
       </div>
     </DashboardLayout>
   );
-}
+} 

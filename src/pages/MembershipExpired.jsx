@@ -5,6 +5,7 @@ import api from "../api/axiosConfig";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { toast } from 'react-toastify';
 
 // Fetch plans for dropdown
 function useMembershipPlans() {
@@ -109,7 +110,7 @@ export default function MembershipExpired() {
         });
         setMembers(Array.isArray(response.data) ? response.data : response.data.data || []);
       } catch (err) {
-        setError(err.response?.data?.message || err.message || 'Failed to fetch expired members');
+        toast.error('Failed to fetch expired members.');
       } finally {
         if (isFirst) setLoading(false);
         if (isFirst) setFirstLoad(false);
@@ -207,7 +208,7 @@ export default function MembershipExpired() {
         membership_plan_id: form.plan, // Use the selected plan's ID
         valid_upto: form.validUpto,
       });
-      setUpdateSuccess(`Member ${modifyMember.name} has been reactivated successfully!`);
+      toast.success('Membership renewed successfully!');
       setMembers(prevMembers => prevMembers.filter(member => member.id !== modifyMember.id));
       setTimeout(() => {
     closeModify();
@@ -216,10 +217,13 @@ export default function MembershipExpired() {
       if (err.response) {
         const errorMessage = err.response.data?.message || err.response.data?.error || 'Failed to activate membership';
         setUpdateError(errorMessage);
+        toast.error(errorMessage);
       } else if (err.request) {
         setUpdateError('Network error. Please check your connection.');
+        toast.error('Network error. Please check your connection.');
       } else {
         setUpdateError('Failed to activate membership. Please try again.');
+        toast.error('Failed to renew membership.');
       }
     } finally {
       setUpdateLoading(false);
@@ -356,19 +360,6 @@ export default function MembershipExpired() {
             <span>Total Expired Members: {members.length}</span>
           </div>
         </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiAlertCircle />
-              <span>{error}</span>
-            </div>
-            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
-              <FiX size={16} />
-            </button>
-          </div>
-        )}
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Controls */}

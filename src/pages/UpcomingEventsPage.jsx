@@ -7,6 +7,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import { toast } from 'react-toastify';
 
 
 // Helper to decode HTML entities
@@ -38,7 +39,6 @@ export default function UpcomingEventsPage() {
   const [formErrors, setFormErrors] = useState({});
   const [showAddEventForm, setShowAddEventForm] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(null);
@@ -50,7 +50,6 @@ export default function UpcomingEventsPage() {
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true);
-      setError(null);
       try {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
@@ -93,7 +92,7 @@ export default function UpcomingEventsPage() {
         }));
         setEvents(mappedEvents);
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch upcoming events');
+        toast.error('Failed to fetch upcoming events.');
       } finally {
         setLoading(false);
       }
@@ -218,7 +217,7 @@ export default function UpcomingEventsPage() {
         credentials: 'include',
         body: formData,
       });
-      setSaveSuccess('Event added successfully!');
+      toast.success('Event added successfully!');
       setAddEventForm({
         event: "",
         agenda: "",
@@ -229,10 +228,10 @@ export default function UpcomingEventsPage() {
         sendReminderTo: "Only Approved Members",
         invitationImage: null
       });
-      setTimeout(() => setSaveSuccess(null), 3000);
+      setTimeout(() => toast.dismiss(), 3000);
       setShowAddEventForm(false);
     } catch (err) {
-      setSaveError('Failed to add event');
+      toast.error('Failed to add event');
     } finally {
       setSaveLoading(false);
     }
@@ -311,7 +310,7 @@ export default function UpcomingEventsPage() {
       });
       doc.save("upcoming_events.pdf");
     } catch (err) {
-      alert("PDF export failed: " + err.message);
+      toast.error("PDF export failed: " + err.message);
     }
   };
 

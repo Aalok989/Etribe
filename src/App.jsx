@@ -29,6 +29,8 @@ import CookiePolicy from "./pages/CookiePolicy";
 import Calendar from "./pages/Calendar";
 import Login from "./pages/Login";
 import DashboardLayout from "./components/Layout/DashboardLayout";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function isAuthenticated() {
   return !!localStorage.getItem('token');
@@ -75,6 +77,7 @@ function App() {
         <Route path="/cookies" element={<CookiePolicy />} />
         <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
       </Routes>
+      <ToastContainer position="top-right" autoClose={3000} />
     </Router>
   );
 }

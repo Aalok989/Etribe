@@ -5,6 +5,7 @@ import api from "../api/axiosConfig";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { toast } from 'react-toastify';
 
 export default function InactiveMembers() {
   const [members, setMembers] = useState([]);
@@ -15,7 +16,6 @@ export default function InactiveMembers() {
   const [form, setForm] = useState({ plan: "", validUpto: "" });
   const [loading, setLoading] = useState(true);
   const [firstLoad, setFirstLoad] = useState(true);
-  const [error, setError] = useState(null);
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState("asc");
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -53,12 +53,12 @@ export default function InactiveMembers() {
   useEffect(() => {
     const fetchInactiveMembers = async (isFirst = false) => {
       if (isFirst) setLoading(true);
-      setError(null);
+      // No need to clear error/success with toast
       try {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
         if (!token) {
-          setError('Please log in to view inactive members');
+          toast.error('Please log in to view inactive members');
           window.location.href = '/';
           return;
         }
@@ -70,7 +70,7 @@ export default function InactiveMembers() {
         });
         setMembers(Array.isArray(response.data) ? response.data : response.data.data || []);
       } catch (err) {
-        setError(err.response?.data?.message || err.message || 'Failed to fetch inactive members');
+        toast.error(err.response?.data?.message || err.message || 'Failed to fetch inactive members');
       } finally {
         if (isFirst) setLoading(false);
         if (isFirst) setFirstLoad(false);
@@ -189,7 +189,7 @@ export default function InactiveMembers() {
         membership_plan_id: form.plan, // Use the selected plan's ID
         valid_upto: form.validUpto,
       });
-      setUpdateSuccess(`Member ${modifyMember.name} has been reactivated successfully!`);
+      toast.success(`Member ${modifyMember.name} has been reactivated successfully!`);
       setMembers(prevMembers => prevMembers.filter(member => member.id !== modifyMember.id));
       setTimeout(() => {
     closeModify();
@@ -301,7 +301,7 @@ export default function InactiveMembers() {
       doc.save("inactive_members.pdf");
     } catch (err) {
       console.error("autoTable failed:", err);
-      alert("PDF export failed: " + err.message);
+      toast.error("PDF export failed: " + err.message);
     }
   };
 
@@ -318,13 +318,13 @@ export default function InactiveMembers() {
     );
   }
 
-  if (error) {
+  if (updateError) {
     return (
       <DashboardLayout>
         <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-800">
           <div className="flex items-center gap-2 text-red-500">
             <FiAlertCircle />
-            <p className="dark:text-red-300">{error}</p>
+            <p className="dark:text-red-300">{updateError}</p>
           </div>
         </div>
       </DashboardLayout>
@@ -341,19 +341,6 @@ export default function InactiveMembers() {
             <span>Total Inactive Members: {members.length}</span>
           </div>
         </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiAlertCircle />
-              <span>{error}</span>
-            </div>
-            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
-              <FiX size={16} />
-            </button>
-          </div>
-        )}
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Controls */}

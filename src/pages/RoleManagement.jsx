@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
 import { FiFileText, FiFile, FiRefreshCw, FiX, FiShield, FiCheckCircle, FiAlertCircle, FiSave, FiSettings } from "react-icons/fi";
 import api from "../api/axiosConfig";
+import { toast } from 'react-toastify';
 
 const modules = [
   "Group Settings",
@@ -29,22 +30,19 @@ export default function RoleManagement() {
   const [roles, setRoles] = useState([]);
   const [selectedRole, setSelectedRole] = useState("");
   const [permissions, setPermissions] = useState(defaultPermissions);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [loadingPermissions, setLoadingPermissions] = useState(false);
 
   // Fetch roles from API
   const fetchRoles = async () => {
     setLoading(true);
-    setError(null);
     try {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid') || '1';
       
       if (!token) {
-        setError('Please log in to view role management');
+        toast.error('Please log in to view role management');
         window.location.href = '/login';
         return;
       }
@@ -87,7 +85,7 @@ export default function RoleManagement() {
     } catch (err) {
       console.error('Fetch roles error:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch roles';
-      setError(errorMessage);
+      toast.error(errorMessage);
       
       if (errorMessage.toLowerCase().includes('token') || errorMessage.toLowerCase().includes('unauthorized')) {
         localStorage.removeItem('token');
@@ -238,6 +236,7 @@ export default function RoleManagement() {
       console.log('Save permissions response:', response.data);
       
       if (response.data?.success || response.data?.status === 'success') {
+        toast.success('Permissions saved successfully!');
         return { success: true };
       } else {
         throw new Error(response.data?.message || 'Failed to save permissions');
@@ -245,7 +244,7 @@ export default function RoleManagement() {
     } catch (err) {
       console.error('Save permissions error:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Failed to save permissions';
-      throw new Error(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -283,15 +282,14 @@ export default function RoleManagement() {
     e.preventDefault();
     try {
       await saveRolePermissions(selectedRole, permissions);
-    setShowSuccess(true);
-      setError(null);
+      // No need to clear error/success with toast
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     }
   };
 
   const handleSuccessClose = () => {
-    setShowSuccess(false);
+    // No need to clear error/success with toast
   };
 
   if (loading && roles.length === 0) {
@@ -319,17 +317,7 @@ export default function RoleManagement() {
         </div>
 
         {/* Success/Error Messages */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiAlertCircle />
-              <span>{error}</span>
-            </div>
-            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
-              <FiX size={16} />
-            </button>
-          </div>
-        )}
+        {/* No need to clear error/success with toast */}
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Role Selection Controls */}
@@ -512,27 +500,7 @@ export default function RoleManagement() {
         </div>
         
         {/* Enhanced Success Modal */}
-        {showSuccess && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-md relative">
-              <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white mb-4">
-                  <FiCheckCircle size={32} />
-                </div>
-                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Permissions Saved Successfully!</h2>
-                <p className="text-gray-600 dark:text-gray-300 text-sm mb-6">
-                  Role permissions for <strong>{selectedRole}</strong> have been updated.
-                </p>
-              <button
-                  className="px-6 py-2 rounded-lg font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-                onClick={handleSuccessClose}
-              >
-                  Continue
-              </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* No need to clear error/success with toast */}
       </div>
     </DashboardLayout>
   );
