@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
-import { FiEdit2, FiX, FiRefreshCw, FiSave, FiPlay, FiMessageSquare, FiAlertCircle, FiCheckCircle, FiSettings, FiLink } from "react-icons/fi";
+import { FiEdit2, FiX, FiRefreshCw, FiSave, FiMessageSquare, FiAlertCircle, FiCheckCircle, FiSettings, FiLink } from "react-icons/fi";
 import api from "../api/axiosConfig";
 
 const initialData = {
@@ -17,7 +17,6 @@ export default function MessageSettings() {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [testing, setTesting] = useState(false);
   const [docTypes, setDocTypes] = useState([]);
 
   // Fetch document types from API
@@ -196,51 +195,7 @@ export default function MessageSettings() {
     }
   };
 
-  // Test message settings
-  const testMessageSettings = async () => {
-    setTesting(true);
-    setError(null);
-    try {
-      // Validate settings before testing
-      const validationErrors = validateSettings(data);
-      if (validationErrors.length > 0) {
-        throw new Error(validationErrors.join(', '));
-      }
-
-      const token = localStorage.getItem('token');
-      const uid = localStorage.getItem('uid');
-      
-      if (!token || !uid) {
-        throw new Error('Authentication required. Please log in.');
-      }
-
-      const response = await api.post('/groupSettings/test_message_setting', {
-        message_url: data.messageUrl,
-        mobile_no_key: data.mobileNoKey,
-        message_key: data.messageKey,
-      }, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-        }
-      });
-
-      if (response.data?.status === 'success') {
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
-      } else {
-        throw new Error(response.data?.message || 'Message test failed');
-      }
-    } catch (err) {
-      console.error('Test message settings error:', err);
-      setError(err.message);
-    } finally {
-      setTesting(false);
-    }
-  };
+  // Remove testMessageSettings function
 
   // Load message settings on component mount
   useEffect(() => {
@@ -353,12 +308,12 @@ export default function MessageSettings() {
             {!editMode && (
                 <>
                   <button className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition" onClick={handleRefresh} disabled={loading} title="Refresh Settings"><FiRefreshCw className={loading ? "animate-spin" : ""} /> Refresh</button>
-                  <button className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition" onClick={testMessageSettings} disabled={testing || !data.messageUrl} title="Test Message Settings">{testing ? (<FiRefreshCw className="animate-spin" />) : (<FiPlay />)}{testing ? 'Testing...' : 'Test'}</button>
                   <button className="flex items-center gap-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition" onClick={handleEdit}><FiEdit2 /> Edit Settings</button>
                 </>
             )}
             </div>
           </div>
+          
           {/* Content */}
           <div className="p-6">
             {loading ? (
@@ -409,14 +364,14 @@ export default function MessageSettings() {
                     </div>
                   </div>
                 </div>
-                {/* Test Results */}
+                {/* Remove Test Results section */}
                 {isConfigured && (
                   <div className="bg-blue-50 dark:bg-blue-900/40 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
                     <h3 className="font-semibold text-blue-700 dark:text-blue-200 mb-2 flex items-center gap-2">
-                      <FiPlay className="text-blue-600 dark:text-blue-200" />
-                      Testing
+                      <FiSettings className="text-blue-600 dark:text-blue-200" />
+                      Configuration Status
                     </h3>
-                    <p className="text-blue-600 dark:text-blue-200 text-sm">Use the "Test" button above to verify your message settings are working correctly.</p>
+                    <p className="text-blue-600 dark:text-blue-200 text-sm">Your message settings are configured and ready to use.</p>
                   </div>
                 )}
               </div>
@@ -480,4 +435,4 @@ export default function MessageSettings() {
       </div>
     </DashboardLayout>
   );
-} 
+}

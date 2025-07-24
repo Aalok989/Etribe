@@ -72,11 +72,21 @@ export default function UserRoles() {
   const addRole = async (roleData) => {
     setSubmitting(true);
     try {
+      // Check if role with same name already exists
+      const roleExists = roles.some(role => 
+        role.role.toLowerCase() === roleData.role.toLowerCase()
+      );
+      
+      if (roleExists) {
+        throw new Error('A role with this name already exists');
+      }
+      
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid') || '1';
       if (!token) {
         throw new Error('Please log in to add user roles');
       }
+      
       const payload = {
         name: roleData.role
       };
@@ -109,6 +119,16 @@ export default function UserRoles() {
   const updateRole = async (roleId, roleData) => {
     setSubmitting(true);
     try {
+      // Check if role with same name already exists (excluding the current role)
+      const roleExists = roles.some(role => 
+        role.role.toLowerCase() === roleData.role.toLowerCase() && 
+        role.id !== roleId
+      );
+      
+      if (roleExists) {
+        throw new Error('A role with this name already exists');
+      }
+      
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid') || '1';
       
@@ -452,7 +472,7 @@ export default function UserRoles() {
                 onClick={openAddModal}
                 disabled={submitting}
               >
-                <FiPlus /> + Add Role
+                <FiPlus />Add Role
               </button>
             </div>
           </div>
@@ -699,4 +719,4 @@ export default function UserRoles() {
       </div>
     </DashboardLayout>
   );
-} 
+}

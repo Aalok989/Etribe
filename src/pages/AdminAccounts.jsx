@@ -14,20 +14,6 @@ const defaultUserRoles = [
   "Super Admin",
 ];
 
-// Updated data to match System Users table
-const initialSystemUsers = [
-  { id: 1, name: "Rohit Arya", contact: "7017064745", email: "rohit@30days.in", address: "Shiv Murti Gandhi Chowk Shamli", city: "Shamli", district: "Shamli", state: "Uttar Pradesh", country: "India", role: "Admin", status: "active" },
-  { id: 2, name: "Parveen", contact: "9876543220", email: "parveen@30dats.in", address: "nangloi", city: "delhi", district: "nangloi", state: "Gujarat", country: "India", role: "Manager", status: "active" },
-  { id: 3, name: "naman", contact: "7876467065", email: "arya.rohi13@gmail.com", address: "test", city: "Rohtak", district: "rohtak", state: "Uttar Pradesh", country: "India", role: "Support", status: "active" },
-  { id: 4, name: "sourav", contact: "9876543210", email: "namanjain@30days.in", address: "test address", city: "Delhi", district: "Central Delhi", state: "Delhi", country: "India", role: "Finance", status: "active" },
-  { id: 5, name: "Test User", contact: "1234567890", email: "test@gmail.com", address: "test address line", city: "Mumbai", district: "Mumbai", state: "Maharashtra", country: "India", role: "HR", status: "active" },
-  { id: 6, name: "Amit Kumar", contact: "5551234567", email: "amit@company.com", address: "789 Tech Park", city: "Bangalore", district: "Bangalore Urban", state: "Karnataka", country: "India", role: "IT", status: "active" },
-  { id: 7, name: "Neha Verma", contact: "4445556666", email: "neha@company.com", address: "321 Business Ave", city: "Chennai", district: "Chennai", state: "Tamil Nadu", country: "India", role: "Super Admin", status: "active" },
-  { id: 8, name: "Suresh Patel", contact: "3332221111", email: "suresh@company.com", address: "654 Main Road", city: "Hyderabad", district: "Hyderabad", state: "Telangana", country: "India", role: "Admin", status: "active" },
-  { id: 9, name: "Meena Joshi", contact: "8889990000", email: "meena@company.com", address: "987 Market Lane", city: "Pune", district: "Pune", state: "Maharashtra", country: "India", role: "Manager", status: "active" },
-  { id: 10, name: "Vikas Sharma", contact: "1112223333", email: "vikas@company.com", address: "159 Tech Blvd", city: "Ahmedabad", district: "Ahmedabad", state: "Gujarat", country: "India", role: "Support", status: "active" },
-];
-
 // Role color mapping
 const getRoleColor = (role) => {
   const roleColors = {
@@ -399,7 +385,7 @@ export default function AdminAccounts() {
             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold shadow hover:bg-green-700 transition"
             onClick={openAddUserModal}
           >
-            <FiPlus /> + Add System User
+            <FiPlus /> Add System User
           </button>
         </div>
 

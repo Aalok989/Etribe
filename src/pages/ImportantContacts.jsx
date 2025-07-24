@@ -335,9 +335,9 @@ export default function ImportantContactsPage() {
         {/* Add Contact Modal */}
         {showAddContactModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 relative">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 relative">
               <button
-                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 dark:text-gray-300 dark:hover:text-red-400 transition-colors"
                 onClick={() => setShowAddContactModal(false)}
                 title="Close"
               >
@@ -345,78 +345,78 @@ export default function ImportantContactsPage() {
               </button>
               
               <div className="mb-6">
-                <h2 className="text-xl font-bold text-indigo-700 flex items-center gap-2">
-                  <FiPlus className="text-indigo-600" />
+                <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+                  <FiPlus className="text-indigo-600 dark:text-indigo-400" />
                   Add New Contact
                 </h2>
-                <p className="text-gray-600 text-sm mt-1">Create a new important contact</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">Create a new important contact</p>
               </div>
               
-              {formError && <p className="text-red-500 text-sm bg-red-100 p-2 rounded-lg">{formError}</p>}
+              {formError && <p className="text-red-500 text-sm bg-red-100 dark:bg-red-900/30 p-2 rounded-lg">{formError}</p>}
               
               <form className="space-y-4" onSubmit={handleAddContactSubmit}>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Department <span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Department <span className="text-red-500 dark:text-red-400">*</span>
                   </label>
                   <input
                     type="text"
                     name="dept"
                     value={addContactForm.dept}
                     onChange={handleAddContactChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 focus:border-transparent transition-colors"
                     placeholder="Enter department"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Person Name <span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Person Name <span className="text-red-500 dark:text-red-400">*</span>
                   </label>
                   <input
                     type="text"
                     name="name"
                     value={addContactForm.name}
                     onChange={handleAddContactChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 focus:border-transparent transition-colors"
                     placeholder="Enter person name"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contact <span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Contact <span className="text-red-500 dark:text-red-400">*</span>
                   </label>
                   <input
                     type="text"
                     name="contact"
                     value={addContactForm.contact}
                     onChange={handleAddContactChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 focus:border-transparent transition-colors"
                     placeholder="Enter contact number"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email ID <span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Email ID <span className="text-red-500 dark:text-red-400">*</span>
                   </label>
                   <input
                     type="email"
                     name="email"
                     value={addContactForm.email}
                     onChange={handleAddContactChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 focus:border-transparent transition-colors"
                     placeholder="Enter email address"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                     Address
                   </label>
                   <input
@@ -424,22 +424,23 @@ export default function ImportantContactsPage() {
                     name="address"
                     value={addContactForm.address}
                     onChange={handleAddContactChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 focus:border-transparent transition-colors"
                     placeholder="Enter address"
+                    required
                   />
                 </div>
                 
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
                   <button
                     type="button"
-                    className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors"
+                    className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                     onClick={() => setShowAddContactModal(false)}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors"
+                    className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 dark:bg-green-700 text-white font-medium hover:bg-green-700 dark:hover:bg-green-600 transition-colors"
                   >
                     <FiPlus />
                     Add Contact
@@ -453,9 +454,9 @@ export default function ImportantContactsPage() {
         {/* Edit Contact Modal */}
         {editContact && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 relative">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 relative">
               <button
-                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 dark:text-gray-300 dark:hover:text-red-400 transition-colors"
                 onClick={() => setEditContact(null)}
                 title="Close"
               >
@@ -463,101 +464,101 @@ export default function ImportantContactsPage() {
               </button>
               
               <div className="mb-6">
-                <h2 className="text-xl font-bold text-indigo-700 flex items-center gap-2">
-                  <FiEdit2 className="text-indigo-600" />
+                <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+                  <FiEdit2 className="text-indigo-600 dark:text-indigo-400" />
                   Edit Contact
                 </h2>
-                <p className="text-gray-600 text-sm mt-1">Update contact information</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">Update contact information</p>
               </div>
               
-               {formError && <p className="text-red-500 text-sm bg-red-100 p-2 rounded-lg">{formError}</p>}
+              {formError && <p className="text-red-500 text-sm bg-red-100 dark:bg-red-900/30 p-2 rounded-lg">{formError}</p>}
               
               <form className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Department <span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Department <span className="text-red-500 dark:text-red-400">*</span>
                   </label>
                   <input
                     type="text"
                     name="dept"
                     value={editForm.dept}
                     onChange={handleEditChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 focus:border-transparent transition-colors"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Person Name <span className="text-red-500">*</span>
-                </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Person Name <span className="text-red-500 dark:text-red-400">*</span>
+                  </label>
                   <input
                     type="text"
                     name="name"
                     value={editForm.name}
                     onChange={handleEditChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 focus:border-transparent transition-colors"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contact <span className="text-red-500">*</span>
-                </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Contact <span className="text-red-500 dark:text-red-400">*</span>
+                  </label>
                   <input
                     type="text"
                     name="contact"
                     value={editForm.contact}
                     onChange={handleEditChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 focus:border-transparent transition-colors"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email ID <span className="text-red-500">*</span>
-                </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Email ID <span className="text-red-500 dark:text-red-400">*</span>
+                  </label>
                   <input
                     type="email"
                     name="email"
                     value={editForm.email}
                     onChange={handleEditChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 focus:border-transparent transition-colors"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                     Address
-                </label>
+                  </label>
                   <input
                     type="text"
                     name="address"
                     value={editForm.address}
                     onChange={handleEditChange}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-colors"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 focus:border-transparent transition-colors"
                   />
                 </div>
                 
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
                   <button
                     type="button"
-                    className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors"
+                    className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                     onClick={() => setEditContact(null)}
                   >
                     Cancel
                   </button>
-                <button
-                  type="button"
-                    className="flex items-center gap-2 px-6 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors"
-                  onClick={handleEditSave}
-                >
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 px-6 py-2 rounded-lg bg-indigo-600 dark:bg-indigo-700 text-white font-medium hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors"
+                    onClick={handleEditSave}
+                  >
                     <FiEdit2 />
                     Save Changes
-                </button>
+                  </button>
                 </div>
               </form>
             </div>
@@ -634,4 +635,4 @@ export default function ImportantContactsPage() {
       </div>
     </DashboardLayout>
   );
-} 
+}
