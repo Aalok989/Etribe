@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiDownload, FiFilter, FiEdit2, FiTrash2, FiUser, FiMail, FiPhone, FiMapPin, FiRefreshCw, FiSearch, FiCopy, FiPlus, FiFileText, FiFile, FiX } from "react-icons/fi";
+import { FiDownload, FiFilter, FiEdit2, FiTrash2, FiUser, FiMail, FiPhone, FiMapPin, FiRefreshCw, FiSearch, FiCopy, FiPlus, FiFileText, FiFile, FiX, FiChevronDown } from "react-icons/fi";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -22,6 +22,21 @@ export default function ImportantContacts() {
     address: ""
   });
   const [formError, setFormError] = useState(null);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest('.export-dropdown')) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportDropdown]);
 
   const departments = ["All", ...Array.from(new Set(contactsData.map(c => c.dept)))];
   
@@ -167,97 +182,176 @@ export default function ImportantContacts() {
 
   return (
     <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-      <div className="rounded-t-2xl inset-0 bg-gradient-to-r from-indigo-300 via-blue-200 to-blue-300 dark:from-indigo-900 dark:via-blue-900 dark:to-gray-900 px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div className="flex items-center gap-4">
-        <h2 className="text-xl font-bold text-gray-800 dark:text-white tracking-wide">Important Contacts</h2>
-          <div className="flex items-center gap-2 text-sm text-white">
-            <FiUser className="text-white" />
-            <span>Total: {contactsData.length}</span>
-          </div>
-        </div>
-        <div className="flex gap-2 items-center">
-          <div className="flex items-center gap-2">
-          <FiFilter className="text-white" />
-          <label htmlFor="dept-filter" className="mr-2 text-sm font-medium text-white">Dept:</label>
-          <select
-            id="dept-filter"
-              className="border-none rounded-lg px-3 py-1 text-sm bg-indigo-100 dark:bg-gray-800 text-indigo-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400"
-            value={filter}
-            onChange={e => setFilter(e.target.value)}
-          >
-            {departments.map(dept => (
-              <option key={dept} value={dept}>{dept}</option>
-            ))}
-          </select>
-        </div>
-        <div className="flex gap-2">
-            <button 
-              className="flex items-center gap-1 bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
-              onClick={handleExportCSV}
-              title="Export to CSV"
-            >
-              <FiFileText />
-              CSV
-            </button>
-            <button 
-              className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-emerald-600 transition"
-              onClick={handleExportExcel}
-              title="Export to Excel"
-            >
-              <FiFile />
-              Excel
-            </button>
-            <button 
-              className="flex items-center gap-1 bg-rose-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-rose-600 transition"
-              onClick={handleExportPDF}
-              title="Export to PDF"
-            >
-              <FiFile />
-              PDF
-            </button>
-            <button 
-              className="flex items-center gap-1 bg-gray-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
-              onClick={handleCopyToClipboard}
-              title="Copy to Clipboard"
-            >
-              <FiCopy />
-              Copy
-            </button>
-            <button 
-              className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-indigo-600 transition"
-              onClick={handleRefresh}
-              title="Refresh Contacts"
-            >
-              <FiRefreshCw />
-              Refresh
-            </button>
+      <div className="rounded-t-2xl inset-0 bg-gradient-to-r from-indigo-300 via-blue-200 to-blue-300 dark:from-indigo-900 dark:via-blue-900 dark:to-gray-900 px-6 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 relative">
+        <div className="flex flex-col gap-3 w-full">
+          {/* First Row - Title */}
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white tracking-wide">
+            Important Contacts
+          </h2>
+          
+          {/* Second Row - Controls */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <FiFilter className="text-white" />
+                <label htmlFor="dept-filter" className="text-sm font-medium text-white">Dept:</label>
+                <select
+                  id="dept-filter"
+                  className="border-none rounded-lg px-3 py-1 text-sm bg-indigo-100 dark:bg-gray-800 text-indigo-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400"
+                  value={filter}
+                  onChange={e => setFilter(e.target.value)}
+                >
+                  {departments.map(dept => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <span className="flex items-center gap-1 text-xs font-medium bg-indigo-500/80 text-white px-2 py-0.5 rounded-lg">
+                <FiUser className="text-white text-base" />
+                Total: {contactsData.length}
+              </span>
+            </div>
+            
+            <div className="flex gap-2 items-center flex-shrink-0">
+              {/* Desktop Export Buttons */}
+              <div className="hidden lg:flex gap-2">
+                <button 
+                  className="flex items-center gap-1 bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
+                  onClick={handleExportCSV}
+                  title="Export to CSV"
+                >
+                  <FiFileText />
+                  CSV
+                </button>
+                <button 
+                  className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-emerald-600 transition"
+                  onClick={handleExportExcel}
+                  title="Export to Excel"
+                >
+                  <FiFile />
+                  Excel
+                </button>
+                <button 
+                  className="flex items-center gap-1 bg-rose-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-rose-600 transition"
+                  onClick={handleExportPDF}
+                  title="Export to PDF"
+                >
+                  <FiFile />
+                  PDF
+                </button>
+                <button 
+                  className="flex items-center gap-1 bg-gray-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
+                  onClick={handleCopyToClipboard}
+                  title="Copy to Clipboard"
+                >
+                  <FiCopy />
+                  Copy
+                </button>
+                <button 
+                  className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-indigo-600 transition"
+                  onClick={handleRefresh}
+                  title="Refresh Contacts"
+                >
+                  <FiRefreshCw />
+                  Refresh
+                </button>
+              </div>
+
+              {/* Mobile Export Dropdown */}
+              <div className="lg:hidden relative export-dropdown">
+                <button
+                  className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-indigo-600 transition"
+                  onClick={() => setShowExportDropdown(!showExportDropdown)}
+                >
+                  <FiDownload />
+                  Export
+                  <FiChevronDown className={`transition-transform ${showExportDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showExportDropdown && (
+                  <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20 min-w-32">
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                      onClick={() => {
+                        handleExportCSV();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiFileText className="text-blue-500" />
+                      CSV
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => {
+                        handleExportExcel();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiFile className="text-emerald-500" />
+                      Excel
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => {
+                        handleExportPDF();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiFile className="text-rose-500" />
+                      PDF
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => {
+                        handleCopyToClipboard();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiCopy className="text-gray-500" />
+                      Copy
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
+                      onClick={() => {
+                        handleRefresh();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiRefreshCw className="text-indigo-500" />
+                      Refresh
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
       <div className="overflow-x-auto p-6">
-        <div className="max-h-96 overflow-y-auto">
-          <table className="min-w-full text-sm bg-white dark:bg-gray-800">
+        <div className="max-h-96 overflow-y-auto min-w-full">
+          <table className="min-w-full text-sm bg-white dark:bg-gray-800 whitespace-nowrap">
             <thead className="bg-indigo-50 dark:bg-gray-800 text-indigo-700 dark:text-indigo-200 sticky top-0 z-10">
               <tr>
-                <th className="p-3 rounded-l-xl text-left">Sr No</th>
-                <th className="p-3 text-left">Department</th>
-                <th className="p-3 text-left">Person Name</th>
-                <th className="p-3 text-left">Contact</th>
-                <th className="p-3 text-left">Email</th>
-                <th className="p-3 text-left">Address</th>
-                <th className="p-3 rounded-r-xl text-center">Action</th>
+                <th className="p-3 rounded-l-xl text-left min-w-[60px]">Sr No</th>
+                <th className="p-3 text-left min-w-[120px]">Department</th>
+                <th className="p-3 text-left min-w-[120px]">Person Name</th>
+                <th className="p-3 text-left min-w-[100px]">Contact</th>
+                <th className="p-3 text-left min-w-[150px]">Email</th>
+                <th className="p-3 text-left min-w-[120px]">Address</th>
+                <th className="p-3 rounded-r-xl text-center min-w-[120px]">Action</th>
               </tr>
             </thead>
             <tbody className="border-separate border-spacing-y-2">
               {filteredContacts.map((c, idx) => (
                 <tr key={c.id} className="bg-white dark:bg-gray-900 shadow rounded-xl">
-                  <td className="p-3 text-center font-semibold text-indigo-700 dark:text-indigo-300">{idx + 1}</td>
-                  <td className="p-3 text-gray-900 dark:text-gray-100">{c.dept}</td>
-                  <td className="p-3 text-gray-900 dark:text-gray-100">{c.name}</td>
-                  <td className="p-3 text-gray-700 dark:text-gray-200">{c.contact}</td>
-                  <td className="p-3 text-gray-700 dark:text-gray-200">{c.email}</td>
-                  <td className="p-3 text-gray-500 dark:text-gray-400">{c.address}</td>
-                  <td className="p-3 flex gap-2 justify-center">
+                  <td className="p-3 text-center font-semibold text-indigo-700 dark:text-indigo-300 min-w-[60px]">{idx + 1}</td>
+                  <td className="p-3 text-gray-900 dark:text-gray-100 min-w-[120px]">{c.dept}</td>
+                  <td className="p-3 text-gray-900 dark:text-gray-100 min-w-[120px]">{c.name}</td>
+                  <td className="p-3 text-gray-700 dark:text-gray-200 min-w-[100px]">{c.contact}</td>
+                  <td className="p-3 text-gray-700 dark:text-gray-200 min-w-[150px]">{c.email}</td>
+                  <td className="p-3 text-gray-500 dark:text-gray-400 min-w-[120px]">{c.address}</td>
+                  <td className="p-3 flex gap-2 justify-center min-w-[120px]">
                     <button 
                       className="flex items-center gap-1 bg-yellow-400 text-white px-2 py-1.5 rounded-lg text-xs font-semibold hover:bg-yellow-500 transition"
                       onClick={() => setEditContact(c)}

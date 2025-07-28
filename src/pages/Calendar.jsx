@@ -726,7 +726,7 @@ export default function Calendar() {
           </div>
 
           {/* Main Content: Two Columns */}
-          <div className="flex flex-col xl:flex-row gap-6 p-6 h-[800px]">
+          <div className="flex flex-col lg:flex-row gap-6 p-6 h-[800px]">
             {/* Left: Calendar Card */}
             <div className="flex-1 min-w-0 h-full flex flex-col">
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 relative h-full flex flex-col">
@@ -741,7 +741,7 @@ export default function Calendar() {
             </div>
             
             {/* Right: Event Details Card */}
-            <div className="w-full xl:w-96 flex-shrink-0 h-full flex flex-col">
+            <div className="w-full lg:w-96 flex-shrink-0 h-full flex flex-col">
               <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 h-full flex flex-col">
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
                   <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
