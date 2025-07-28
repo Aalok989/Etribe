@@ -77,8 +77,8 @@ export default function InactiveMembers() {
       }
     };
     fetchInactiveMembers(true); // Initial load
-    const interval = setInterval(() => fetchInactiveMembers(false), 10000);
-    return () => clearInterval(interval);
+    // Removed setInterval for auto-refresh
+    // Only call fetchInactiveMembers after CRUD operations
   }, []);
 
   // Sorting function
@@ -166,10 +166,12 @@ export default function InactiveMembers() {
     // Validation
     if (!form.plan) {
       setUpdateError('Please select a membership plan.');
+      closeModify();
       return;
     }
     if (!form.validUpto) {
       setUpdateError('Please select a valid until date.');
+      closeModify();
       return;
     }
     // Check if date is in future
@@ -178,6 +180,7 @@ export default function InactiveMembers() {
     today.setHours(0, 0, 0, 0);
     if (selectedDate <= today) {
       setUpdateError('Please select a future date for membership validity.');
+      closeModify();
       return;
     }
     setUpdateLoading(true);
@@ -191,9 +194,7 @@ export default function InactiveMembers() {
       });
       toast.success(`Member ${modifyMember.name} has been reactivated successfully!`);
       setMembers(prevMembers => prevMembers.filter(member => member.id !== modifyMember.id));
-      setTimeout(() => {
     closeModify();
-      }, 2000);
     } catch (err) {
       if (err.response) {
         const errorMessage = err.response.data?.message || err.response.data?.error || 'Failed to activate membership';
@@ -203,17 +204,10 @@ export default function InactiveMembers() {
       } else {
         setUpdateError('Failed to activate membership. Please try again.');
       }
+      closeModify();
     } finally {
       setUpdateLoading(false);
     }
-  };
-
-  const handleCopyToClipboard = () => {
-    if (!members.length) return;
-    const data = members.map(m => 
-      `${m.name}, ${m.phone_num || m.contact}, ${m.email}, ${m.address}, ${m.ad1 || m.pan}, ${m.ad2 || m.aadhar}, ${m.ad3 || m.dl}, ${m.ad4 || m.dob}, ${m.company_name || m.company}, ${m.ad5 || m.validUpto}, ${m.plan || ""}`
-    ).join('\n');
-    navigator.clipboard.writeText(data);
   };
 
   // Export Handlers
@@ -305,6 +299,14 @@ export default function InactiveMembers() {
     }
   };
 
+  const handleCopyToClipboard = () => {
+    if (!members.length) return;
+    const data = members.map(m => 
+      `${m.name}, ${m.phone_num || m.contact}, ${m.email}, ${m.address}, ${m.ad1 || m.pan}, ${m.ad2 || m.aadhar}, ${m.ad3 || m.dl}, ${m.ad4 || m.dob}, ${m.company_name || m.company}, ${m.ad5 || m.validUpto}, ${m.plan || ""}`
+    ).join('\n');
+    navigator.clipboard.writeText(data);
+  };
+
   if (loading && firstLoad) {
     return (
       <DashboardLayout>
@@ -337,7 +339,7 @@ export default function InactiveMembers() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-2xl font-bold text-orange-600">Inactive Members</h1>
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <FiUserX className="text-indigo-600" />
+            <FiUsers className="text-indigo-600" />
             <span>Total Inactive Members: {members.length}</span>
           </div>
         </div>
@@ -636,7 +638,7 @@ export default function InactiveMembers() {
                   value={entriesPerPage}
                   onChange={handleEntriesChange}
                 >
-                  {[5, 10, 25, 50, 100].map(num => (
+                  {[10, 25, 50, 100].map(num => (
                     <option key={num} value={num}>{num}</option>
                   ))}
                 </select>
@@ -673,9 +675,9 @@ export default function InactiveMembers() {
         {/* Enhanced Modify Membership Modal */}
         {modifyMember && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg relative">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl dark:shadow-2xl p-8 w-full max-w-lg relative">
               <button
-                className="absolute top-4 right-4 text-gray-400 hover:text-rose-500 transition-colors"
+                className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-rose-500 transition-colors"
                 onClick={closeModify}
                 title="Close"
               >
@@ -686,17 +688,17 @@ export default function InactiveMembers() {
                   {modifyMember.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">Modify Membership</h2>
-                  <p className="text-gray-600">Update membership for {modifyMember.name}</p>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Modify Membership</h2>
+                  <p className="text-gray-600 dark:text-gray-400">Update membership for {modifyMember.name}</p>
                 </div>
               </div>
               {updateError && (
-                <div className="mb-4 text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2 flex items-center gap-2">
+                <div className="mb-4 text-red-600 bg-red-50 dark:bg-gray-800 border border-red-200 dark:border-red-400 rounded-lg px-4 py-2 flex items-center gap-2">
                   <FiAlertCircle /> {updateError}
                 </div>
               )}
               {updateSuccess && (
-                <div className="mb-4 text-green-600 bg-green-50 border border-green-200 rounded-lg px-4 py-2 flex items-center gap-2">
+                <div className="mb-4 text-green-600 bg-green-50 dark:bg-gray-800 border border-green-200 dark:border-green-400 rounded-lg px-4 py-2 flex items-center gap-2">
                   <FiCalendar /> {updateSuccess}
                 </div>
               )}

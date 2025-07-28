@@ -13,7 +13,7 @@ const modules = [
   "Account Password Change",
   "Message Settings",
   "Membership Plans",
-  "Membership Management",
+  "Members Services",
   "Contacts Management",
   "Events Management",
 ];

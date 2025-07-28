@@ -8,7 +8,7 @@ export default function UserRoles() {
   const [roles, setRoles] = useState([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [entriesPerPage, setEntriesPerPage] = useState(100);
+  const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedRoleIdx, setSelectedRoleIdx] = useState(null);
@@ -258,6 +258,7 @@ export default function UserRoles() {
     setShowEditModal(false);
     } catch (err) {
       toast.error(err.message);
+      setShowEditModal(false);
     }
   };
 
@@ -277,6 +278,7 @@ export default function UserRoles() {
     setShowAddModal(false);
     } catch (err) {
       toast.error(err.message);
+      setShowAddModal(false);
     }
   };
 
@@ -350,7 +352,7 @@ export default function UserRoles() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-2xl font-bold text-orange-600">User Roles</h1>
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <FiShield className="text-indigo-600" />
+            <FiUser className="text-indigo-600" />
             <span>Total Roles: {roles.length}</span>
           </div>
         </div>
@@ -370,7 +372,7 @@ export default function UserRoles() {
               onChange={e => setSearch(e.target.value)}
                     style={{ minWidth: 200 }}
                   />
-                  <FiUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                  <FiFileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                 </div>
               </div>
               
@@ -422,7 +424,7 @@ export default function UserRoles() {
                 onClick={openAddModal}
                 disabled={submitting}
               >
-                <FiPlus /> + Add Role
+                <FiPlus />Add Role
               </button>
             </div>
           </div>
@@ -500,7 +502,7 @@ export default function UserRoles() {
                           disabled={submitting}
                       >
                           <FiEdit2 size={16} />
-                        </button>
+                      </button>
                       </div>
                     </td>
                   </tr>
@@ -556,9 +558,9 @@ export default function UserRoles() {
         {/* Enhanced Edit Role Modal */}
         {showEditModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-md relative">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl dark:shadow-2xl p-8 w-full max-w-md relative">
               <button
-                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors"
                 onClick={closeEditModal}
                 title="Close"
                 disabled={submitting}
@@ -570,19 +572,19 @@ export default function UserRoles() {
                   <FiEdit2 size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Update Role</h2>
-                  <p className="text-gray-600 text-sm">Modify role information</p>
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Update Role</h2>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">Modify role information</p>
                 </div>
               </div>
               <form className="flex flex-col gap-6" onSubmit={handleEditSubmit}>
                 <div className="flex flex-col gap-2">
-                  <label className="font-medium text-gray-700">Role Name</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-200">Role Name</label>
                   <input
                     type="text"
                     name="role"
                     value={editForm.role}
                     onChange={handleEditChange}
-                    className="px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Enter role name"
                     required
                     disabled={submitting}
@@ -591,7 +593,7 @@ export default function UserRoles() {
                 <div className="flex justify-end gap-4 mt-6">
                   <button
                     type="button"
-                    className="px-6 py-2 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+                    className="px-6 py-2 rounded-lg font-semibold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                     onClick={closeEditModal}
                     disabled={submitting}
                   >
@@ -613,9 +615,9 @@ export default function UserRoles() {
         {/* Enhanced Add Role Modal */}
         {showAddModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-md relative">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl dark:shadow-2xl p-8 w-full max-w-md relative">
               <button
-                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-red-500 transition-colors"
                 onClick={closeAddModal}
                 title="Close"
                 disabled={submitting}
@@ -627,19 +629,19 @@ export default function UserRoles() {
                   <FiPlus size={24} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Add New Role</h2>
-                  <p className="text-gray-600 text-sm">Create a new user role</p>
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Add New Role</h2>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">Create a new user role</p>
                 </div>
               </div>
               <form className="flex flex-col gap-6" onSubmit={handleAddSubmit}>
                 <div className="flex flex-col gap-2">
-                  <label className="font-medium text-gray-700">Role Name</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-200">Role Name</label>
                   <input
                     type="text"
                     name="role"
                     value={addForm.role}
                     onChange={handleAddChange}
-                    className="px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
+                    className="px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-colors"
                     placeholder="Enter role name"
                     required
                     disabled={submitting}
@@ -648,7 +650,7 @@ export default function UserRoles() {
                 <div className="flex justify-end gap-4 mt-6">
                   <button
                     type="button"
-                    className="px-6 py-2 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+                    className="px-6 py-2 rounded-lg font-semibold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                     onClick={closeAddModal}
                     disabled={submitting}
                   >

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
 import { FiPlus, FiFileText, FiFile, FiEye, FiX, FiCalendar, FiMapPin, FiClock, FiSearch, FiFilter, FiDownload, FiCopy, FiEdit2, FiTrash2, FiRefreshCw, FiImage, FiTrendingUp } from "react-icons/fi";
-import api from "../api/axiosConfig";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import api from "../api/axiosConfig";
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { toast } from 'react-toastify';
@@ -17,6 +17,43 @@ function decodeHtml(html) {
   return txt.value;
 }
 
+// Helper to strip HTML tags
+function stripHtml(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || div.innerText || '';
+}
+
+// Helper to get CKEditor contentsCss based on dark mode
+function getCKEditorContentsCss() {
+  const isDark = document.documentElement.classList.contains('dark');
+  return isDark
+    ? [
+        'https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/styles.css',
+        `
+        .ck-editor__editable {
+          background: #ffffff !important;
+          color: #000000 !important;
+        }
+        .ck-editor__editable.ck-placeholder::before {
+          color: #6b7280 !important;
+        }
+        `
+      ]
+    : [
+        'https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/styles.css',
+        `
+        .ck-editor__editable {
+          background: #fff !important;
+          color: #111827 !important;
+        }
+        .ck-editor__editable.ck-placeholder::before {
+          color: #6b7280 !important;
+        }
+        `
+      ];
+}
+
 export default function UpcomingEventsPage() {
   const [events, setEvents] = useState([]);
   const [search, setSearch] = useState("");
@@ -25,7 +62,7 @@ export default function UpcomingEventsPage() {
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [showViewEventModal, setShowViewEventModal] = useState(false);
   const [selectedEventIdx, setSelectedEventIdx] = useState(null);
-  // Replace add event state and logic
+  const [imageError, setImageError] = useState(false);
   const [addEventForm, setAddEventForm] = useState({
     event: "",
     agenda: "",
@@ -36,20 +73,32 @@ export default function UpcomingEventsPage() {
     sendReminderTo: "Only Approved Members",
     invitationImage: null
   });
-  const [formErrors, setFormErrors] = useState({});
-  const [showAddEventForm, setShowAddEventForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [saveError, setSaveError] = useState(null);
-  const [saveSuccess, setSaveSuccess] = useState(null);
-  const [imageError, setImageError] = useState(false);
-  const [sortField, setSortField] = useState("datetime");
-  const [sortDirection, setSortDirection] = useState("asc");
+  const [formErrors, setFormErrors] = useState({});
+  const [sortField, setSortField] = useState('event');
+  const [sortDirection, setSortDirection] = useState('asc');
+
+  // Edit Event State
+  const [showEditEventModal, setShowEditEventModal] = useState(false);
+  const [editEventForm, setEditEventForm] = useState({
+    id: '',
+    event: '',
+    agenda: '',
+    venue: '',
+    date: '',
+    time: '',
+    invitationImage: null,
+    imageUrl: '',
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editFormErrors, setEditFormErrors] = useState({});
 
 
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true);
+      // toast.dismiss();
       try {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
@@ -78,26 +127,33 @@ export default function UpcomingEventsPage() {
           backendEvents = [];
         }
         const BASE_URL = "https://api.etribes.in"; // Change to your backend's base URL
-        const mappedEvents = backendEvents.map((e, idx) => ({
-          id: e.id || idx,
-          event: e.event_title || e.event || e.title || e.name || "",
-          agenda: e.event_description || e.agenda || e.description || "",
-          venue: e.event_venue || e.venue || e.location || "",
-          datetime: e.event_date && e.event_time
-            ? `${e.event_date}T${e.event_time}`
-            : e.datetime || e.date_time || e.date || "",
-          imageUrl: e.event_image
-            ? (e.event_image.startsWith("http") ? e.event_image : BASE_URL + e.event_image)
-            : (e.image || e.imageUrl || ""),
-        }));
+        const mappedEvents = backendEvents.map((e, idx) => {
+          let datetime = '';
+          if (e.event_date && e.event_time) {
+            const dt = `${e.event_date}T${e.event_time}`;
+            datetime = !isNaN(new Date(dt)) && dt.includes('T') ? dt : '';
+          }
+          return {
+            id: e.id || idx,
+            event: e.event_title || e.event || e.title || e.name || "",
+            agenda: e.event_description || e.agenda || e.description || "",
+            venue: e.event_venue || e.venue || e.location || "",
+            datetime,
+            imageUrl: e.event_image
+              ? (e.event_image.startsWith("http") ? e.event_image : BASE_URL + e.event_image)
+              : (e.image || e.imageUrl || ""),
+          };
+        });
         setEvents(mappedEvents);
       } catch (err) {
-        toast.error('Failed to fetch upcoming events.');
+        toast.error('Failed to fetch upcoming events');
       } finally {
         setLoading(false);
       }
     };
     fetchEvents();
+    // Removed setInterval polling
+    // Only call fetchEvents after CRUD operations
   }, []);
 
   // Filtered, sorted and paginated data
@@ -187,11 +243,10 @@ export default function UpcomingEventsPage() {
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
+      toast.error(Object.values(errors).join('\n'));
       return;
     }
     setSaveLoading(true);
-    setSaveError(null);
-    setSaveSuccess(null);
     try {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid');
@@ -228,21 +283,67 @@ export default function UpcomingEventsPage() {
         sendReminderTo: "Only Approved Members",
         invitationImage: null
       });
-      setTimeout(() => toast.dismiss(), 3000);
-      setShowAddEventForm(false);
+      // Refresh events after adding
+      setLoading(true);
+      try {
+        const response = await api.post('/event/future', {}, {
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'login.etribes.in',
+            'Content-Type': 'application/json',
+          }
+        });
+        let backendEvents = [];
+        if (Array.isArray(response.data?.data?.event)) {
+          backendEvents = response.data.data.event;
+        } else if (Array.isArray(response.data?.data?.events)) {
+          backendEvents = response.data.data.events;
+        } else if (Array.isArray(response.data?.data)) {
+          backendEvents = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          backendEvents = response.data;
+        } else if (response.data?.data && typeof response.data.data === 'object') {
+          backendEvents = Object.values(response.data.data);
+        } else {
+          backendEvents = [];
+        }
+        const BASE_URL = "https://api.etribes.in";
+        const mappedEvents = backendEvents.map((e, idx) => {
+          let datetime = '';
+          if (e.event_date && e.event_time) {
+            const dt = `${e.event_date}T${e.event_time}`;
+            datetime = !isNaN(new Date(dt)) && dt.includes('T') ? dt : '';
+          }
+          return {
+            id: e.id || idx,
+            event: e.event_title || e.event || e.title || e.name || "",
+            agenda: e.event_description || e.agenda || e.description || "",
+            venue: e.event_venue || e.venue || e.location || "",
+            datetime,
+            imageUrl: e.event_image
+              ? (e.event_image.startsWith("http") ? e.event_image : BASE_URL + e.event_image)
+              : (e.image || e.imageUrl || ""),
+          };
+        });
+        setEvents(mappedEvents);
+      } finally {
+        setLoading(false);
+      }
     } catch (err) {
       toast.error('Failed to add event');
     } finally {
       setSaveLoading(false);
     }
   };
-  const handleShowAddEventForm = () => setShowAddEventForm(true);
-  const handleHideAddEventForm = () => setShowAddEventForm(false);
+  const handleShowAddEventForm = () => setShowAddEventModal(true);
+  const handleHideAddEventForm = () => setShowAddEventModal(false);
 
   // View Event Modal
   const openViewEventModal = (idx) => {
     setSelectedEventIdx(idx);
-    setImageError(false);
     setShowViewEventModal(true);
   };
   const closeViewEventModal = () => setShowViewEventModal(false);
@@ -255,7 +356,7 @@ export default function UpcomingEventsPage() {
       e.event,
       e.agenda,
       e.venue,
-      e.datetime ? new Date(e.datetime).toLocaleString() : "",
+      e.datetime && !isNaN(new Date(e.datetime)) && e.datetime.includes('T') ? new Date(e.datetime).toLocaleString() : "TBD",
     ]);
     let csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n");
     const encodedUri = encodeURI(csvContent);
@@ -265,6 +366,7 @@ export default function UpcomingEventsPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success('Events exported to CSV!');
   };
 
   // Excel Export
@@ -275,12 +377,13 @@ export default function UpcomingEventsPage() {
         Event: e.event,
         Agenda: e.agenda,
         Venue: e.venue,
-        "Date & Time": e.datetime ? new Date(e.datetime).toLocaleString() : "",
+        "Date & Time": e.datetime && !isNaN(new Date(e.datetime)) && e.datetime.includes('T') ? new Date(e.datetime).toLocaleString() : "TBD",
       }))
     );
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Upcoming Events");
     XLSX.writeFile(wb, "upcoming_events.xlsx");
+    toast.success('Events exported to Excel!');
   };
 
   // PDF Export
@@ -298,7 +401,7 @@ export default function UpcomingEventsPage() {
       e.event,
       e.agenda,
       e.venue,
-      e.datetime ? new Date(e.datetime).toLocaleString() : "",
+      e.datetime && !isNaN(new Date(e.datetime)) && e.datetime.includes('T') ? new Date(e.datetime).toLocaleString() : "TBD",
     ]);
     try {
       autoTable(doc, {
@@ -309,20 +412,244 @@ export default function UpcomingEventsPage() {
         headStyles: { fillColor: [41, 128, 185] }
       });
       doc.save("upcoming_events.pdf");
+      toast.success('Events exported to PDF!');
     } catch (err) {
-      toast.error("PDF export failed: " + err.message);
+      alert("PDF export failed: " + err.message);
     }
   };
 
   const handleCopyToClipboard = () => {
     const data = events.map(e => 
-      `${e.event},${e.agenda},${e.venue},${e.datetime ? new Date(e.datetime).toLocaleString() : ""}`
+      `${e.event},${e.agenda},${e.venue},${e.datetime && !isNaN(new Date(e.datetime)) && e.datetime.includes('T') ? new Date(e.datetime).toLocaleString() : "TBD"}`
     ).join('\n');
     navigator.clipboard.writeText(data);
+    toast.success('Event copied to clipboard!');
   };
 
   const handleRefresh = () => {
     window.location.reload();
+  };
+
+  // Delete event handler
+  const handleDeleteEvent = async (eventId) => {
+    if (!window.confirm('Are you sure you want to delete this event?')) return;
+    setSaveLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid');
+      await fetch('/api/event/remove', {
+        method: 'POST',
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'login.etribes.in',
+          'Content-Type': 'text/plain',
+          'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || ''),
+        },
+        credentials: 'include',
+        body: JSON.stringify({ id: eventId }),
+      });
+      setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
+      toast.success('Event deleted successfully!');
+      setTimeout(() => toast.dismiss(), 3000);
+      // Refresh events after deleting
+      setLoading(true);
+      try {
+        const response = await api.post('/event/future', {}, {
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'login.etribes.in',
+            'Content-Type': 'application/json',
+          }
+        });
+        let backendEvents = [];
+        if (Array.isArray(response.data?.data?.event)) {
+          backendEvents = response.data.data.event;
+        } else if (Array.isArray(response.data?.data?.events)) {
+          backendEvents = response.data.data.events;
+        } else if (Array.isArray(response.data?.data)) {
+          backendEvents = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          backendEvents = response.data;
+        } else if (response.data?.data && typeof response.data.data === 'object') {
+          backendEvents = Object.values(response.data.data);
+        } else {
+          backendEvents = [];
+        }
+        const BASE_URL = "https://api.etribes.in";
+        const mappedEvents = backendEvents.map((e, idx) => {
+          let datetime = '';
+          if (e.event_date && e.event_time) {
+            const dt = `${e.event_date}T${e.event_time}`;
+            datetime = !isNaN(new Date(dt)) && dt.includes('T') ? dt : '';
+          }
+          return {
+            id: e.id || idx,
+            event: e.event_title || e.event || e.title || e.name || "",
+            agenda: e.event_description || e.agenda || e.description || "",
+            venue: e.event_venue || e.venue || e.location || "",
+            datetime,
+            imageUrl: e.event_image
+              ? (e.event_image.startsWith("http") ? e.event_image : BASE_URL + e.event_image)
+              : (e.image || e.imageUrl || ""),
+          };
+        });
+        setEvents(mappedEvents);
+      } finally {
+        setLoading(false);
+      }
+    } catch (err) {
+      toast.error('Failed to delete event.');
+      setTimeout(() => toast.dismiss(), 3000);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // Open Edit Modal
+  const openEditEventModal = (event) => {
+    setEditEventForm({
+      id: event.id,
+      event: event.event,
+      agenda: event.agenda,
+      venue: event.venue,
+      date: event.datetime ? event.datetime.split('T')[0] : '',
+      time: event.datetime ? event.datetime.split('T')[1]?.slice(0,5) : '',
+      invitationImage: null,
+      imageUrl: event.imageUrl || '',
+    });
+    setEditFormErrors({});
+    setShowEditEventModal(true);
+  };
+  const closeEditEventModal = () => setShowEditEventModal(false);
+
+  // Edit form change handlers
+  const handleEditEventChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === 'invitationImage') {
+      setEditEventForm({ ...editEventForm, invitationImage: files[0] });
+    } else {
+      setEditEventForm({ ...editEventForm, [name]: value });
+      setEditFormErrors({ ...editFormErrors, [name]: undefined });
+    }
+  };
+  const handleEditAgendaChange = (event, editor) => {
+    const data = editor.getData();
+    setEditEventForm({ ...editEventForm, agenda: data });
+    setEditFormErrors({ ...editFormErrors, agenda: undefined });
+  };
+
+  // Edit form validation
+  const validateEditForm = () => {
+    const errors = {};
+    if (!editEventForm.event.trim()) errors.event = 'The Event Title field is required.';
+    if (!editEventForm.agenda || !editEventForm.agenda.replace(/<[^>]*>/g, '').trim()) errors.agenda = 'The Agenda field is required.';
+    if (!editEventForm.venue.trim()) errors.venue = 'The Venue field is required.';
+    if (!editEventForm.date.trim()) errors.date = 'The Date field is required.';
+    if (!editEventForm.time.trim()) errors.time = 'The Time field is required.';
+    return errors;
+  };
+
+  // Edit Event API call
+  const handleEditEventSubmit = async (e) => {
+    e.preventDefault();
+    const errors = validateEditForm();
+    if (Object.keys(errors).length > 0) {
+      setEditFormErrors(errors);
+      toast.error(Object.values(errors).join('\n'));
+      setShowEditEventModal(false);
+      return;
+    }
+    setEditLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid');
+      const formData = new FormData();
+      formData.append('id', editEventForm.id);
+      formData.append('event_title', editEventForm.event);
+      formData.append('event_description', editEventForm.agenda);
+      formData.append('event_venue', editEventForm.venue);
+      formData.append('event_time', editEventForm.time);
+      formData.append('event_date', editEventForm.date);
+      if (editEventForm.invitationImage) {
+        formData.append('event_image', editEventForm.invitationImage);
+      }
+      await fetch('/api/event/edit', {
+        method: 'POST',
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'login.etribes.in',
+          'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || ''),
+        },
+        credentials: 'include',
+        body: formData,
+      });
+      toast.success('Event updated successfully!');
+      setShowEditEventModal(false);
+      setTimeout(() => toast.dismiss(), 2000);
+      // Refresh events after editing
+      setLoading(true);
+      try {
+        const response = await api.post('/event/future', {}, {
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'login.etribes.in',
+            'Content-Type': 'application/json',
+          }
+        });
+        let backendEvents = [];
+        if (Array.isArray(response.data?.data?.event)) {
+          backendEvents = response.data.data.event;
+        } else if (Array.isArray(response.data?.data?.events)) {
+          backendEvents = response.data.data.events;
+        } else if (Array.isArray(response.data?.data)) {
+          backendEvents = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          backendEvents = response.data;
+        } else if (response.data?.data && typeof response.data.data === 'object') {
+          backendEvents = Object.values(response.data.data);
+        } else {
+          backendEvents = [];
+        }
+        const BASE_URL = "https://api.etribes.in";
+        const mappedEvents = backendEvents.map((e, idx) => {
+          let datetime = '';
+          if (e.event_date && e.event_time) {
+            const dt = `${e.event_date}T${e.event_time}`;
+            datetime = !isNaN(new Date(dt)) && dt.includes('T') ? dt : '';
+          }
+          return {
+            id: e.id || idx,
+            event: e.event_title || e.event || e.title || e.name || "",
+            agenda: e.event_description || e.agenda || e.description || "",
+            venue: e.event_venue || e.venue || e.location || "",
+            datetime,
+            imageUrl: e.event_image
+              ? (e.event_image.startsWith("http") ? e.event_image : BASE_URL + e.event_image)
+              : (e.image || e.imageUrl || ""),
+          };
+        });
+        setEvents(mappedEvents);
+      } finally {
+        setLoading(false);
+      }
+    } catch (err) {
+      toast.error('Failed to update event');
+      setShowEditEventModal(false);
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   if (loading) {
@@ -338,23 +665,12 @@ export default function UpcomingEventsPage() {
     );
   }
 
-  if (error) {
-    return (
-      <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <p className="text-red-500">{error}</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-4 py-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-2xl font-bold text-orange-600">Upcoming Events</h1>
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <FiTrendingUp className="text-indigo-600" />
             <span>Total Upcoming Events: {events.length}</span>
           </div>
         </div>
@@ -364,7 +680,6 @@ export default function UpcomingEventsPage() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <FiTrendingUp className="text-indigo-600 text-xl" />
                 <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">Upcoming Event Management</span>
               </div>
               
@@ -462,13 +777,11 @@ export default function UpcomingEventsPage() {
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors" onClick={() => handleSort("venue")}>
                     <div className="flex items-center gap-2">
-                      <FiMapPin />
                       Venue {getSortIcon("venue")}
                     </div>
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900 transition-colors" onClick={() => handleSort("datetime")}>
                     <div className="flex items-center gap-2">
-                      <FiClock />
                       Date & Time {getSortIcon("datetime")}
                     </div>
                   </th>
@@ -496,23 +809,21 @@ export default function UpcomingEventsPage() {
       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate" title={event.agenda}>
-                        {event.agenda}
+                      <div className="text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate" title={stripHtml(event.agenda)}>
+                        {stripHtml(event.agenda)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                          <FiMapPin className="mr-1" />
-                          {event.venue}
+                          Venue
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-                          <FiClock className="mr-1" />
-                          {event.datetime ? new Date(event.datetime).toLocaleString() : "TBD"}
+                          Date & Time
                         </span>
                       </div>
                     </td>
@@ -525,12 +836,12 @@ export default function UpcomingEventsPage() {
                       >
                           <FiEye size={16} />
                         </button>
-                        <button className="text-blue-600 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-400 transition-colors" title="Edit Event">
+                        <button className="text-blue-600 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-400 transition-colors" title="Edit Event" onClick={() => openEditEventModal(event)}>
                           <FiEdit2 size={16} />
                         </button>
-                        <button className="text-red-600 dark:text-red-300 hover:text-red-900 dark:hover:text-red-400 transition-colors" title="Delete Event">
+                        <button className="text-red-600 dark:text-red-300 hover:text-red-900 dark:hover:text-red-400 transition-colors" title="Delete Event" onClick={() => handleDeleteEvent(event.id)} disabled={saveLoading}>
                           <FiTrash2 size={16} />
-                      </button>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -586,7 +897,7 @@ export default function UpcomingEventsPage() {
           </div>
         </div>
 
-        {showAddEventForm && (
+        {showAddEventModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-2xl mx-4 relative max-h-[90vh] overflow-y-auto">
               <button
@@ -665,13 +976,39 @@ export default function UpcomingEventsPage() {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Agenda <span className="text-red-500">*</span>
                     </label>
-                    <div className={`rounded-lg p-1 bg-white dark:bg-gray-700 dark:text-gray-100 ${formErrors.agenda ? 'border border-red-500' : ''}`}>
+                    <div className={`rounded-lg p-1 bg-white dark:bg-gray-700 ${formErrors.agenda ? 'border border-red-500' : ''}`}>
                       <CKEditor
                         editor={ClassicEditor}
                         data={addEventForm.agenda}
-                        onChange={handleAgendaChange}
+                        onReady={editor => {
+                          // You can store the "editor" and use it later to do something with it.
+                          // For example, we can set the data in it when it's ready.
+                          // editor.setData(addEventForm.agenda);
+                        }}
+                        onChange={(event, editor) => {
+                          const data = editor.getData();
+                          setAddEventForm({ ...addEventForm, agenda: data });
+                          setFormErrors({ ...formErrors, agenda: undefined });
+                        }}
+                        onBlur={(event, editor) => {
+                          const data = editor.getData();
+                          setAddEventForm({ ...addEventForm, agenda: data });
+                          setFormErrors({ ...formErrors, agenda: undefined });
+                        }}
+                        onFocus={(event, editor) => {
+                          // The editor is ready to accept commands.
+                        }}
                         config={{
-                          placeholder: 'Describe the event agenda and details',
+                          // This is optional, but if you want to add any specific CKEditor config,
+                          // you can add it here.
+                          // For example, if you want to add a toolbar, you can add it here.
+                          // toolbar: [ 'bold', 'italic', 'underline', 'link' ],
+                          // This is for CKEditor 5 Classic Editor.
+                          // For CKEditor 5 Balloon Editor, you would use:
+                          // balloonToolbar: [ 'bold', 'italic', 'underline', 'link' ],
+                        }}
+                        onError={(error, t) => {
+                          console.error("CKEditor error:", error);
                         }}
                       />
                     </div>
@@ -690,16 +1027,6 @@ export default function UpcomingEventsPage() {
                     />
                   </div>
                 </div>
-                {saveError && (
-                  <div className="bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded-lg">
-                    {saveError}
-                  </div>
-                )}
-                {saveSuccess && (
-                  <div className="bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-700 text-green-700 dark:text-green-200 px-4 py-3 rounded-lg">
-                    {saveSuccess}
-                  </div>
-                )}
                 <div className="flex gap-4 mt-4">
                   <button
                     type="button"
@@ -715,6 +1042,175 @@ export default function UpcomingEventsPage() {
                     className={`flex items-center gap-2 px-8 py-2 rounded-lg font-medium transition-colors text-white ${saveLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
                   >
                     {saveLoading ? (
+                      <>
+                        <FiRefreshCw className="animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-lg">✔</span>
+                        Save
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {showEditEventModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-2xl mx-4 relative max-h-[90vh] overflow-y-auto">
+              <button
+                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                onClick={closeEditEventModal}
+                title="Close"
+                disabled={editLoading}
+              >
+                <FiX size={24} />
+              </button>
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                  <FiEdit2 className="text-blue-600 dark:text-blue-300" />
+                  Edit Event
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">Update event details, venue, and schedule</p>
+              </div>
+              <form className="space-y-6" onSubmit={handleEditEventSubmit}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Event Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="event"
+                      value={editEventForm.event}
+                      onChange={handleEditEventChange}
+                      className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-300 focus:border-transparent transition-colors ${editFormErrors.event ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'}`}
+                      placeholder="Enter event name"
+                    />
+                    {editFormErrors.event && <div className="text-red-600 text-xs mt-1">{editFormErrors.event}</div>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Venue <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="venue"
+                      value={editEventForm.venue}
+                      onChange={handleEditEventChange}
+                      className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-300 focus:border-transparent transition-colors ${editFormErrors.venue ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'}`}
+                      placeholder="Enter venue"
+                    />
+                    {editFormErrors.venue && <div className="text-red-600 text-xs mt-1">{editFormErrors.venue}</div>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Date <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={editEventForm.date}
+                      onChange={handleEditEventChange}
+                      className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-300 focus:border-transparent transition-colors ${editFormErrors.date ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'}`}
+                      placeholder="Select date"
+                    />
+                    {editFormErrors.date && <div className="text-red-600 text-xs mt-1">{editFormErrors.date}</div>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Time <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="time"
+                      name="time"
+                      value={editEventForm.time}
+                      onChange={handleEditEventChange}
+                      className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-300 focus:border-transparent transition-colors ${editFormErrors.time ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'}`}
+                      placeholder="Select time"
+                    />
+                    {editFormErrors.time && <div className="text-red-600 text-xs mt-1">{editFormErrors.time}</div>}
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Agenda <span className="text-red-500">*</span>
+                    </label>
+                    <div className={`rounded-lg p-1 bg-white dark:bg-gray-700 ${editFormErrors.agenda ? 'border border-red-500' : ''}`}>
+                      <CKEditor
+                        editor={ClassicEditor}
+                        data={editEventForm.agenda}
+                        onReady={editor => {
+                          // You can store the "editor" and use it later to do something with it.
+                          // For example, we can set the data in it when it's ready.
+                          // editor.setData(editEventForm.agenda);
+                        }}
+                        onChange={(event, editor) => {
+                          const data = editor.getData();
+                          setEditEventForm({ ...editEventForm, agenda: data });
+                          setEditFormErrors({ ...editFormErrors, agenda: undefined });
+                        }}
+                        onBlur={(event, editor) => {
+                          const data = editor.getData();
+                          setEditEventForm({ ...editEventForm, agenda: data });
+                          setEditFormErrors({ ...editFormErrors, agenda: undefined });
+                        }}
+                        onFocus={(event, editor) => {
+                          // The editor is ready to accept commands.
+                        }}
+                        config={{
+                          // This is optional, but if you want to add any specific CKEditor config,
+                          // you can add it here.
+                          // For example, if you want to add a toolbar, you can add it here.
+                          // toolbar: [ 'bold', 'italic', 'underline', 'link' ],
+                          // This is for CKEditor 5 Classic Editor.
+                          // For CKEditor 5 Balloon Editor, you would use:
+                          // balloonToolbar: [ 'bold', 'italic', 'underline', 'link' ],
+                        }}
+                        onError={(error, t) => {
+                          console.error("CKEditor error:", error);
+                        }}
+                      />
+                    </div>
+                    {editFormErrors.agenda && <div className="text-red-600 text-xs mt-1">{editFormErrors.agenda}</div>}
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Invitation Image
+                    </label>
+                    <input
+                      type="file"
+                      name="invitationImage"
+                      accept="image/*"
+                      onChange={handleEditEventChange}
+                      className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-300 focus:border-transparent transition-colors border-gray-200 dark:border-gray-600"
+                    />
+                    {editEventForm.imageUrl && (
+                      <div className="mt-2">
+                        <img src={editEventForm.imageUrl} alt="Current" className="h-20 rounded-lg border dark:border-gray-600" />
+                        <span className="block text-xs text-gray-500 dark:text-gray-400">Current image</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-4 mt-4">
+                  <button
+                    type="button"
+                    className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                    onClick={closeEditEventModal}
+                    disabled={editLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editLoading}
+                    className={`flex items-center gap-2 px-8 py-2 rounded-lg font-medium transition-colors text-white ${editLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                  >
+                    {editLoading ? (
                       <>
                         <FiRefreshCw className="animate-spin" />
                         Saving...
@@ -762,7 +1258,9 @@ export default function UpcomingEventsPage() {
                   <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                     <div><span className="font-medium text-gray-800 dark:text-gray-100">Event:</span> {paginated[selectedEventIdx]?.event}</div>
                     <div><span className="font-medium text-gray-800 dark:text-gray-100">Venue:</span> {paginated[selectedEventIdx]?.venue}</div>
-                    <div><span className="font-medium text-gray-800 dark:text-gray-100">Date & Time:</span> {paginated[selectedEventIdx]?.datetime && new Date(paginated[selectedEventIdx]?.datetime).toLocaleString()}</div>
+                    <div><span className="font-medium text-gray-800 dark:text-gray-100">Date & Time:</span> {paginated[selectedEventIdx]?.datetime && !isNaN(new Date(paginated[selectedEventIdx]?.datetime)) && paginated[selectedEventIdx]?.datetime.includes('T')
+  ? new Date(paginated[selectedEventIdx]?.datetime).toLocaleString()
+  : 'TBD'}</div>
                   </div>
                 </div>
                 
@@ -776,7 +1274,7 @@ export default function UpcomingEventsPage() {
                   />
           </div>
                 
-                {paginated[selectedEventIdx]?.imageUrl && paginated[selectedEventIdx]?.imageUrl.trim() !== "" && !imageError ? (
+                {paginated[selectedEventIdx]?.imageUrl && paginated[selectedEventIdx]?.imageUrl.trim() !== "" ? (
                   <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
                       <FiImage className="text-indigo-600" />
@@ -786,7 +1284,6 @@ export default function UpcomingEventsPage() {
                       src={paginated[selectedEventIdx]?.imageUrl}
                       alt="Event"
                       className="rounded-lg border border-gray-200 dark:border-gray-700 shadow max-w-full max-h-48 object-cover"
-                      onError={() => setImageError(true)}
                     />
                       </div>
                 ) : (

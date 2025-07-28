@@ -21,6 +21,43 @@ function getEventDotColor(events) {
   return "bg-pink-400";
 }
 
+// Helper to strip HTML tags
+function stripHtml(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || div.innerText || '';
+}
+
+// Helper to get CKEditor contentsCss based on dark mode
+function getCKEditorContentsCss() {
+  const isDark = document.documentElement.classList.contains('dark');
+  return isDark
+    ? [
+        'https://ckeditor.com/ckeditor5/39.0.1/classic/styles.css',
+        `
+        .ck-editor__editable {
+          background: #ffffff !important;
+          color: #000000 !important;
+        }
+        .ck-editor__editable.ck-placeholder::before {
+          color: #6b7280 !important;
+        }
+        `
+      ]
+    : [
+        'https://ckeditor.com/ckeditor5/39.0.1/classic/styles.css',
+        `
+        .ck-editor__editable {
+          background: #fff !important;
+          color: #111827 !important;
+        }
+        .ck-editor__editable.ck-placeholder::before {
+          color: #6b7280 !important;
+        }
+        `
+      ];
+}
+
 // SimpleCalendar component
 // Helper functions remain unchanged...
 
@@ -151,7 +188,6 @@ export default function Calendar() {
     invitationImage: null
   });
   const [formErrors, setFormErrors] = useState({});
-
   // Stats for pills (use backend endpoints for counts to match Dashboard)
   const [todayCount, setTodayCount] = useState(0);
   const [upcomingCount, setUpcomingCount] = useState(0);
@@ -186,6 +222,9 @@ export default function Calendar() {
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
+      toast.error(Object.values(errors).join('\n'));
+      setShowAddEventForm(false);
+      setTimeout(() => toast.dismiss(), 3000);
       return;
     }
     setLoading(true);
@@ -219,18 +258,19 @@ export default function Calendar() {
         event: "",
         agenda: "",
         venue: "",
-        date: selectedDate.toISOString().slice(0, 10),
+        date: "",
         time: "",
         reminder: "Yes",
         sendReminderTo: "Only Approved Members",
         invitationImage: null
       });
-      setShowAddEventForm(false);
       toast.success('Event added successfully!');
-      // Optionally, refresh events here
+      setShowAddEventForm(false);
+      setTimeout(() => toast.dismiss(), 3000);
     } catch (err) {
-      setFormErrors({ api: 'Failed to add event' });
-      toast.error('Failed to add event.');
+      setShowAddEventForm(false);
+      toast.error('Failed to add event');
+      setTimeout(() => toast.dismiss(), 3000);
     } finally {
       setLoading(false);
     }
@@ -340,15 +380,85 @@ export default function Calendar() {
         credentials: 'include',
         body: formData,
       });
-      setEditSuccess('Event updated successfully!');
       toast.success('Event updated successfully!');
+      setTimeout(() => toast.dismiss(), 2000);
       setShowEditEventModal(false);
-      // Refresh events
+      // Refresh events after adding/editing/deleting
       setLoading(true);
-      // (re-fetch events logic here, or optimistically update if desired)
+      try {
+        const token = localStorage.getItem('token');
+        const uid = localStorage.getItem('uid');
+        const response = await api.post('/event/index', {}, {
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'login.etribes.in',
+            'Content-Type': 'application/json',
+          }
+        });
+        let backendEvents = [];
+        if (Array.isArray(response.data?.data?.event)) {
+          backendEvents = response.data.data.event;
+        } else if (Array.isArray(response.data?.data?.events)) {
+          backendEvents = response.data.data.events;
+        } else if (Array.isArray(response.data?.data)) {
+          backendEvents = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          backendEvents = response.data;
+        } else if (response.data?.data && typeof response.data.data === 'object') {
+          backendEvents = Object.values(response.data.data);
+        } else {
+          backendEvents = [];
+        }
+        // Map backend fields to calendar event structure
+        const mappedEvents = backendEvents.map((e, idx) => {
+          // Always parse date as a JS Date object
+          let eventDate = null;
+          if (e.event_date && e.event_time) {
+            eventDate = new Date(`${e.event_date}T${e.event_time}`);
+          } else if (e.event_date) {
+            eventDate = new Date(e.event_date);
+          } else if (e.datetime) {
+            eventDate = new Date(e.datetime);
+          } else if (e.date_time) {
+            eventDate = new Date(e.date_time);
+          } else if (e.date) {
+            eventDate = new Date(e.date);
+          } else {
+            eventDate = new Date();
+          }
+          // Defensive: if eventDate is a string, convert to Date
+          if (!(eventDate instanceof Date) || isNaN(eventDate)) {
+            eventDate = new Date(eventDate);
+          }
+          // Determine type
+          const today = new Date();
+          today.setHours(0,0,0,0);
+          const eventDay = new Date(eventDate);
+          eventDay.setHours(0,0,0,0);
+          let type = 'upcoming';
+          if (eventDay < today) type = 'past';
+          else if (eventDay.getTime() === today.getTime()) type = 'today';
+          return {
+            id: e.id || idx, // Assuming 'id' is available in backend
+            name: e.event_title || e.event || e.title || e.name || '',
+            date: eventDate,
+            attendees: e.attendees || e.attendee_count || e.count || 0,
+            description: e.event_description || e.agenda || e.description || '',
+            type,
+            imageUrl: e.event_image || '', // Assuming 'event_image' is available
+          };
+        });
+        setEvents(mappedEvents);
+      } catch (err) {
+        toast.error(err.response?.data?.message || err.message || 'Failed to fetch events');
+      } finally {
+        setLoading(false);
+      }
     } catch (err) {
-      setEditError('Failed to update event');
-      toast.error('Failed to update event.');
+      toast.error('Failed to update event');
     } finally {
       setEditLoading(false);
     }
@@ -378,9 +488,9 @@ export default function Calendar() {
       });
       setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
       toast.success('Event deleted successfully!');
+      setTimeout(() => toast.dismiss(), 3000);
     } catch (err) {
-      setDeleteError('Failed to delete event');
-      toast.error('Failed to delete event.');
+      toast.error('Failed to delete event');
     } finally {
       setDeleteLoading(false);
     }
@@ -388,7 +498,6 @@ export default function Calendar() {
 
   // Fetch event counts from backend endpoints
   useEffect(() => {
-    let interval;
     const fetchCounts = async () => {
       try {
         const token = localStorage.getItem('token');
@@ -474,6 +583,8 @@ export default function Calendar() {
       }
     };
     fetchCounts();
+    // Removed setInterval polling
+    // Only call fetchCounts after CRUD operations
     return () => {};
   }, []);
 
@@ -551,8 +662,7 @@ export default function Calendar() {
         });
         setEvents(mappedEvents);
       } catch (err) {
-        setError(err.response?.data?.message || err.message || 'Failed to fetch events');
-        toast.error('Failed to fetch events.');
+        toast.error(err.response?.data?.message || err.message || 'Failed to fetch events');
       } finally {
         setLoading(false);
       }
@@ -646,7 +756,7 @@ export default function Calendar() {
                       day: 'numeric' 
                     })}
                   </p>
-                </div>
+                  </div>
                 {/* Event cards for selected date */}
                 <div className="p-6 space-y-4 flex-1 overflow-y-auto">
                   {eventsForDate.length === 0 ? (
@@ -690,10 +800,9 @@ export default function Calendar() {
                             <FiCalendar className="text-gray-400" size={14} />
                             <span>{ev.date.toLocaleDateString()}</span>
                               </div>
-                        </div>
-                        
-                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                          <p className="text-gray-700 dark:text-gray-200 text-sm">{ev.description}</p>
+                         {stripHtml(ev.description) && (
+                           <div className="overflow-x-auto whitespace-nowrap"><span className="font-medium text-gray-800 dark:text-gray-100">Agenda:</span> {stripHtml(ev.description)}</div>
+                         )}
                         </div>
                         
                         <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
@@ -793,13 +902,14 @@ export default function Calendar() {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Agenda <span className="text-red-500">*</span>
                     </label>
-                    <div className={`rounded-lg p-1 bg-white dark:bg-gray-700 dark:text-gray-100 ${formErrors.agenda ? 'border border-red-500' : ''}`}>
+                    <div className={`rounded-lg p-1 bg-white dark:bg-gray-700 dark:text-gray-700 ${formErrors.agenda ? 'border border-red-500' : ''}`}>
                       <CKEditor
                         editor={ClassicEditor}
                         data={addEventForm.agenda}
                         onChange={handleAgendaChange}
                         config={{
                           placeholder: 'Describe the event agenda and details',
+                          contentsCss: getCKEditorContentsCss(),
                         }}
                       />
                     </div>
@@ -872,7 +982,7 @@ export default function Calendar() {
                   Edit Event
                 </h2>
                 <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">Modify the details of the event</p>
-              </div>
+      </div>
               <form className="space-y-6" onSubmit={handleEditEventSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -935,13 +1045,14 @@ export default function Calendar() {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Agenda <span className="text-red-500">*</span>
                     </label>
-                    <div className={`rounded-lg p-1 bg-white dark:bg-gray-700 dark:text-gray-100 ${editFormErrors.agenda ? 'border border-red-500' : ''}`}>
+                    <div className={`rounded-lg p-1 bg-white dark:bg-gray-700 ${editFormErrors.agenda ? 'border border-red-500' : ''}`}>
                       <CKEditor
                         editor={ClassicEditor}
                         data={editEventForm.agenda}
                         onChange={handleEditAgendaChange}
                         config={{
                           placeholder: 'Describe the event agenda and details',
+                          contentsCss: getCKEditorContentsCss(),
                         }}
                       />
                     </div>
@@ -1002,6 +1113,7 @@ export default function Calendar() {
           </div>
         )}
       </div>
+      {/* Removed custom notification UI */}
     </DashboardLayout>
   );
 } 

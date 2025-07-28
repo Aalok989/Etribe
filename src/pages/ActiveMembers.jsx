@@ -60,8 +60,8 @@ export default function ActiveMembers() {
     };
 
     fetchActiveMembers(true); // Initial load
-    const interval = setInterval(() => fetchActiveMembers(false), 10000); // Poll every 10 seconds
-    return () => clearInterval(interval); // Cleanup on unmount
+    // Removed setInterval for auto-refresh
+    // Only call fetchActiveMembers after CRUD operations
   }, []);
 
   // Sorting function
@@ -201,19 +201,6 @@ export default function ActiveMembers() {
           <div className="flex items-center gap-3">
             <FiRefreshCw className="animate-spin text-indigo-600 text-2xl" />
           <p className="text-indigo-700">Loading active members...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="flex items-center gap-2 text-red-500">
-            <FiAlertCircle />
-            <p>{error}</p>
           </div>
         </div>
       </DashboardLayout>
@@ -551,9 +538,9 @@ export default function ActiveMembers() {
         {/* Enhanced View Profile Modal */}
         {viewMember && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl relative">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl dark:shadow-2xl p-8 w-full max-w-2xl relative">
               <button
-                className="absolute top-4 right-4 text-gray-400 hover:text-rose-500 transition-colors"
+                className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-rose-500 transition-colors"
                 onClick={() => setViewMember(null)}
                 title="Close"
               >
@@ -572,7 +559,7 @@ export default function ActiveMembers() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Contact Information</h3>
                     <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                       <div><span className="font-medium text-gray-800 dark:text-gray-100">Phone:</span> {viewMember.phone_num}</div>
@@ -581,7 +568,7 @@ export default function ActiveMembers() {
                     </div>
                   </div>
                   
-                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Company Details</h3>
                     <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                       <div><span className="font-medium text-gray-800 dark:text-gray-100">Company:</span> {viewMember.company_name}</div>
@@ -591,7 +578,7 @@ export default function ActiveMembers() {
                 </div>
                 
                 <div className="space-y-4">
-                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Identity Documents</h3>
                     <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                       <div><span className="font-medium text-gray-800 dark:text-gray-100">PAN Number:</span> {viewMember.ad1}</div>
@@ -600,7 +587,7 @@ export default function ActiveMembers() {
                     </div>
                   </div>
                   
-                  <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Personal Information</h3>
                     <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                       <div><span className="font-medium text-gray-800 dark:text-gray-100">Date of Birth:</span> {viewMember.ad4}</div>

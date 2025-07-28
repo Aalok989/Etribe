@@ -61,8 +61,8 @@ export const ContactsProvider = ({ children }) => {
 
   useEffect(() => {
     fetchContacts();
-    const interval = setInterval(fetchContacts, 60000);
-    return () => clearInterval(interval);
+    // Removed setInterval for auto-refresh
+    // Only call fetchContacts after CRUD operations
   }, []);
 
   const addContact = async (contact) => {

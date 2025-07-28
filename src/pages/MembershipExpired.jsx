@@ -117,8 +117,8 @@ export default function MembershipExpired() {
       }
     };
     fetchExpiredMembers(true); // Initial load
-    const interval = setInterval(() => fetchExpiredMembers(false), 10000);
-    return () => clearInterval(interval);
+    // Removed setInterval for auto-refresh
+    // Only call fetchExpiredMembers after CRUD operations
   }, []);
 
   // Sorting function
@@ -185,10 +185,12 @@ export default function MembershipExpired() {
     // Validation
     if (!form.plan) {
       setUpdateError('Please select a membership plan.');
+      closeModify();
       return;
     }
     if (!form.validUpto) {
       setUpdateError('Please select a valid until date.');
+      closeModify();
       return;
     }
     // Check if date is in future
@@ -197,6 +199,7 @@ export default function MembershipExpired() {
     today.setHours(0, 0, 0, 0);
     if (selectedDate <= today) {
       setUpdateError('Please select a future date for membership validity.');
+      closeModify();
       return;
     }
     setUpdateLoading(true);
@@ -210,9 +213,7 @@ export default function MembershipExpired() {
       });
       toast.success('Membership renewed successfully!');
       setMembers(prevMembers => prevMembers.filter(member => member.id !== modifyMember.id));
-      setTimeout(() => {
     closeModify();
-      }, 2000);
     } catch (err) {
       if (err.response) {
         const errorMessage = err.response.data?.message || err.response.data?.error || 'Failed to activate membership';
@@ -225,17 +226,10 @@ export default function MembershipExpired() {
         setUpdateError('Failed to activate membership. Please try again.');
         toast.error('Failed to renew membership.');
       }
+      closeModify();
     } finally {
       setUpdateLoading(false);
     }
-  };
-
-  const handleCopyToClipboard = () => {
-    if (!members.length) return;
-    const data = members.map(m => 
-      `${m.name}, ${m.phone_num || m.contact}, ${m.email}, ${m.address}, ${m.ad1 || m.pan}, ${m.ad2 || m.aadhar}, ${m.ad3 || m.dl}, ${m.ad4 || m.dob}, ${m.company_name || m.company}, ${m.membershipExpired || m.membership_expired || ""}`
-    ).join('\n');
-    navigator.clipboard.writeText(data);
   };
 
   // Export Handlers
@@ -324,6 +318,14 @@ export default function MembershipExpired() {
     }
   };
 
+  const handleCopyToClipboard = () => {
+    if (!members.length) return;
+    const data = members.map(m => 
+      `${m.name}, ${m.phone_num || m.contact}, ${m.email}, ${m.address}, ${m.ad1 || m.pan}, ${m.ad2 || m.aadhar}, ${m.ad3 || m.dl}, ${m.ad4 || m.dob}, ${m.company_name || m.company}, ${m.membershipExpired || m.membership_expired || ""}`
+    ).join('\n');
+    navigator.clipboard.writeText(data);
+  };
+
   if (loading && firstLoad) {
     return (
       <DashboardLayout>
@@ -356,7 +358,6 @@ export default function MembershipExpired() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-2xl font-bold text-orange-600">Membership Expired</h1>
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <FiClock className="text-orange-600" />
             <span>Total Expired Members: {members.length}</span>
           </div>
         </div>
@@ -640,7 +641,7 @@ export default function MembershipExpired() {
                   value={entriesPerPage}
                   onChange={handleEntriesChange}
                 >
-                  {[5, 10, 25, 50, 100].map(num => (
+                  {[10, 25, 50, 100].map(num => (
                     <option key={num} value={num}>{num}</option>
                   ))}
                 </select>
@@ -677,9 +678,9 @@ export default function MembershipExpired() {
         {/* Enhanced Modify Membership Modal */}
         {modifyMember && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg relative">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl dark:shadow-2xl p-8 w-full max-w-lg relative">
               <button
-                className="absolute top-4 right-4 text-gray-400 hover:text-rose-500 transition-colors"
+                className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-rose-500 transition-colors"
                 onClick={closeModify}
                 title="Close"
               >
@@ -690,8 +691,8 @@ export default function MembershipExpired() {
                   {modifyMember.name ? modifyMember.name.charAt(0).toUpperCase() : 'N'}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">Renew Membership</h2>
-                  <p className="text-gray-600">Update membership for {modifyMember.name || 'Unknown Member'}</p>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Renew Membership</h2>
+                  <p className="text-gray-600 dark:text-gray-400">Update membership for {modifyMember.name || 'Unknown Member'}</p>
                 </div>
               </div>
               <form className="space-y-6" onSubmit={e => e.preventDefault()}>

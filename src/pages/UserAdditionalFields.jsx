@@ -203,10 +203,8 @@ export default function UserAdditionalFields() {
   // Load user additional fields on component mount
   useEffect(() => {
     fetchUserAdditionalFields();
-    
-    // Set up polling every 60 seconds to keep data fresh
-    const interval = setInterval(fetchUserAdditionalFields, 60000);
-    return () => clearInterval(interval);
+    // Removed setInterval for auto-refresh
+    // Only call fetchUserAdditionalFields after edit operations
   }, []);
 
   const handleEdit = () => {

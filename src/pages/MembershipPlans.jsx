@@ -371,7 +371,7 @@ export default function MembershipPlans() {
         if (response.data?.status === 'success' || (response.data?.message && response.data.message.toLowerCase().includes('success'))) {
           await fetchPlans();
           toast.success(response.data?.message || 'Membership plan added successfully!');
-      } else {
+        } else {
           toast.error(response.data?.message || 'Failed to add membership plan');
         }
         setAddMode(false);
@@ -538,7 +538,7 @@ export default function MembershipPlans() {
             <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Show</span>
                 <select className="border rounded-lg px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors" value={entriesPerPage} onChange={handleEntriesChange}>
-                    {[5, 10, 25, 50, 100].map(num => (
+                    {[10, 25, 50, 100].map(num => (
                   <option key={num} value={num}>{num}</option>
                 ))}
               </select>

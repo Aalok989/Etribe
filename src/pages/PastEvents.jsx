@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
-import { FiPlus, FiFileText, FiFile, FiEye, FiX, FiCalendar, FiMapPin, FiClock, FiSearch, FiFilter, FiDownload, FiCopy, FiEdit2, FiTrash2, FiRefreshCw, FiImage, FiArchive } from "react-icons/fi";
-import api from "../api/axiosConfig";
+import { FiPlus, FiFileText, FiFile, FiEye, FiX, FiCalendar, FiMapPin, FiClock, FiSearch, FiFilter, FiDownload, FiCopy, FiEdit2, FiTrash2, FiRefreshCw, FiImage, FiArchive, FiAlertCircle } from "react-icons/fi";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import api from "../api/axiosConfig";
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { toast } from 'react-toastify';
@@ -15,6 +15,43 @@ function decodeHtml(html) {
   const txt = document.createElement('textarea');
   txt.innerHTML = html;
   return txt.value;
+}
+
+// Helper to strip HTML tags
+function stripHtml(html) {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || div.innerText || '';
+}
+
+// Helper to get CKEditor contentsCss based on dark mode
+function getCKEditorContentsCss() {
+  const isDark = document.documentElement.classList.contains('dark');
+  return isDark
+    ? [
+        'https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/styles.css',
+        `
+        .ck-editor__editable {
+          background: #ffffff !important;
+          color: #000000 !important;
+        }
+        .ck-editor__editable.ck-placeholder::before {
+          color: #6b7280 !important;
+        }
+        `
+      ]
+    : [
+        'https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/styles.css',
+        `
+        .ck-editor__editable {
+          background: #fff !important;
+          color: #111827 !important;
+        }
+        .ck-editor__editable.ck-placeholder::before {
+          color: #6b7280 !important;
+        }
+        `
+      ];
 }
 
 export default function PastEvents() {
@@ -46,6 +83,7 @@ export default function PastEvents() {
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true);
+      // toast.dismiss();
       try {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
@@ -88,12 +126,14 @@ export default function PastEvents() {
         }));
         setEvents(mappedEvents);
       } catch (err) {
-        toast.error('Failed to fetch past events.');
+        toast.error('Failed to fetch past events');
       } finally {
         setLoading(false);
       }
     };
     fetchEvents();
+    // Removed setInterval polling
+    // Only call fetchEvents after CRUD operations
   }, []);
 
   // Filtered, sorted and paginated data
@@ -183,6 +223,9 @@ export default function PastEvents() {
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
+      toast.error(Object.values(errors).join('\n'));
+      setShowAddEventForm(false);
+      setTimeout(() => toast.dismiss(), 3000);
       return;
     }
     setSaveLoading(true);
@@ -198,7 +241,8 @@ export default function PastEvents() {
       if (addEventForm.invitationImage) {
         formData.append('event_image', addEventForm.invitationImage);
       }
-      await api.post('/event/add', formData, {
+      await fetch('/api/event/add', {
+        method: 'POST',
         headers: {
           'Client-Service': 'COHAPPRT',
           'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
@@ -208,6 +252,7 @@ export default function PastEvents() {
           'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || ''),
         },
         credentials: 'include',
+        body: formData,
       });
       toast.success('Event added successfully!');
       setAddEventForm({
@@ -220,10 +265,11 @@ export default function PastEvents() {
         sendReminderTo: "Only Approved Members",
         invitationImage: null
       });
-      setTimeout(() => toast.dismiss(), 3000);
       setShowAddEventForm(false);
+      setTimeout(() => toast.dismiss(), 3000);
     } catch (err) {
       toast.error('Failed to add event');
+      setShowAddEventForm(false);
     } finally {
       setSaveLoading(false);
     }
@@ -241,10 +287,7 @@ export default function PastEvents() {
 
   // Export Handlers (CSV, Excel, PDF)
   const handleExportCSV = () => {
-    if (!events.length) {
-      toast.error('No events to export.');
-      return;
-    }
+    if (!events.length) return;
     const headers = ["Event", "Agenda", "Venue", "Date & Time"];
     const rows = events.map(e => [
       e.event,
@@ -260,14 +303,11 @@ export default function PastEvents() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success('Events exported successfully!');
+    toast.success('Events exported to CSV!');
   };
 
   const handleExportExcel = () => {
-    if (!events.length) {
-      toast.error('No events to export.');
-      return;
-    }
+    if (!events.length) return;
     const ws = XLSX.utils.json_to_sheet(
       events.map(e => ({
         Event: e.event,
@@ -279,14 +319,11 @@ export default function PastEvents() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Past Events");
     XLSX.writeFile(wb, "past_events.xlsx");
-    toast.success('Events exported successfully!');
+    toast.success('Events exported to Excel!');
   };
 
   const handleExportPDF = () => {
-    if (!events.length) {
-      toast.error('No events to export.');
-      return;
-    }
+    if (!events.length) return;
     const doc = new jsPDF({
       orientation: "portrait",
       unit: "pt",
@@ -310,9 +347,9 @@ export default function PastEvents() {
         headStyles: { fillColor: [41, 128, 185] }
       });
       doc.save("past_events.pdf");
-      toast.success('Events exported successfully!');
+      toast.success('Events exported to PDF!');
     } catch (err) {
-      toast.error('PDF export failed: ' + err.message);
+      alert("PDF export failed: " + err.message);
     }
   };
 
@@ -321,6 +358,7 @@ export default function PastEvents() {
       `${e.event},${e.agenda},${e.venue},${e.datetime ? new Date(e.datetime).toLocaleString() : ""}`
     ).join('\n');
     navigator.clipboard.writeText(data);
+    toast.success('Event copied to clipboard!');
   };
 
   const handleRefresh = () => {
@@ -340,23 +378,13 @@ export default function PastEvents() {
     );
   }
 
-  if (error) {
-    return (
-      <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center">
-          <p className="text-red-500">{error}</p>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-4 py-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-2xl font-bold text-orange-600">Past Events</h1>
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <FiArchive className="text-indigo-600" />
+            <FiAlertCircle className="text-indigo-600" />
             <span>Total Past Events: {events.length}</span>
           </div>
         </div>
@@ -366,7 +394,7 @@ export default function PastEvents() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <FiArchive className="text-indigo-600 text-xl" />
+                <FiFileText />
                 <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">Past Event Management</span>
               </div>
               
@@ -488,7 +516,7 @@ export default function PastEvents() {
                         <span className="font-medium text-gray-800 dark:text-gray-100">{event.event}</span>
                       </div>
                     </td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{event.agenda}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{stripHtml(event.agenda)}</td>
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                           <FiMapPin className="mr-1" />
@@ -663,13 +691,14 @@ export default function PastEvents() {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Agenda <span className="text-red-500">*</span>
                     </label>
-                    <div className={`rounded-lg p-1 bg-white dark:bg-gray-700 dark:text-gray-100 ${formErrors.agenda ? 'border border-red-500' : ''}`}>
+                    <div className={`rounded-lg p-1 bg-white dark:bg-gray-700 ${formErrors.agenda ? 'border border-red-500' : ''}`}>
                       <CKEditor
                         editor={ClassicEditor}
                         data={addEventForm.agenda}
                         onChange={handleAgendaChange}
                         config={{
                           placeholder: 'Describe the event agenda and details',
+                          contentsCss: getCKEditorContentsCss(),
                         }}
                       />
                     </div>
@@ -679,8 +708,7 @@ export default function PastEvents() {
                   </div>
                 </div>
                 
-                {/* Error Message */}
-                {/* Success Message */}
+                {/* Removed saveError and saveSuccess messages */}
                 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
                   <button
@@ -788,6 +816,7 @@ export default function PastEvents() {
           </div>
         )}
       </div>
+      {/* Removed custom notification UI */}
     </DashboardLayout>
   );
 }

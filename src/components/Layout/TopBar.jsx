@@ -264,7 +264,7 @@ export default function TopBar() {
             {groupLogo ? (
               <img src={groupLogo} alt="Group Logo" className="h-8 w-8 rounded-full object-cover border border-gray-300 dark:border-gray-700" />
             ) : (
-              <FiUser className="text-blue-500 dark:text-blue-300" size={20} />
+            <FiUser className="text-blue-500 dark:text-blue-300" size={20} />
             )}
           </div>
           <div className="hidden sm:block text-right">
