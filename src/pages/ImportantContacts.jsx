@@ -18,15 +18,24 @@ export default function ImportantContactsPage() {
   const [deleteContact, setDeleteContact] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [showAddContactModal, setShowAddContactModal] = useState(false);
-  const [addContactForm, setAddContactForm] = useState({
-    dept: "",
-    name: "",
-    contact: "",
-    email: "",
-    address: ""
-  });
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [addContactForm, setAddContactForm] = useState({ dept: "", name: "", contact: "", email: "", address: "" });
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [formError, setFormError] = useState(null);
+
+  // Handle click outside for export dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest('.export-dropdown')) {
+        setShowExportDropdown(false);
+        }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportDropdown]);
 
   const departments = ["All", ...Array.from(new Set(contactsData.map(c => c.dept)))];
 
@@ -229,8 +238,9 @@ export default function ImportantContactsPage() {
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-4 py-3">
+        {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-2xl font-bold text-orange-600">Important Contacts</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-orange-600">Important Contacts</h1>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <FiUser className="text-indigo-600" />
             <span>Total Contacts: {contactsData.length}</span>
@@ -240,8 +250,8 @@ export default function ImportantContactsPage() {
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Controls */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-4">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="relative flex-1">
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
@@ -249,30 +259,133 @@ export default function ImportantContactsPage() {
                   className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  style={{ minWidth: 250 }}
+                  style={{ minWidth: '100%', maxWidth: '100%' }}
                 />
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 flex-shrink-0">
                 <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, totalEntries)} of {totalEntries} entries</span>
               </div>
             </div>
-            <div className="flex gap-2 items-center">
-              <button className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition" onClick={handleRefresh} title="Refresh Data"><FiRefreshCw /> Refresh</button>
-              <button className="flex items-center gap-1 bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition" onClick={handleCopyToClipboard} title="Copy to Clipboard"><FiCopy /> Copy</button>
-              <button className="flex items-center gap-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition" onClick={handleExportCSV} title="Export CSV"><FiDownload /> CSV</button>
-              <button className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition" onClick={handleExportExcel} title="Export Excel"><FiFile /> Excel</button>
-              <button className="flex items-center gap-1 bg-rose-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-rose-600 transition" onClick={handleExportPDF} title="Export PDF"><FiFile /> PDF</button>
+            
+            <div className="flex flex-wrap gap-2 items-center justify-between xl:justify-start">
+              <button 
+                className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
+                onClick={handleRefresh}
+                title="Refresh Data"
+              >
+                <FiRefreshCw /> 
+                <span>Refresh</span>
+              </button>
+              
+              {/* Desktop Export Buttons - Show on larger screens */}
+              <div className="hidden xl:flex gap-2">
+                <button 
+                  className="flex items-center gap-1 bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
+                  onClick={handleCopyToClipboard}
+                  title="Copy to Clipboard"
+                >
+                  <FiCopy /> 
+                  Copy
+                </button>
+                
+                <button 
+                  className="flex items-center gap-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition"
+                  onClick={handleExportCSV}
+                  title="Export CSV"
+                >
+                  <FiDownload /> 
+                  CSV
+                </button>
+                
+                <button 
+                  className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition"
+                  onClick={handleExportExcel}
+                  title="Export Excel"
+                >
+                  <FiFile /> 
+                  Excel
+                </button>
+                
+                <button 
+                  className="flex items-center gap-1 bg-rose-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-rose-600 transition"
+                  onClick={handleExportPDF}
+                  title="Export PDF"
+                >
+                  <FiFile /> 
+                  PDF
+                </button>
+              </div>
+              
+              {/* Mobile/Tablet Export Dropdown - Show on smaller screens */}
+              <div className="relative xl:hidden flex-1 flex justify-center">
+                <button
+                  className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-600 transition"
+                  onClick={() => setShowExportDropdown(!showExportDropdown)}
+                >
+                  <FiDownload />
+                  <span>Export</span>
+                  <FiChevronDown className={`transition-transform ${showExportDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showExportDropdown && (
+                  <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20 min-w-32">
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                      onClick={() => {
+                        handleCopyToClipboard();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiCopy className="text-gray-500" />
+                      Copy
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => {
+                        handleExportCSV();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiDownload className="text-green-500" />
+                      CSV
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => {
+                        handleExportExcel();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiFile className="text-emerald-500" />
+                      Excel
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
+                      onClick={() => {
+                        handleExportPDF();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiFile className="text-rose-500" />
+                      PDF
+                    </button>
+                  </div>
+                )}
+              </div>
+              
               <button
-                className="flex items-center gap-1 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
+                className="flex items-center gap-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
                 onClick={() => setShowAddContactModal(true)}
               >
                 <FiPlus />
-                Add Contact
+                <span className="hidden sm:inline">Add Contact</span>
+                <span className="sm:hidden">Add</span>
               </button>
             </div>
           </div>
-          {/* Table */}
-          <div className="overflow-x-auto">
+          {/* Table - Desktop View */}
+          <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
                 <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
@@ -308,10 +421,68 @@ export default function ImportantContactsPage() {
               </tbody>
             </table>
           </div>
-          {/* Pagination Controls - moved outside scrollable area */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-t border-gray-100 dark:border-gray-700">
+
+          {/* Mobile Cards View */}
+          <div className="lg:hidden p-4 sm:p-6 space-y-4">
+            {paginatedContacts.map((c, idx) => (
+              <div key={c.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 dark:from-indigo-800 dark:to-purple-900 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-medium text-white">
+                        {c.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{c.name}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Contact #{startIdx + idx + 1}</p>
+                      <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">{c.dept}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300 transition-colors p-1" 
+                      onClick={() => setEditContact(c)}
+                      title="Edit Contact"
+                    >
+                      <FiEdit2 size={16} />
+                    </button>
+                    <button 
+                      className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-colors p-1" 
+                      onClick={() => setDeleteContact(c)}
+                      title="Delete Contact"
+                    >
+                      <FiTrash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <FiPhone className="text-gray-400 flex-shrink-0" size={14} />
+                    <span className="text-gray-700 dark:text-gray-300 truncate">{c.contact}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <FiMail className="text-gray-400 flex-shrink-0" size={14} />
+                    <span className="text-gray-700 dark:text-gray-300 truncate">{c.email}</span>
+                  </div>
+                  {c.address && (
+                    <div className="flex items-start gap-2">
+                      <FiMapPin className="text-gray-400 flex-shrink-0 mt-0.5" size={14} />
+                      <span className="text-gray-700 dark:text-gray-300 text-xs line-clamp-2">
+                        {c.address}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Pagination Controls */}
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Show</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-400">Show</span>
                 <select
                 className="border rounded-lg px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
                   value={entriesPerPage}
@@ -323,14 +494,17 @@ export default function ImportantContactsPage() {
                 </select>
               <span className="text-sm text-gray-600 dark:text-gray-400">entries per page</span>
               </div>
+              
               <div className="flex items-center gap-2">
                 <button
                   onClick={handlePrev}
                   disabled={currentPage === 1}
-                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                    currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 title="Previous"
                   >
-                    Previous
+                    &lt;
                 </button>
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                     Page {currentPage} of {totalPages}
@@ -338,29 +512,32 @@ export default function ImportantContactsPage() {
                 <button
                   onClick={handleNext}
                   disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                    currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 title="Next"
                   >
-                    Next
+                    &gt;
                 </button>
+                </div>
             </div>
           </div>
         </div>
 
         {/* Add Contact Modal */}
         {showAddContactModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 relative">
+          <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black bg-opacity-50 p-2 sm:p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 w-full max-w-md relative h-[95vh] sm:h-auto sm:max-h-[90vh] flex flex-col">
               <button
-                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-red-500 transition-colors z-10"
                 onClick={() => setShowAddContactModal(false)}
                 title="Close"
               >
-                <FiX size={24} />
+                <FiX size={20} className="sm:w-6 sm:h-6" />
               </button>
               
-              <div className="mb-6">
-                <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-200 flex items-center gap-2">
+              <div className="mb-4 sm:mb-6 pr-8 sm:pr-0">
+                <h2 className="text-lg sm:text-xl font-bold text-indigo-700 dark:text-indigo-200 flex items-center gap-2">
                   <FiPlus className="text-indigo-600 dark:text-indigo-300" />
                   Add New Contact
                 </h2>
@@ -369,9 +546,10 @@ export default function ImportantContactsPage() {
               
                {formError && <p className="text-red-500 text-sm bg-red-100 dark:bg-red-900 p-2 rounded-lg">{formError}</p>}
               
-              <form className="space-y-4" onSubmit={handleAddContactSubmit}>
+              <form className="flex-1 flex flex-col" onSubmit={handleAddContactSubmit}>
+                <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 sm:mb-2">
                     Department <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -386,7 +564,7 @@ export default function ImportantContactsPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 sm:mb-2">
                     Person Name <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -400,7 +578,7 @@ export default function ImportantContactsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 sm:mb-2">
                     Contact <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -414,7 +592,7 @@ export default function ImportantContactsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 sm:mb-2">
                     Email <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -428,7 +606,7 @@ export default function ImportantContactsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1 sm:mb-2">
                     Address
                   </label>
                   <input
@@ -440,7 +618,8 @@ export default function ImportantContactsPage() {
                     placeholder="Enter address"
                   />
                 </div>
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <button
                     type="button"
                     className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
@@ -450,7 +629,7 @@ export default function ImportantContactsPage() {
                   </button>
                   <button
                     type="submit"
-                    className="flex items-center gap-2 px-6 py-2 rounded-lg bg-indigo-600 dark:bg-indigo-700 text-white font-medium hover:bg-indigo-700 dark:hover:bg-indigo-800 transition-colors"
+                    className="flex items-center justify-center gap-2 px-6 py-2 rounded-lg bg-indigo-600 dark:bg-indigo-700 text-white font-medium hover:bg-indigo-700 dark:hover:bg-indigo-800 transition-colors"
                   >
                     <FiPlus />
                     Add Contact
@@ -463,18 +642,18 @@ export default function ImportantContactsPage() {
 
         {/* Edit Contact Modal */}
         {editContact && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 w-full max-w-md mx-4 relative">
+          <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black bg-opacity-50 p-2 sm:p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 w-full max-w-md relative h-[95vh] sm:h-auto sm:max-h-[90vh] flex flex-col">
               <button
-                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-red-500 transition-colors z-10"
                 onClick={() => setEditContact(null)}
                 title="Close"
               >
-                <FiX size={24} />
+                <FiX size={20} className="sm:w-6 sm:h-6" />
               </button>
               
-              <div className="mb-6">
-                <h2 className="text-xl font-bold text-indigo-700 dark:text-indigo-200 flex items-center gap-2">
+              <div className="mb-4 sm:mb-6 pr-8 sm:pr-0">
+                <h2 className="text-lg sm:text-xl font-bold text-indigo-700 dark:text-indigo-200 flex items-center gap-2">
                   <FiEdit2 className="text-indigo-600 dark:text-indigo-300" />
                   Edit Contact
                 </h2>

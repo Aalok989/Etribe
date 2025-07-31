@@ -1,68 +1,205 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
-import { FiFileText, FiFile, FiEye, FiX, FiUsers, FiSearch, FiRefreshCw, FiAlertCircle, FiCopy, FiDownload } from "react-icons/fi";
+import { FiEdit2, FiPlus, FiKey, FiX, FiFileText, FiFile, FiEye, FiRefreshCw, FiTrash2, FiUser, FiMail, FiPhone, FiMapPin, FiShield, FiCheckCircle, FiAlertCircle, FiCopy, FiDownload, FiChevronDown, FiChevronUp, FiChevronLeft, FiChevronRight, FiSearch, FiUsers, FiHome, FiCalendar } from "react-icons/fi";
 import api from "../api/axiosConfig";
-import * as XLSX from "xlsx";
+import { toast } from 'react-toastify';
+
+import * as XLSX from 'xlsx';
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { toast } from 'react-toastify';
+
+// Cache for additional fields to avoid repeated API calls
+let additionalFieldsCache = null;
+let cacheTimestamp = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Fetch additional fields function
+const fetchAdditionalFields = async () => {
+  // Return cached data if still valid
+  if (additionalFieldsCache && cacheTimestamp && (Date.now() - cacheTimestamp) < CACHE_DURATION) {
+    return additionalFieldsCache;
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    const uid = localStorage.getItem('uid');
+    
+    if (!token || !uid) {
+      throw new Error('Authentication required');
+    }
+
+    const response = await api.post('/groupSettings/get_user_additional_fields', {}, {
+      headers: {
+        'Client-Service': 'COHAPPRT',
+        'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+        'uid': uid,
+        'token': token,
+        'rurl': 'login.etribes.in',
+      }
+    });
+
+    console.log('Additional Fields Response:', response.data);
+    
+    // Map backend data to frontend format
+    const backendData = response.data?.data || response.data || {};
+    
+    let mappedFields = [];
+    
+    if (Array.isArray(backendData)) {
+      // Handle array response
+      mappedFields = backendData
+        .filter(field => field && (field.name || field.label || field.value || field))
+        .map((field, index) => ({
+          id: index + 1,
+          name: field.name || field.label || field.value || field || `Field ${index + 1}`,
+          key: `additionalField${index + 1}`,
+          backendKey: `ad${index + 1}` || `field${index + 1}`
+        }));
+    } else {
+      // Handle object response
+      mappedFields = Object.keys(backendData)
+        .filter(key => backendData[key] && backendData[key].trim() !== '')
+        .map((key, index) => ({
+          id: index + 1,
+          name: backendData[key],
+          key: key,
+          backendKey: key
+        }));
+    }
+
+    // Cache the result
+    additionalFieldsCache = mappedFields;
+    cacheTimestamp = Date.now();
+    
+    return mappedFields;
+  } catch (err) {
+    console.error('Fetch additional fields error:', err);
+    // Return empty array on error
+    return [];
+  }
+};
+
+// Get table headers for member pages
+const getMemberTableHeaders = (additionalFields = []) => {
+  const baseHeaders = [
+    { key: 'sr', name: 'SR No', sortable: true, width: '60px' },
+    { key: 'name', name: 'Name', sortable: true, width: '120px' },
+    { key: 'contact', name: 'Contact', sortable: true, width: '120px' },
+    { key: 'email', name: 'Email', sortable: true, width: '180px' },
+    { key: 'address', name: 'Address', sortable: true, width: '200px' },
+  ];
+
+  // Add dynamic additional fields
+  const dynamicHeaders = additionalFields.map(field => ({
+    key: field.key,
+    name: field.name,
+    sortable: true,
+    width: '120px',
+    isAdditional: true
+  }));
+
+  const endHeaders = [
+    { key: 'company', name: 'Company Name', sortable: true, width: '150px' },
+    { key: 'validUpto', name: 'Valid Upto', sortable: true, width: '120px' },
+    { key: 'status', name: 'Status', sortable: true, width: '100px' },
+    { key: 'actions', name: 'Actions', sortable: false, width: '120px' }
+  ];
+
+  return [...baseHeaders, ...dynamicHeaders, ...endHeaders];
+};
+
+// Get mobile card fields for member pages
+const getMemberCardFields = (additionalFields = []) => {
+  return additionalFields.map(field => ({
+    key: field.key,
+    name: field.name,
+    backendKey: field.backendKey
+  }));
+};
 
 export default function ActiveMembers() {
   const [members, setMembers] = useState([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
-  const [viewMember, setViewMember] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [firstLoad, setFirstLoad] = useState(true);
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState("asc");
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [additionalFields, setAdditionalFields] = useState([]);
+  const [tableHeaders, setTableHeaders] = useState([]);
+  const [cardFields, setCardFields] = useState([]);
+  const [viewMember, setViewMember] = useState(null);
 
+  // Close export dropdown when clicking outside
   useEffect(() => {
-    const fetchActiveMembers = async (isFirst = false) => {
-      if (isFirst) setLoading(true);
-      // No need to clear error/success with toast
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest('.export-dropdown')) {
+        setShowExportDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showExportDropdown]);
+
+  // Fetch additional fields and set up headers
+  useEffect(() => {
+    const loadAdditionalFields = async () => {
+      try {
+        const fields = await fetchAdditionalFields();
+        setAdditionalFields(fields);
+        setTableHeaders(getMemberTableHeaders(fields));
+        setCardFields(getMemberCardFields(fields));
+      } catch (err) {
+        console.error('Failed to load additional fields:', err);
+        setTableHeaders(getMemberTableHeaders([]));
+        setCardFields(getMemberCardFields([]));
+      }
+    };
+    loadAdditionalFields();
+  }, []);
+
+  // Fetch active members from API
+  const fetchActiveMembers = async () => {
+    setLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const uid = localStorage.getItem('uid') || '1'; // Fallback to '1' as per cURL
-        console.log('Token:', token);
-        console.log('UID:', uid);
+      const uid = localStorage.getItem('uid');
+      
         if (!token) {
-          toast.error('Please log in to view active members');
-          window.location.href = '/'; // Redirect to login
+        toast.error('Please log in to view active members');
+        window.location.href = '/login';
           return;
         }
-        const response = await api.post('/userDetail/active_members', { uid }, {
+
+      const response = await api.post('/userDetail/active_members', {}, {
           headers: {
             'token': token,
             'uid': uid,
           }
         });
-        console.log('Active Members Response:', response.data);
-        setMembers(Array.isArray(response.data) ? response.data : response.data.data || []);
-      } catch (err) {
-        console.error('Fetch error:', {
-          message: err.message,
-          status: err.response?.status,
-          data: err.response?.data,
-        });
-        const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch active members';
-        toast.error(errorMessage);
-        if (errorMessage.toLowerCase().includes('token')) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('uid');
-          window.location.href = '/'; // Redirect to login
-        }
-      } finally {
-        if (isFirst) setLoading(false);
-        if (isFirst) setFirstLoad(false);
-      }
-    };
 
-    fetchActiveMembers(true); // Initial load
-    // Removed setInterval for auto-refresh
-    // Only call fetchActiveMembers after CRUD operations
-  }, []);
+        console.log('Active Members Response:', response.data);
+      
+      // Handle different response formats
+      let membersData = [];
+      if (Array.isArray(response.data)) {
+        membersData = response.data;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        membersData = response.data.data;
+      } else if (response.data?.members && Array.isArray(response.data.members)) {
+        membersData = response.data.members;
+      }
+      
+      setMembers(membersData);
+    } catch (err) {
+      console.error('Fetch active members error:', err);
+      toast.error('Failed to fetch active members');
+      setMembers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Sorting function
   const handleSort = (field) => {
@@ -86,8 +223,14 @@ export default function ActiveMembers() {
     }
   });
 
-  // Filter by name
-  const filtered = sortedData.filter(m => m.name.toLowerCase().includes(search.toLowerCase()));
+  // Filter by search
+  const filtered = sortedData.filter(member => 
+    member.name?.toLowerCase().includes(search.toLowerCase()) ||
+    member.email?.toLowerCase().includes(search.toLowerCase()) ||
+    member.contact?.toLowerCase().includes(search.toLowerCase()) ||
+    member.company?.toLowerCase().includes(search.toLowerCase())
+  );
+
   const totalEntries = filtered.length;
   const totalPages = Math.ceil(totalEntries / entriesPerPage);
   const startIdx = (currentPage - 1) * entriesPerPage;
@@ -100,78 +243,116 @@ export default function ActiveMembers() {
     setCurrentPage(1);
   };
 
-  // Export Handlers
+  // Export handlers
+  const handleExportCopy = () => {
+    if (!members.length) {
+      toast.error("No data to export!");
+      return;
+    }
+    console.log("Copying data:", members);
+    const data = members.map(member => 
+      `${member.name}, ${member.phone_num || member.contact}, ${member.email}, ${member.address}, ${member.company_name || member.company}, ${member.ad5 || member.valid_upto}`
+    ).join('\n');
+    navigator.clipboard.writeText(data);
+    toast.success("All members copied to clipboard!");
+  };
+
+  const handleExportExcel = () => {
+    if (!members.length) {
+      toast.error("No data to export!");
+      return;
+    }
+    console.log("Exporting Excel with data:", members);
+    try {
+      const exportData = members.map(member => ({
+        Name: member.name || '',
+        Contact: member.phone_num || member.contact || '',
+        Email: member.email || '',
+        Address: member.address || '',
+        Company: member.company_name || member.company || '',
+        'Valid Upto': member.ad5 || member.valid_upto || '',
+        Status: 'Active'
+      }));
+      console.log("Processed export data:", exportData);
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Active Members");
+      XLSX.writeFile(wb, "active_members.xlsx");
+      toast.success("Members exported to Excel!");
+    } catch (error) {
+      console.error("Excel export error:", error);
+      toast.error("Excel export failed: " + error.message);
+    }
+  };
+
   const handleExportCSV = () => {
-    if (!members.length) return;
+    if (!members.length) {
+      toast.error("No data to export!");
+      return;
+    }
+    console.log("Exporting CSV with data:", members);
     const headers = [
-      "Name", "Contact", "Email", "Address", "PAN Number", "Aadhar Number", "DL Number", "D.O.B", "Company Name", "Valid Upto"
+      "Name", "Contact", "Email", "Address", "Company", "Valid Upto", "Status"
     ];
-    const rows = members.map(m => [
-      m.name,
-      m.phone_num,
-      m.email,
-      m.address,
-      m.ad1,
-      m.ad2,
-      m.ad3,
-      m.ad4,
-      m.company_name,
-      m.ad5,
+    const rows = members.map(member => [
+      member.name,
+      member.phone_num || member.contact,
+      member.email,
+      member.address,
+      member.company_name || member.company,
+      member.ad5 || member.valid_upto,
+      'Active'
     ]);
-    let csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n");
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "active_members.csv");
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } else {
+      // Fallback for older browsers
+      const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", "active_members.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const handleExportExcel = () => {
-    if (!members.length) return;
-    const ws = XLSX.utils.json_to_sheet(
-      members.map(m => ({
-        Name: m.name,
-        Contact: m.phone_num,
-        Email: m.email,
-        Address: m.address,
-        "PAN Number": m.ad1,
-        "Aadhar Number": m.ad2,
-        "DL Number": m.ad3,
-        "D.O.B": m.ad4,
-        "Company Name": m.company_name,
-        "Valid Upto": m.ad5,
-      }))
-    );
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Active Members");
-    XLSX.writeFile(wb, "active_members.xlsx");
+    }
+    toast.success("Members exported to CSV!");
   };
 
   const handleExportPDF = () => {
-    if (!members.length) return;
+    if (!members.length) {
+      toast.error("No data to export!");
+      return;
+    }
+    console.log("Exporting PDF with data:", members);
     const doc = new jsPDF({
-      orientation: "portrait", // A4 vertical
+      orientation: "portrait",
       unit: "pt",
       format: "a4"
     });
     const headers = [[
-      "Name", "Contact", "Email", "Address", "PAN Number", "Aadhar Number", "DL Number", "D.O.B", "Company Name", "Valid Upto"
+      "Name", "Contact", "Email", "Address", "Company", "Valid Upto", "Status"
     ]];
-    const rows = members.map(m => [
-      m.name,
-      m.phone_num,
-      m.email,
-      m.address,
-      m.ad1,
-      m.ad2,
-      m.ad3,
-      m.ad4,
-      m.company_name,
-      m.ad5,
+    const rows = members.map(member => [
+      member.name,
+      member.phone_num || member.contact,
+      member.email,
+      member.address,
+      member.company_name || member.company,
+      member.ad5 || member.valid_upto,
+      'Active'
     ]);
     try {
+      console.log("PDF headers:", headers);
+      console.log("PDF rows:", rows);
       autoTable(doc, {
         head: headers,
         body: rows,
@@ -180,27 +361,46 @@ export default function ActiveMembers() {
         headStyles: { fillColor: [41, 128, 185] }
       });
       doc.save("active_members.pdf");
+      toast.success("Members exported to PDF!");
     } catch (err) {
       console.error("autoTable failed:", err);
       toast.error("PDF export failed: " + err.message);
     }
   };
 
-  const handleCopyToClipboard = () => {
-    if (!members.length) return;
-    const data = members.map(m => 
-      `${m.name}, ${m.phone_num}, ${m.email}, ${m.address}, ${m.ad1}, ${m.ad2}, ${m.ad3}, ${m.ad4}, ${m.company_name}, ${m.ad5}`
-    ).join('\n');
-    navigator.clipboard.writeText(data);
+  const handleRefresh = () => {
+    fetchActiveMembers();
+    toast.info("Refreshing members...");
   };
 
-  if (loading && firstLoad) {
+  // Test download functionality
+  const testDownload = () => {
+    const testData = "Name,Contact,Email\nJohn Doe,1234567890,john@example.com\nJane Smith,0987654321,jane@example.com";
+    const blob = new Blob([testData], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "test.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.info("Test download initiated");
+  };
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchActiveMembers();
+  }, []);
+
+  if (loading && members.length === 0) {
     return (
       <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-800">
           <div className="flex items-center gap-3">
             <FiRefreshCw className="animate-spin text-indigo-600 text-2xl" />
-          <p className="text-indigo-700">Loading active members...</p>
+            <p className="text-indigo-700 dark:text-indigo-300">Loading active members...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -211,49 +411,52 @@ export default function ActiveMembers() {
     <DashboardLayout>
       <div className="flex flex-col gap-4 py-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-2xl font-bold text-orange-600">Active Members</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-orange-600">Active Members</h1>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <FiUsers className="text-indigo-600" />
-            <span>Total Members: {members.length}</span>
+            <span>Total Active Members: {members.length}</span>
           </div>
         </div>
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Controls */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-4">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="relative flex-1">
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name..."
+                  placeholder="Search by name, email, contact, or company..."
                   className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
               value={search}
               onChange={e => setSearch(e.target.value)}
-                  style={{ minWidth: 250 }}
+                  style={{ minWidth: '100%', maxWidth: '100%' }}
             />
               </div>
-              
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 flex-shrink-0">
                 <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, totalEntries)} of {totalEntries} entries</span>
               </div>
             </div>
 
-            <div className="flex gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-center justify-between xl:justify-start">
               <button 
                 className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
-                onClick={() => window.location.reload()}
+                onClick={handleRefresh}
                 title="Refresh Data"
               >
-                <FiRefreshCw /> Refresh
+                <FiRefreshCw /> 
+                <span>Refresh</span>
               </button>
               
+              {/* Desktop Export Buttons - Show on larger screens */}
+              <div className="hidden xl:flex gap-2">
               <button 
                 className="flex items-center gap-1 bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
-                onClick={handleCopyToClipboard}
+                  onClick={handleExportCopy}
                 title="Copy to Clipboard"
               >
-                <FiCopy /> Copy
+                  <FiCopy /> 
+                  Copy
               </button>
               
               <button 
@@ -261,7 +464,8 @@ export default function ActiveMembers() {
                 onClick={handleExportCSV}
                 title="Export CSV"
               >
-                <FiDownload /> CSV
+                  <FiDownload /> 
+                  CSV
               </button>
               
               <button 
@@ -269,7 +473,8 @@ export default function ActiveMembers() {
                 onClick={handleExportExcel}
                 title="Export Excel"
               >
-                <FiFile /> Excel
+                  <FiFile /> 
+                  Excel
               </button>
               
               <button 
@@ -277,182 +482,101 @@ export default function ActiveMembers() {
                 onClick={handleExportPDF}
                 title="Export PDF"
               >
-                <FiFile /> PDF
+                  <FiFile /> 
+                  PDF
+                </button>
+              </div>
+              
+              {/* Mobile/Tablet Export Dropdown - Show on smaller screens */}
+              <div className="relative xl:hidden">
+                <button
+                  className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-600 transition"
+                  onClick={() => setShowExportDropdown(!showExportDropdown)}
+                >
+                  <FiDownload />
+                  <span>Export</span>
+                  <FiChevronDown className={`transition-transform ${showExportDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showExportDropdown && (
+                  <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20 min-w-32 export-dropdown">
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                      onClick={() => {
+                        handleExportCopy();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiCopy className="text-gray-500" />
+                      Copy
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => {
+                        handleExportCSV();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiDownload className="text-green-500" />
+                      CSV
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => {
+                        handleExportExcel();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiFile className="text-emerald-500" />
+                      Excel
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
+                      onClick={() => {
+                        handleExportPDF();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiFile className="text-rose-500" />
+                      PDF
               </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           
-          {/* Table */}
-          <div className="overflow-x-auto">
+          {/* Table - Desktop View */}
+          <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
                 <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
-                  <th 
-                    className="p-3 text-center font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
-                    style={{ minWidth: '80px', width: '80px' }}
-                    onClick={() => handleSort('id')}
-                  >
-                    <div className="flex items-center justify-center gap-1">
-                      Sr No
-                      {sortField === 'id' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
-                    style={{ minWidth: '150px', width: '150px' }}
-                    onClick={() => handleSort('name')}
+                  {tableHeaders.map((header, index) => (
+                    <th 
+                      key={header.key}
+                      className={`p-3 font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap ${
+                        header.sortable ? '' : 'cursor-default'
+                      }`}
+                      onClick={() => header.sortable && handleSort(header.key)}
+                      style={{ minWidth: header.width, width: header.width }}
                   >
                     <div className="flex items-center gap-1">
-                      Name
-                      {sortField === 'name' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
+                        {header.name}
+                        {header.sortable && (
+                          <div className="flex flex-col">
+                            <span className={`text-xs ${sortField === header.key && sortDirection === "asc" ? "text-indigo-600" : "text-gray-400"}`}>▲</span>
+                            <span className={`text-xs ${sortField === header.key && sortDirection === "desc" ? "text-indigo-600" : "text-gray-400"}`}>▼</span>
+                    </div>
                       )}
                     </div>
                   </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
-                    style={{ minWidth: '120px', width: '120px' }}
-                    onClick={() => handleSort('phone_num')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Contact
-                      {sortField === 'phone_num' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
-                    style={{ minWidth: '180px', width: '180px' }}
-                    onClick={() => handleSort('email')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Email
-                      {sortField === 'email' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
-                    style={{ minWidth: '200px', width: '200px' }}
-                    onClick={() => handleSort('address')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Address
-                      {sortField === 'address' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
-                    style={{ minWidth: '120px', width: '120px' }}
-                    onClick={() => handleSort('ad1')}
-                  >
-                    <div className="flex items-center gap-1">
-                      PAN Number
-                      {sortField === 'ad1' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
-                    style={{ minWidth: '130px', width: '130px' }}
-                    onClick={() => handleSort('ad2')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Aadhar Number
-                      {sortField === 'ad2' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
-                    style={{ minWidth: '120px', width: '120px' }}
-                    onClick={() => handleSort('ad3')}
-                  >
-                    <div className="flex items-center gap-1">
-                      DL Number
-                      {sortField === 'ad3' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
-                    style={{ minWidth: '100px', width: '100px' }}
-                    onClick={() => handleSort('ad4')}
-                  >
-                    <div className="flex items-center gap-1">
-                      D.O.B
-                      {sortField === 'ad4' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
-                    style={{ minWidth: '150px', width: '150px' }}
-                    onClick={() => handleSort('company_name')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Company Name
-                      {sortField === 'company_name' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
-                    style={{ minWidth: '120px', width: '120px' }}
-                    onClick={() => handleSort('ad5')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Valid Upto
-                      {sortField === 'ad5' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-center font-semibold whitespace-nowrap"
-                    style={{ minWidth: '80px', width: '80px' }}
-                  >
-                    Actions
-                  </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {paginated.map((m, idx) => (
+                {paginated.map((member, idx) => (
                   <tr 
-                    key={m.id} 
+                    key={member.id} 
                     className={`border-b border-gray-200 dark:border-gray-700 transition-colors ${
                       idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'
                     } hover:bg-indigo-50 dark:hover:bg-gray-700 hover:shadow-sm`}
@@ -463,36 +587,126 @@ export default function ActiveMembers() {
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xs">
-                          {m.name.charAt(0).toUpperCase()}
+                          {member.name.charAt(0).toUpperCase()}
                         </div>
-                        <span className="font-medium text-gray-800 dark:text-gray-100">{m.name}</span>
+                        <span className="font-medium text-gray-800 dark:text-gray-100">{member.name}</span>
                       </div>
                     </td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.phone_num}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.email}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.address}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.ad1}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.ad2}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.ad3}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.ad4}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.company_name}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.ad5}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{member.phone_num || member.contact}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{member.email}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{member.address}</td>
+                    
+                    {/* Dynamic Additional Fields */}
+                    {additionalFields.map(field => (
+                      <td key={field.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
+                        {member[field.backendKey] || member[field.key] || '-'}
+                      </td>
+                    ))}
+                    
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{member.company_name || member.company}</td>
+                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{member.ad5 || member.valid_upto}</td>
+                    <td className="p-3 text-center border-r border-gray-200 dark:border-gray-700">
+                      <span className="px-2 py-1 bg-green-100 text-green-800 border border-green-200 rounded-full text-xs font-medium">
+                        Active
+                      </span>
+                    </td>
                     <td className="p-3 text-center">
+                      <div className="flex items-center justify-center gap-1">
                       <button
-                        className="text-indigo-600 dark:text-indigo-300 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors"
-                        title="View Profile"
-                        onClick={() => setViewMember(m)}
-                      >
-                        <FiEye size={18} />
+                          className="text-indigo-600 dark:text-indigo-300 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors"
+                          title="View Member"
+                          onClick={() => setViewMember(member)}
+                        >
+                          <FiEye size={16} />
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {/* Pagination Controls - moved outside scrollable area */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-t border-gray-100 dark:border-gray-700">
+
+          {/* Mobile Cards View */}
+          <div className="lg:hidden p-4 sm:p-6 space-y-4">
+            {paginated.map((member, idx) => (
+              <div key={member.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 dark:from-indigo-800 dark:to-purple-900 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-medium text-white">
+                        {member.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{member.name}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Member #{startIdx + idx + 1}</p>
+                      <span className="inline-block px-2 py-1 bg-green-100 text-green-800 border border-green-200 rounded-full text-xs font-medium">
+                        Active
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors p-1"
+                      onClick={() => setViewMember(member)}
+                      title="View Member"
+                    >
+                      <FiEye size={16} />
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <FiPhone className="text-gray-400 flex-shrink-0" size={14} />
+                    <span className="text-gray-700 dark:text-gray-300 truncate">{member.phone_num || member.contact}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <FiMail className="text-gray-400 flex-shrink-0" size={14} />
+                    <span className="text-gray-700 dark:text-gray-300 truncate">{member.email}</span>
+                  </div>
+                  {member.address && (
+                    <div className="flex items-start gap-2">
+                      <FiMapPin className="text-gray-400 flex-shrink-0 mt-0.5" size={14} />
+                      <span className="text-gray-700 dark:text-gray-300 text-xs line-clamp-2">
+                        {member.address}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <FiHome className="text-gray-400 flex-shrink-0" size={14} />
+                    <span className="text-gray-700 dark:text-gray-300 truncate">{member.company_name || member.company}</span>
+                  </div>
+                  
+                  {/* Dynamic Additional Fields for Mobile */}
+                  {cardFields.map(field => {
+                    const fieldValue = member[field.backendKey] || member[field.key];
+                    if (fieldValue) {
+                      return (
+                        <div key={field.key} className="flex items-center gap-2">
+                          <FiUser className="text-gray-400 flex-shrink-0" size={14} />
+                          <span className="text-gray-700 dark:text-gray-300 text-xs">
+                            <span className="font-medium">{field.name}:</span> {fieldValue}
+                          </span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                  
+                  <div className="flex items-center gap-2">
+                    <FiCalendar className="text-gray-400 flex-shrink-0" size={14} />
+                    <span className="text-gray-700 dark:text-gray-300 text-xs">
+                      <span className="font-medium">Valid Until:</span> {member.ad5 || member.valid_upto}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination Controls - moved below content */}
+          <div className="flex flex-row items-center justify-between gap-4 p-6 border-t border-gray-100 dark:border-gray-700">
               <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600 dark:text-gray-400">Show</span>
                 <select
@@ -511,12 +725,12 @@ export default function ActiveMembers() {
                 <button
                   onClick={handlePrev}
                   disabled={currentPage === 1}
-                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                className={`p-2 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
                     currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                   title="Previous"
                 >
-                  Previous
+                  <FiChevronLeft size={16} />
                 </button>
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                   Page {currentPage} of {totalPages}
@@ -524,13 +738,14 @@ export default function ActiveMembers() {
                 <button
                   onClick={handleNext}
                   disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                className={`p-2 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
                     currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                   title="Next"
                 >
-                  Next
+                  <FiChevronRight size={16} />
                 </button>
+            </div>
             </div>
           </div>
         </div>
@@ -538,9 +753,9 @@ export default function ActiveMembers() {
         {/* Enhanced View Profile Modal */}
         {viewMember && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl dark:shadow-2xl p-8 w-full max-w-2xl relative">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl dark:shadow-2xl p-8 w-full max-w-2xl relative max-h-[90vh] overflow-y-auto">
               <button
-                className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-rose-500 transition-colors"
+              className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-rose-500 transition-colors"
                 onClick={() => setViewMember(null)}
                 title="Close"
               >
@@ -559,46 +774,65 @@ export default function ActiveMembers() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Contact Information</h3>
                     <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                      <div><span className="font-medium text-gray-800 dark:text-gray-100">Phone:</span> {viewMember.phone_num}</div>
+                    <div><span className="font-medium text-gray-800 dark:text-gray-100">Phone:</span> {viewMember.phone_num || viewMember.contact}</div>
                       <div><span className="font-medium text-gray-800 dark:text-gray-100">Email:</span> {viewMember.email}</div>
                       <div><span className="font-medium text-gray-800 dark:text-gray-100">Address:</span> {viewMember.address}</div>
                     </div>
                   </div>
                   
-                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Company Details</h3>
                     <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                      <div><span className="font-medium text-gray-800 dark:text-gray-100">Company:</span> {viewMember.company_name}</div>
-                      <div><span className="font-medium text-gray-800 dark:text-gray-100">Valid Until:</span> {viewMember.ad5}</div>
+                    <div><span className="font-medium text-gray-800 dark:text-gray-100">Company:</span> {viewMember.company_name || viewMember.company}</div>
+                    <div><span className="font-medium text-gray-800 dark:text-gray-100">Valid Until:</span> {viewMember.ad5 || viewMember.valid_upto}</div>
+                  </div>
+                </div>
                     </div>
+              
+              <div className="space-y-4">
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Identity Documents</h3>
+                  <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    <div><span className="font-medium text-gray-800 dark:text-gray-100">PAN Number:</span> {viewMember.ad1 || '-'}</div>
+                    <div><span className="font-medium text-gray-800 dark:text-gray-100">Aadhar Number:</span> {viewMember.ad2 || '-'}</div>
+                    <div><span className="font-medium text-gray-800 dark:text-gray-100">DL Number:</span> {viewMember.ad3 || '-'}</div>
                   </div>
                 </div>
                 
-                <div className="space-y-4">
-                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Identity Documents</h3>
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Personal Information</h3>
                     <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                      <div><span className="font-medium text-gray-800 dark:text-gray-100">PAN Number:</span> {viewMember.ad1}</div>
-                      <div><span className="font-medium text-gray-800 dark:text-gray-100">Aadhar Number:</span> {viewMember.ad2}</div>
-                      <div><span className="font-medium text-gray-800 dark:text-gray-100">DL Number:</span> {viewMember.ad3}</div>
+                    <div><span className="font-medium text-gray-800 dark:text-gray-100">Date of Birth:</span> {viewMember.ad4 || '-'}</div>
                     </div>
                   </div>
                   
+                {/* Dynamic Additional Fields */}
+                {additionalFields.length > 0 && (
                   <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Personal Information</h3>
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Additional Information</h3>
                     <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                      <div><span className="font-medium text-gray-800 dark:text-gray-100">Date of Birth:</span> {viewMember.ad4}</div>
+                      {additionalFields.map(field => {
+                        const fieldValue = viewMember[field.backendKey] || viewMember[field.key];
+                        if (fieldValue) {
+                          return (
+                            <div key={field.key}>
+                              <span className="font-medium text-gray-800 dark:text-gray-100">{field.name}:</span> {fieldValue}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })}
                     </div>
                   </div>
+                )}
                 </div>
               </div>
             </div>
           </div>
         )}
-      </div>
     </DashboardLayout>
   );
 } 

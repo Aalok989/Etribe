@@ -409,8 +409,8 @@ export default function MembershipPlans() {
     <DashboardLayout>
       <div className="flex flex-col gap-4 py-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-2xl font-bold text-orange-600">Membership Plans</h1>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <h1 className="text-xl sm:text-2xl font-bold text-orange-600">Membership Plans</h1>
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
             <FiPackage className="text-indigo-600" />
             <span>Total Plans: {plans.length}</span>
           </div>
@@ -418,30 +418,36 @@ export default function MembershipPlans() {
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Controls */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <div className="relative">
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search by plan name..."
-                  className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                  className="pl-10 pr-4 py-2 border rounded-lg text-xs sm:text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors w-full sm:w-auto"
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  style={{ minWidth: 250 }}
+                  style={{ minWidth: '200px' }}
                 />
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                 <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, totalEntries)} of {totalEntries} entries</span>
               </div>
             </div>
-            <div className="flex gap-2 items-center">
-              <button className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition" onClick={handleRefresh} disabled={loading} title="Refresh Plans"><FiRefreshCw className={loading ? "animate-spin" : ""} /> Refresh</button>
-              <button className="flex items-center gap-1 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition" onClick={handleAdd}><FiPlus /> Add Plan</button>
+            <div className="flex flex-wrap gap-2 items-center justify-between sm:justify-end">
+              <button className="flex items-center gap-1 bg-blue-500 text-white px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-600 transition" onClick={handleRefresh} disabled={loading} title="Refresh Plans">
+                <FiRefreshCw className={loading ? "animate-spin" : ""} /> 
+                <span>Refresh</span>
+              </button>
+              <button className="flex items-center gap-1 bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-green-700 transition" onClick={handleAdd}>
+                <FiPlus /> 
+                <span>Add Plan</span>
+              </button>
             </div>
           </div>
           {/* Table */}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto hidden lg:block">
             <table className="w-full text-sm border-collapse">
               <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
                 <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
@@ -529,25 +535,71 @@ export default function MembershipPlans() {
               <div className="text-center py-8 text-gray-500 dark:text-gray-300">
                 <FiPackage className="mx-auto text-4xl mb-2 text-gray-300 dark:text-gray-700" />
                 <p>No membership plans found</p>
+              </div>
+            )}
           </div>
+
+          {/* Mobile Cards View */}
+          <div className="lg:hidden p-4 sm:p-6">
+            {paginated.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-300">
+                <FiPackage className="mx-auto text-4xl mb-2 text-gray-300 dark:text-gray-700" />
+                <p className="text-sm">No membership plans found</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {paginated.map((plan, idx) => (
+                  <div key={plan.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 dark:from-indigo-800 dark:to-purple-900 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                          {plan.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">{plan.name}</h3>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">#{startIdx + idx + 1}</p>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${plan.status === 'active' ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200' : 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200'}`}>
+                        {plan.status}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-2 mb-4">
+                      <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2">{plan.description}</p>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1 text-green-600 dark:text-green-300 font-medium text-sm">
+                        <BiRupee size={12} />
+                        <span>{plan.price}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-blue-600 dark:text-blue-300 text-sm">
+                        <FiCalendar size={12} />
+                        <span>{plan.validity} months</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
           {/* Pagination Controls - moved outside scrollable area */}
             {!addMode && !editMode && totalEntries > 0 && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-6 border-t border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Show</span>
-                <select className="border rounded-lg px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors" value={entriesPerPage} onChange={handleEntriesChange}>
+                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Show</span>
+                <select className="border rounded-lg px-2 sm:px-3 py-1 text-xs sm:text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors" value={entriesPerPage} onChange={handleEntriesChange}>
                     {[10, 25, 50, 100].map(num => (
                   <option key={num} value={num}>{num}</option>
                 ))}
               </select>
-                <span className="text-sm text-gray-600 dark:text-gray-400">entries per page</span>
+                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">entries per page</span>
             </div>
             <div className="flex items-center gap-2">
-                <button onClick={handlePrev} disabled={currentPage === 1} className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`} title="Previous">Previous</button>
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Page {currentPage} of {totalPages}</span>
-                <button onClick={handleNext} disabled={currentPage === totalPages} className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`} title="Next">Next</button>
+                <button onClick={handlePrev} disabled={currentPage === 1} className={`px-2 sm:px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`} title="Previous">&lt;</button>
+                <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200">Page {currentPage} of {totalPages}</span>
+                <button onClick={handleNext} disabled={currentPage === totalPages} className={`px-2 sm:px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors text-xs sm:text-sm ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`} title="Next">&gt;</button>
               </div>
               </div>
             )}
@@ -555,8 +607,8 @@ export default function MembershipPlans() {
 
         {/* Add/Edit Modal */}
         {(addMode || editMode) && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-lg relative">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-8 w-full max-w-lg relative max-h-[95vh] overflow-y-auto">
                 <button
                   className="absolute top-3 right-3 text-gray-400 hover:text-rose-500 dark:text-gray-300 dark:hover:text-rose-400"
                   onClick={handleCancel}
@@ -564,12 +616,12 @@ export default function MembershipPlans() {
                 >
                   <FiX size={22} />
                 </button>
-              <h2 className="text-xl font-bold mb-4 text-indigo-700 dark:text-indigo-300">
+              <h2 className="text-lg sm:text-xl font-bold mb-4 text-indigo-700 dark:text-indigo-300">
                 {editMode ? 'Edit Membership Plan' : 'Add Membership Plan'}
               </h2>
-                <form className="grid grid-cols-1 gap-y-6" onSubmit={handleSubmit}>
+                <form className="grid grid-cols-1 gap-y-4 sm:gap-y-6" onSubmit={handleSubmit}>
                   <div className="flex flex-col gap-1">
-                    <label className="font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
+                    <label className="font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1 text-sm sm:text-base">
                       Plan Name <span className="text-red-500 dark:text-red-400">*</span>
                     </label>
                     <input
@@ -577,30 +629,30 @@ export default function MembershipPlans() {
                       name="name"
                       value={form.name}
                       onChange={handleChange}
-                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500"
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 text-sm"
                       placeholder="Enter plan name"
                       required
                       disabled={submitting}
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
+                    <label className="font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1 text-sm sm:text-base">
                       Plan Description <span className="text-red-500 dark:text-red-400">*</span>
                     </label>
                     <textarea
                       name="description"
                       value={form.description}
                       onChange={handleChange}
-                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500"
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 text-sm"
                       placeholder="Enter plan description"
                       rows={3}
                       required
                       disabled={submitting}
                     />
                   </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1">
-                    <label className="font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
+                    <label className="font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1 text-sm sm:text-base">
                       Plan Price <span className="text-red-500 dark:text-red-400">*</span>
                     </label>
                     <input
@@ -608,7 +660,7 @@ export default function MembershipPlans() {
                       name="price"
                       value={form.price}
                       onChange={handleChange}
-                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500"
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 text-sm"
                       placeholder="0.00"
                       min="0"
                       step="0.01"
@@ -617,7 +669,7 @@ export default function MembershipPlans() {
                     />
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
+                    <label className="font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1 text-sm sm:text-base">
                       Validity (Months) <span className="text-red-500 dark:text-red-400">*</span>
                     </label>
                     <input
@@ -625,7 +677,7 @@ export default function MembershipPlans() {
                       name="validity"
                       value={form.validity}
                       onChange={handleChange}
-                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500"
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 text-sm"
                       placeholder="12"
                       min="1"
                       required
@@ -634,22 +686,22 @@ export default function MembershipPlans() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="font-medium text-gray-700 dark:text-gray-200">Status</label>
+                  <label className="font-medium text-gray-700 dark:text-gray-200 text-sm sm:text-base">Status</label>
                   <select
                     name="status"
                     value={form.status}
                     onChange={handleChange}
-                    className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500"
+                    className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 text-sm"
                     disabled={submitting}
                   >
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                   </select>
                   </div>
-                  <div className="flex justify-end gap-4 mt-6">
+                  <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
                     <button
                       type="button"
-                      className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+                      className="px-4 sm:px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 text-sm"
                       onClick={handleCancel}
                       disabled={submitting}
                     >
@@ -657,7 +709,7 @@ export default function MembershipPlans() {
                     </button>
                     <button
                       type="submit"
-                      className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-2 px-4 sm:px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 transition-colors disabled:opacity-50 text-sm"
                       disabled={submitting}
                     >
                     {submitting ? (

@@ -248,8 +248,8 @@ export default function CompanyAdditionalFields() {
     <DashboardLayout>
       <div className="flex flex-col gap-4 py-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-2xl font-bold text-orange-600">Company Additional Fields</h1>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <h1 className="text-xl sm:text-2xl font-bold text-orange-600">Company Additional Fields</h1>
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
             <FiHome className="text-indigo-600" />
             <span>Configured: {configuredFields}/10 fields</span>
           </div>
@@ -257,37 +257,39 @@ export default function CompanyAdditionalFields() {
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto border border-gray-200 dark:border-gray-700">
           {/* Header Controls */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <div className="flex items-center gap-2">
-                <FiHome className="text-indigo-600 text-xl" />
-                <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                <FiHome className="text-indigo-600 text-lg sm:text-xl" />
+                <span className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100">
                   Company Fields Configuration
                 </span>
               </div>
               {!editMode && (
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                   <FiSettings className="text-indigo-600" />
                   <span>Custom company profile fields</span>
                 </div>
               )}
             </div>
-            <div className="flex gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-center justify-between sm:justify-end">
               {!editMode && (
                 <>
                   <button
-                    className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
+                    className="flex items-center gap-1 bg-blue-500 text-white px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-600 transition"
                     onClick={handleRefresh}
                     disabled={loading}
                     title="Refresh Fields"
                   >
-                    <FiRefreshCw className={loading ? "animate-spin" : ""} /> Refresh
+                    <FiRefreshCw className={loading ? "animate-spin" : ""} /> 
+                    <span>Refresh</span>
                   </button>
                   <button
-                    className="flex items-center gap-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
+                    className="flex items-center gap-1 bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-indigo-700 transition"
                     onClick={handleEdit}
                   >
-                    <FiEdit2 /> Edit Fields
+                    <FiEdit2 /> 
+                    <span>Edit Fields</span>
                   </button>
                 </>
               )}
@@ -295,17 +297,17 @@ export default function CompanyAdditionalFields() {
           </div>
 
           {/* Content */}
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {loading ? (
               <div className="flex items-center justify-center h-32 text-indigo-700 dark:text-indigo-300">
                 <FiRefreshCw className="animate-spin text-indigo-600 dark:text-indigo-300 text-xl mr-2" />
                 Loading company additional fields...
               </div>
             ) : !editMode ? (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Status Card */}
                 <div
-                  className={`p-4 rounded-lg border ${
+                  className={`p-3 sm:p-4 rounded-lg border ${
                     configuredFields >= 5
                       ? "bg-green-50 dark:bg-green-900/40 border-green-200 dark:border-green-700"
                       : "bg-yellow-50 dark:bg-yellow-900/40 border-yellow-200 dark:border-yellow-700"
@@ -328,7 +330,7 @@ export default function CompanyAdditionalFields() {
                     Configuration Status
                   </h3>
                   <p
-                    className={`text-sm ${
+                    className={`text-xs sm:text-sm ${
                       configuredFields >= 5
                         ? "text-green-600 dark:text-green-200"
                         : "text-yellow-600 dark:text-yellow-200"
@@ -341,7 +343,7 @@ export default function CompanyAdditionalFields() {
                 </div>
 
                 {/* Fields Display */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   {Array.from({ length: 10 }).map((_, i) => {
                     const fieldKey = `companyField${i + 1}`;
                     const fieldValue = data[fieldKey];
@@ -349,14 +351,14 @@ export default function CompanyAdditionalFields() {
                     return (
                       <div
                         key={i}
-                        className={`p-4 rounded-lg border ${
+                        className={`p-3 sm:p-4 rounded-lg border ${
                           isConfigured
                             ? "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                             : "bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 opacity-60"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                          <h4 className="font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2 text-sm sm:text-base">
                             <FiBriefcase className="text-indigo-600" />
                             Company Field {i + 1}
                           </h4>
@@ -367,7 +369,7 @@ export default function CompanyAdditionalFields() {
                           )}
                         </div>
                         <p
-                          className={`text-sm ${
+                          className={`text-xs sm:text-sm ${
                             isConfigured ? "text-gray-800 dark:text-gray-100" : "text-gray-500 dark:text-gray-400"
                           }`}
                         >
@@ -379,27 +381,27 @@ export default function CompanyAdditionalFields() {
                 </div>
               </div>
             ) : (
-              <form className="space-y-6" onSubmit={handleSubmit}>
+              <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
                 {/* Form Header */}
-                <div className="bg-yellow-50 dark:bg-yellow-900/40 p-4 rounded-lg border border-yellow-200 dark:border-yellow-700">
+                <div className="bg-yellow-50 dark:bg-yellow-900/40 p-3 sm:p-4 rounded-lg border border-yellow-200 dark:border-yellow-700">
                   <h3 className="font-semibold text-yellow-700 dark:text-yellow-200 mb-2 flex items-center gap-2">
                     <FiAlertCircle className="text-yellow-600 dark:text-yellow-200" />
                     Company Fields Configuration
                   </h3>
-                  <p className="text-yellow-700 dark:text-yellow-200 text-sm">
+                  <p className="text-yellow-700 dark:text-yellow-200 text-xs sm:text-sm">
                     Configure custom fields for company profiles. At least the first 5 fields are required. Field names
                     must be unique.
                   </p>
                 </div>
 
                 {/* Form Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                   {Array.from({ length: 10 }).map((_, i) => {
                     const fieldKey = `companyField${i + 1}`;
                     const isRequired = i < 5;
                     return (
                       <div key={i} className="space-y-2">
-                        <label className="block text-gray-700 dark:text-gray-200 font-medium">
+                        <label className="block text-gray-700 dark:text-gray-200 font-medium text-sm sm:text-base">
                           Company Field {i + 1}
                           {isRequired && <span className="text-red-500 ml-1">*</span>}
                         </label>
@@ -408,7 +410,7 @@ export default function CompanyAdditionalFields() {
                           name={fieldKey}
                           value={form[fieldKey]}
                           onChange={handleChange}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors text-sm"
                           placeholder={`Enter company field name ${i + 1}`}
                           required={isRequired}
                           disabled={submitting}
@@ -422,10 +424,10 @@ export default function CompanyAdditionalFields() {
                 </div>
 
                 {/* Form Actions */}
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
                   <button
                     type="button"
-                    className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+                    className="px-4 sm:px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 text-sm"
                     onClick={handleCancel}
                     disabled={submitting}
                   >
@@ -433,7 +435,7 @@ export default function CompanyAdditionalFields() {
                   </button>
                   <button
                     type="submit"
-                    className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 sm:px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition-colors disabled:opacity-50 text-sm"
                     disabled={submitting}
                   >
                     {submitting ? (

@@ -300,19 +300,19 @@ export default function SMTPSettings() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col gap-4 py-3">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-2xl font-bold text-orange-600">SMTP Settings</h1>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <FiMail className="text-indigo-600" />
-            <span>Email Configuration</span>
+              <div className="flex flex-col gap-4 py-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h1 className="text-xl sm:text-2xl font-bold text-orange-600">SMTP Settings</h1>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <FiMail className="text-indigo-600" />
+              <span>Email Configuration</span>
+            </div>
           </div>
-        </div>
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto border border-gray-200 dark:border-gray-700">
           {/* Header Controls */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="flex items-center gap-2">
                 <FiServer className="text-indigo-600 text-xl" />
                 <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">SMTP Configuration</span>
@@ -324,24 +324,30 @@ export default function SMTPSettings() {
                 </div>
               )}
             </div>
-            <div className="flex gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-center justify-between sm:justify-end">
             {!editMode && (
                 <>
-                  <button className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition" onClick={handleRefresh} disabled={loading} title="Refresh Settings"><FiRefreshCw className={loading ? "animate-spin" : ""} /> Refresh</button>
-                  <button className="flex items-center gap-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition" onClick={handleEdit}><FiEdit2 /> Edit Settings</button>
+                  <button className="flex items-center gap-1 bg-blue-500 text-white px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-600 transition" onClick={handleRefresh} disabled={loading} title="Refresh Settings">
+                    <FiRefreshCw className={loading ? "animate-spin" : ""} /> 
+                    <span>Refresh</span>
+                  </button>
+                  <button className="flex items-center gap-1 bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-indigo-700 transition" onClick={handleEdit}>
+                    <FiEdit2 /> 
+                    <span>Edit Settings</span>
+                  </button>
                 </>
             )}
             </div>
           </div>
           {/* Content */}
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {loading ? (
               <div className="flex items-center justify-center h-32 text-indigo-700 dark:text-indigo-300">
                 <FiRefreshCw className="animate-spin text-indigo-600 dark:text-indigo-300 text-xl mr-2" />
                 Loading SMTP settings...
               </div>
             ) : !editMode ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-4">
                   <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                     <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
@@ -412,7 +418,7 @@ export default function SMTPSettings() {
               </div>
             ) : (
               <form className="space-y-6" onSubmit={handleSubmit}>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-4">
                     <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                       <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-4 flex items-center gap-2">
@@ -421,8 +427,8 @@ export default function SMTPSettings() {
                       </h3>
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">SMTP Host</label>
-                          <input type="text" name="smtpHost" value={form.smtpHost} onChange={handleChange} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors" placeholder="e.g., smtp.gmail.com" required disabled={submitting} />
+                          <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2 text-sm sm:text-base">SMTP Host</label>
+                          <input type="text" name="smtpHost" value={form.smtpHost} onChange={handleChange} className="w-full px-2 sm:px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors text-sm sm:text-base" placeholder="e.g., smtp.gmail.com" required disabled={submitting} />
                         </div>
                         <div>
                           <label className="block text-gray-700 dark:text-gray-200 font-medium mb-2">SMTP Port</label>
@@ -490,9 +496,9 @@ export default function SMTPSettings() {
                   </div>
                 </div>
                 {/* Form Actions */}
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-                  <button type="button" className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50" onClick={handleCancel} disabled={submitting}>Cancel</button>
-                  <button type="submit" className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition-colors disabled:opacity-50" disabled={submitting}>{submitting ? (<><FiRefreshCw className="animate-spin" />Saving...</>) : (<><FiSave />Save Settings</>)}</button>
+                <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  <button type="button" className="px-4 sm:px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 text-sm sm:text-base" onClick={handleCancel} disabled={submitting}>Cancel</button>
+                  <button type="submit" className="flex items-center gap-2 px-4 sm:px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition-colors disabled:opacity-50 text-sm sm:text-base" disabled={submitting}>{submitting ? (<><FiRefreshCw className="animate-spin" />Saving...</>) : (<><FiSave />Save Settings</>)}</button>
                 </div>
               </form>
             )}

@@ -11,18 +11,17 @@ export default function DashboardLayout({ children }) {
       <Sidebar className="fixed left-0 top-0 h-screen z-30" collapsed={collapsed} setCollapsed={setCollapsed} />
       {/* Main content area with responsive padding */}
       <div className={`flex flex-col flex-1 h-screen overflow-y-auto transition-all duration-200 ${
-        // Mobile/Tablet: no padding (sidebar is overlay)
-        // Desktop (lg+): sidebar padding based on collapsed state
+        // Always collapsed by default, expand only on user action
         collapsed ? 'pl-0 lg:pl-20' : 'pl-0 lg:pl-72'
       }`}>
         {/* TopBar and content centered */}
         <div className="max-w-7xl mx-auto w-full px-4 pt-8 flex flex-col flex-1">
           <div className="mt-4">
-            <TopBar />
+          <TopBar />
           </div>
           <div className="flex-1 py-4">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 md:p-6">
-              {children}
+            {children}
             </div>
           </div>
         </div>

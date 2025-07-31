@@ -1,20 +1,138 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
-import { FiEdit2, FiX, FiCalendar, FiFileText, FiFile, FiUsers, FiSearch, FiRefreshCw, FiAlertCircle, FiCopy, FiDownload, FiClock } from "react-icons/fi";
+import { FiEdit2, FiPlus, FiKey, FiX, FiFileText, FiFile, FiEye, FiRefreshCw, FiTrash2, FiUser, FiMail, FiPhone, FiMapPin, FiShield, FiCheckCircle, FiAlertCircle, FiCopy, FiDownload, FiChevronDown, FiChevronUp, FiChevronLeft, FiChevronRight, FiSearch, FiUsers, FiHome, FiCalendar } from "react-icons/fi";
 import api from "../api/axiosConfig";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { toast } from 'react-toastify';
 
-// Fetch plans for dropdown
+import * as XLSX from 'xlsx';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+// Cache for additional fields to avoid repeated API calls
+let additionalFieldsCache = null;
+let cacheTimestamp = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Fetch additional fields function
+const fetchAdditionalFields = async () => {
+  // Return cached data if still valid
+  if (additionalFieldsCache && cacheTimestamp && (Date.now() - cacheTimestamp) < CACHE_DURATION) {
+    return additionalFieldsCache;
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    const uid = localStorage.getItem('uid');
+    
+    if (!token || !uid) {
+      throw new Error('Authentication required');
+    }
+
+    const response = await api.post('/groupSettings/get_user_additional_fields', {}, {
+      headers: {
+        'Client-Service': 'COHAPPRT',
+        'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+        'uid': uid,
+        'token': token,
+        'rurl': 'login.etribes.in',
+      }
+    });
+
+    console.log('Additional Fields Response:', response.data);
+    
+    // Map backend data to frontend format
+    const backendData = response.data?.data || response.data || {};
+    
+    let mappedFields = [];
+    
+    if (Array.isArray(backendData)) {
+      // Handle array response
+      mappedFields = backendData
+        .filter(field => field && (field.name || field.label || field.value || field))
+        .map((field, index) => ({
+          id: index + 1,
+          name: field.name || field.label || field.value || field || `Field ${index + 1}`,
+          key: `additionalField${index + 1}`,
+          backendKey: `ad${index + 1}` || `field${index + 1}`
+        }));
+    } else {
+      // Handle object response
+      mappedFields = Object.keys(backendData)
+        .filter(key => backendData[key] && backendData[key].trim() !== '')
+        .map((key, index) => ({
+          id: index + 1,
+          name: backendData[key],
+          key: key,
+          backendKey: key
+        }));
+    }
+
+    // Cache the result
+    additionalFieldsCache = mappedFields;
+    cacheTimestamp = Date.now();
+    
+    return mappedFields;
+  } catch (err) {
+    console.error('Fetch additional fields error:', err);
+    // Return empty array on error
+    return [];
+  }
+};
+
+// Get table headers for member pages
+const getMemberTableHeaders = (additionalFields = []) => {
+  const baseHeaders = [
+    { key: 'sr', name: 'SR No', sortable: true, width: '60px' },
+    { key: 'name', name: 'Name', sortable: true, width: '120px' },
+    { key: 'contact', name: 'Contact', sortable: true, width: '120px' },
+    { key: 'email', name: 'Email', sortable: true, width: '180px' },
+    { key: 'address', name: 'Address', sortable: true, width: '200px' },
+  ];
+
+  // Add dynamic additional fields
+  const dynamicHeaders = additionalFields.map(field => ({
+    key: field.key,
+    name: field.name,
+    sortable: true,
+    width: '120px',
+    isAdditional: true
+  }));
+
+  const endHeaders = [
+    { key: 'company', name: 'Company Name', sortable: true, width: '150px' },
+    { key: 'validUpto', name: 'Valid Upto', sortable: true, width: '120px' },
+    { key: 'status', name: 'Status', sortable: true, width: '100px' },
+    { key: 'actions', name: 'Actions', sortable: false, width: '120px' }
+  ];
+
+  return [...baseHeaders, ...dynamicHeaders, ...endHeaders];
+};
+
+// Get mobile card fields for member pages
+const getMemberCardFields = (additionalFields = []) => {
+  return additionalFields.map(field => ({
+    key: field.key,
+    name: field.name,
+    backendKey: field.backendKey
+  }));
+};
+
+// Fetch plans for dropdown with real-time functionality
 function useMembershipPlans() {
-  const [plans, setPlans] = React.useState([]);
-  React.useEffect(() => {
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
     const fetchPlans = async () => {
       try {
+      setLoading(true);
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
+      
+      if (!token || !uid) {
+        console.error('Authentication required for fetching plans');
+        return;
+      }
+      
         const response = await api.get('/groupSettings/get_membership_plans', {
           headers: {
             'Client-Service': 'COHAPPRT',
@@ -24,13 +142,25 @@ function useMembershipPlans() {
             'rurl': 'login.etribes.in',
           }
         });
+      
+      console.log('Membership Plans Response:', response.data);
+      
         const plansData = Array.isArray(response.data?.data) ? response.data.data : [];
         setPlans(plansData);
-      } catch {}
-    };
+      console.log('Plans loaded:', plansData);
+    } catch (error) {
+      console.error('Failed to fetch membership plans:', error);
+      toast.error('Failed to load membership plans');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
     fetchPlans();
   }, []);
-  return plans;
+  
+  return { plans, loading, refetch: fetchPlans };
 }
 
 // Get plan ID from plan name
@@ -74,52 +204,104 @@ const activateMembership = async ({ company_detail_id, membership_plan_id, valid
 };
 
 export default function MembershipExpired() {
-  const plans = useMembershipPlans();
+  const { plans, loading: plansLoading, refetch: refetchPlans } = useMembershipPlans();
   const [members, setMembers] = useState([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
-  const [modifyMember, setModifyMember] = useState(null);
-  const [form, setForm] = useState({ plan: "", validUpto: "" });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [firstLoad, setFirstLoad] = useState(true);
-  const [updateLoading, setUpdateLoading] = useState(false);
-  const [updateError, setUpdateError] = useState(null);
-  const [updateSuccess, setUpdateSuccess] = useState(null);
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState("asc");
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [additionalFields, setAdditionalFields] = useState([]);
+  const [tableHeaders, setTableHeaders] = useState([]);
+  const [cardFields, setCardFields] = useState([]);
+  const [viewMember, setViewMember] = useState(null);
 
+  // Load additional fields on component mount
   useEffect(() => {
-    const fetchExpiredMembers = async (isFirst = false) => {
-      if (isFirst) setLoading(true);
-      setError(null);
+    const loadAdditionalFields = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const uid = localStorage.getItem('uid');
-        if (!token) {
-          setError('Please log in to view expired members');
-          window.location.href = '/';
-          return;
-        }
-        const response = await api.post('/userDetail/membership_expired', { uid }, {
-          headers: {
-            'token': token,
-            'uid': uid,
-          }
-        });
-        setMembers(Array.isArray(response.data) ? response.data : response.data.data || []);
-      } catch (err) {
-        toast.error('Failed to fetch expired members.');
-      } finally {
-        if (isFirst) setLoading(false);
-        if (isFirst) setFirstLoad(false);
+        const fields = await fetchAdditionalFields();
+        setAdditionalFields(fields);
+        setTableHeaders(getMemberTableHeaders(fields));
+        setCardFields(getMemberCardFields(fields));
+      } catch (error) {
+        console.error('Failed to load additional fields:', error);
       }
     };
-    fetchExpiredMembers(true); // Initial load
-    // Removed setInterval for auto-refresh
-    // Only call fetchExpiredMembers after CRUD operations
+    loadAdditionalFields();
   }, []);
+
+  // Close export dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest('.export-dropdown')) {
+        setShowExportDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showExportDropdown]);
+
+  // Fetch expired members from API
+  const fetchExpiredMembers = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid');
+      
+      if (!token) {
+        toast.error('Please log in to view expired members');
+        window.location.href = '/login';
+        return;
+      }
+
+      const response = await api.post('/userDetail/membership_expired', { uid }, {
+        headers: {
+          'token': token,
+          'uid': uid,
+        }
+      });
+
+      console.log('Expired Members Response:', response.data);
+      
+      // Handle different response formats
+      let membersData = [];
+      if (Array.isArray(response.data)) {
+        membersData = response.data;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        membersData = response.data.data;
+      } else if (response.data?.members && Array.isArray(response.data.members)) {
+        membersData = response.data.members;
+      }
+      
+      setMembers(membersData);
+    } catch (err) {
+      console.error('Fetch expired members error:', err);
+      toast.error('Failed to fetch expired members');
+      setMembers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExpiredMembers();
+  }, []);
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-800">
+          <div className="flex items-center gap-3">
+            <FiRefreshCw className="animate-spin text-indigo-600 text-2xl" />
+            <p className="text-indigo-700 dark:text-indigo-300">Loading expired members...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   // Sorting function
   const handleSort = (field) => {
@@ -144,7 +326,10 @@ export default function MembershipExpired() {
   });
 
   // Filter by name
-  const filtered = sortedData.filter(m => m.name?.toLowerCase().includes(search.toLowerCase()));
+  const filtered = sortedData.filter(m => m.name?.toLowerCase().includes(search.toLowerCase()) ||
+                                      m.email?.toLowerCase().includes(search.toLowerCase()) ||
+                                      m.phone_num?.toLowerCase().includes(search.toLowerCase()) ||
+                                      m.company_name?.toLowerCase().includes(search.toLowerCase()));
   const totalEntries = filtered.length;
   const totalPages = Math.ceil(totalEntries / entriesPerPage);
   const startIdx = (currentPage - 1) * entriesPerPage;
@@ -157,80 +342,12 @@ export default function MembershipExpired() {
     setCurrentPage(1);
   };
 
-  const openModify = (member) => {
-    setModifyMember(member);
-    setForm({
-      plan: "",
-      validUpto: ""
-    });
-  };
+  // Removed openModify function
+  // Removed closeModify function
 
-  const closeModify = () => {
-    setModifyMember(null);
-    setForm({ plan: "", validUpto: "" });
-    setUpdateError(null);
-    setUpdateSuccess(null);
-  };
-
-  const handleFormChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleDateChange = (e) => {
-    setForm({ ...form, validUpto: e.target.value });
-  };
-
-  const handleUpdate = async () => {
-    if (!modifyMember) return;
-    // Validation
-    if (!form.plan) {
-      setUpdateError('Please select a membership plan.');
-      closeModify();
-      return;
-    }
-    if (!form.validUpto) {
-      setUpdateError('Please select a valid until date.');
-      closeModify();
-      return;
-    }
-    // Check if date is in future
-    const selectedDate = new Date(form.validUpto);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (selectedDate <= today) {
-      setUpdateError('Please select a future date for membership validity.');
-      closeModify();
-      return;
-    }
-    setUpdateLoading(true);
-    setUpdateError(null);
-    setUpdateSuccess(null);
-    try {
-      await activateMembership({
-        company_detail_id: modifyMember.company_detail_id || modifyMember.id,
-        membership_plan_id: form.plan, // Use the selected plan's ID
-        valid_upto: form.validUpto,
-      });
-      toast.success('Membership renewed successfully!');
-      setMembers(prevMembers => prevMembers.filter(member => member.id !== modifyMember.id));
-    closeModify();
-    } catch (err) {
-      if (err.response) {
-        const errorMessage = err.response.data?.message || err.response.data?.error || 'Failed to activate membership';
-        setUpdateError(errorMessage);
-        toast.error(errorMessage);
-      } else if (err.request) {
-        setUpdateError('Network error. Please check your connection.');
-        toast.error('Network error. Please check your connection.');
-      } else {
-        setUpdateError('Failed to activate membership. Please try again.');
-        toast.error('Failed to renew membership.');
-      }
-      closeModify();
-    } finally {
-      setUpdateLoading(false);
-    }
-  };
+  // Removed handleFormChange function
+  // Removed handleDateChange function
+  // Removed handleUpdate function
 
   // Export Handlers
   const handleExportCSV = () => {
@@ -326,31 +443,10 @@ export default function MembershipExpired() {
     navigator.clipboard.writeText(data);
   };
 
-  if (loading && firstLoad) {
-    return (
-      <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-800">
-          <div className="flex items-center gap-3">
-            <FiRefreshCw className="animate-spin text-indigo-600 text-2xl" />
-            <p className="text-indigo-700 dark:text-indigo-300">Loading expired members...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <DashboardLayout>
-        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-800">
-          <div className="flex items-center gap-2 text-red-500">
-            <FiAlertCircle />
-            <p className="dark:text-red-300">{error}</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const handleRefresh = () => {
+    fetchExpiredMembers();
+    setCurrentPage(1);
+  };
 
   return (
     <DashboardLayout>
@@ -365,225 +461,155 @@ export default function MembershipExpired() {
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Controls */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-4">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="relative flex-1">
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name..."
+                  placeholder="Search by name, email, contact, or company..."
                   className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
               value={search}
               onChange={e => setSearch(e.target.value)}
-                  style={{ minWidth: 250 }}
+                  style={{ minWidth: '100%', maxWidth: '100%' }}
             />
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 flex-shrink-0">
                 <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, totalEntries)} of {totalEntries} entries</span>
               </div>
             </div>
-            <div className="flex gap-2 items-center">
+
+            <div className="flex flex-wrap gap-2 items-center justify-between xl:justify-start">
               <button 
                 className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
-                onClick={() => window.location.reload()}
+                onClick={handleRefresh}
                 title="Refresh Data"
               >
-                <FiRefreshCw /> Refresh
+                <FiRefreshCw /> 
+                <span>Refresh</span>
               </button>
+              
+              {/* Desktop Export Buttons - Show on larger screens */}
+              <div className="hidden xl:flex gap-2">
               <button 
                 className="flex items-center gap-1 bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
-                onClick={handleCopyToClipboard}
+                  onClick={handleCopyToClipboard}
                 title="Copy to Clipboard"
               >
-                <FiCopy /> Copy
+                  <FiCopy /> 
+                  Copy
               </button>
+              
               <button 
                 className="flex items-center gap-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition"
                 onClick={handleExportCSV}
                 title="Export CSV"
               >
-                <FiDownload /> CSV
+                  <FiDownload /> 
+                  CSV
               </button>
+              
               <button 
                 className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition"
                 onClick={handleExportExcel}
                 title="Export Excel"
               >
-                <FiFile /> Excel
+                  <FiFile /> 
+                  Excel
               </button>
+              
               <button 
                 className="flex items-center gap-1 bg-rose-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-rose-600 transition"
                 onClick={handleExportPDF}
                 title="Export PDF"
               >
-                <FiFile /> PDF
+                  <FiFile /> 
+                  PDF
+                </button>
+              </div>
+              
+              {/* Mobile/Tablet Export Dropdown - Show on smaller screens */}
+              <div className="relative xl:hidden">
+                <button
+                  className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-600 transition"
+                  onClick={() => setShowExportDropdown(!showExportDropdown)}
+                >
+                  <FiDownload />
+                  <span>Export</span>
+                  <FiChevronDown className={`transition-transform ${showExportDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showExportDropdown && (
+                  <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20 min-w-32 export-dropdown">
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                      onClick={() => {
+                        handleCopyToClipboard();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiCopy className="text-gray-500" />
+                      Copy
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => {
+                        handleExportCSV();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiDownload className="text-green-500" />
+                      CSV
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => {
+                        handleExportExcel();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiFile className="text-emerald-500" />
+                      Excel
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
+                      onClick={() => {
+                        handleExportPDF();
+                        setShowExportDropdown(false);
+                      }}
+                    >
+                      <FiFile className="text-rose-500" />
+                      PDF
               </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          {/* Table */}
-          <div className="overflow-x-auto">
+          {/* Table - Desktop View */}
+          <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
                 <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
-                  <th 
-                    className="p-3 text-center font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
-                    style={{ minWidth: '80px', width: '80px' }}
-                    onClick={() => handleSort('id')}
-                  >
-                    <div className="flex items-center justify-center gap-1">
-                      Sr No
-                      {sortField === 'id' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
-                    style={{ minWidth: '150px', width: '150px' }}
-                    onClick={() => handleSort('name')}
+                  {tableHeaders.map((header, index) => (
+                    <th 
+                      key={header.key}
+                      className={`p-3 font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap ${
+                        header.sortable ? '' : 'cursor-default'
+                      }`}
+                      onClick={() => header.sortable && handleSort(header.key)}
+                      style={{ minWidth: header.width, width: header.width }}
                   >
                     <div className="flex items-center gap-1">
-                      Name
-                      {sortField === 'name' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
+                        {header.name}
+                        {header.sortable && (
+                          <div className="flex flex-col">
+                            <span className={`text-xs ${sortField === header.key && sortDirection === "asc" ? "text-indigo-600" : "text-gray-400"}`}>▲</span>
+                            <span className={`text-xs ${sortField === header.key && sortDirection === "desc" ? "text-indigo-600" : "text-gray-400"}`}>▼</span>
+                    </div>
                       )}
                     </div>
                   </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
-                    style={{ minWidth: '120px', width: '120px' }}
-                    onClick={() => handleSort('phone_num')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Contact
-                      {sortField === 'phone_num' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
-                    style={{ minWidth: '180px', width: '180px' }}
-                    onClick={() => handleSort('email')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Email
-                      {sortField === 'email' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
-                    style={{ minWidth: '200px', width: '200px' }}
-                    onClick={() => handleSort('address')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Address
-                      {sortField === 'address' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
-                    style={{ minWidth: '120px', width: '120px' }}
-                    onClick={() => handleSort('ad1')}
-                  >
-                    <div className="flex items-center gap-1">
-                      PAN Number
-                      {sortField === 'ad1' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
-                    style={{ minWidth: '130px', width: '130px' }}
-                    onClick={() => handleSort('ad2')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Aadhar Number
-                      {sortField === 'ad2' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
-                    style={{ minWidth: '120px', width: '120px' }}
-                    onClick={() => handleSort('ad3')}
-                  >
-                    <div className="flex items-center gap-1">
-                      DL Number
-                      {sortField === 'ad3' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
-                    style={{ minWidth: '100px', width: '100px' }}
-                    onClick={() => handleSort('ad4')}
-                  >
-                    <div className="flex items-center gap-1">
-                      D.O.B
-                      {sortField === 'ad4' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
-                    style={{ minWidth: '150px', width: '150px' }}
-                    onClick={() => handleSort('company_name')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Company Name
-                      {sortField === 'company_name' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-left font-semibold border-r border-indigo-200 whitespace-nowrap cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors"
-                    style={{ minWidth: '160px', width: '160px' }}
-                    onClick={() => handleSort('membershipExpired')}
-                  >
-                    <div className="flex items-center gap-1">
-                      Expiry Date
-                      {sortField === 'membershipExpired' && (
-                        <span className="text-indigo-600">
-                          {sortDirection === 'asc' ? '↑' : '↓'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                  <th 
-                    className="p-3 text-center font-semibold whitespace-nowrap"
-                    style={{ minWidth: '100px', width: '100px' }}
-                  >
-                    Actions
-                  </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -594,50 +620,188 @@ export default function MembershipExpired() {
                       idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'
                     } hover:bg-indigo-50 dark:hover:bg-gray-700 hover:shadow-sm`}
                   >
-                    <td className="p-3 text-center font-semibold text-indigo-700 border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">
+                    {tableHeaders.map((header, headerIndex) => {
+                      if (header.key === 'sr') {
+                        return (
+                          <td key={header.key} className="p-3 text-center font-semibold text-indigo-700 dark:text-indigo-300 border-r border-gray-200 dark:border-gray-700">
                       {startIdx + idx + 1}
                     </td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">
+                        );
+                      } else if (header.key === 'name') {
+                        return (
+                          <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xs">
+                              <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center text-white font-semibold text-xs">
                           {m.name.charAt(0).toUpperCase()}
                         </div>
                         <span className="font-medium text-gray-800 dark:text-gray-100">{m.name}</span>
                       </div>
                     </td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.phone_num || m.contact}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.email}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100 whitespace-pre-line break-words max-w-xs">{m.address}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.ad1 || m.pan}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.ad2 || m.aadhar}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.ad3 || m.dl}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.ad4 || m.dob}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">{m.company_name || m.company}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 dark:text-gray-100">
-                      <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium dark:bg-indigo-900 dark:text-gray-100">
+                        );
+                      } else if (header.key === 'contact') {
+                        return (
+                          <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
+                            {m.phone_num || m.contact}
+                          </td>
+                        );
+                      } else if (header.key === 'email') {
+                        return (
+                          <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
+                            {m.email}
+                          </td>
+                        );
+                      } else if (header.key === 'address') {
+                        return (
+                          <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
+                            {m.address}
+                          </td>
+                        );
+                      } else if (header.key === 'company') {
+                        return (
+                          <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
+                            {m.company_name || m.company}
+                          </td>
+                        );
+                      } else if (header.key === 'validUpto') {
+                        return (
+                          <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
+                            {m.valid_upto || m.validUpto || '-'}
+                          </td>
+                        );
+                      } else if (header.key === 'status') {
+                        return (
+                          <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
+                            <span className="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-full text-xs font-medium">
                         {m.membershipExpired || m.membership_expired || "Expired"}
                       </span>
                     </td>
-                    <td className="p-3 text-center">
+                        );
+                      } else if (header.key === 'actions') {
+                        return (
+                          <td key={header.key} className="p-3 text-center">
                       <button
-                        className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-800 transition-colors"
-                        title="Modify Membership"
-                        onClick={() => openModify(m)}
+                              className="text-indigo-600 dark:text-indigo-300 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors"
+                              title="Renew Membership"
+                        onClick={() => setViewMember(m)}
                       >
                         <FiEdit2 size={18} />
                       </button>
                     </td>
+                        );
+                      } else if (header.isAdditional) {
+                        return (
+                          <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
+                            {m[header.key] || m[header.key.replace('additionalField', 'ad')] || '-'}
+                          </td>
+                        );
+                      } else {
+                        return (
+                          <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
+                            {m[header.key] || '-'}
+                          </td>
+                        );
+                      }
+                    })}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-            {/* Pagination Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-t border-gray-100 dark:border-gray-700">
+
+          {/* Mobile Cards View */}
+          <div className="lg:hidden p-4 sm:p-6 space-y-4">
+            {paginated.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-300">
+                <FiUsers className="mx-auto text-4xl mb-2 text-gray-300 dark:text-gray-700" />
+                <p className="text-sm">No expired members found</p>
+              </div>
+            ) : (
+              <>
+                {paginated.map((member, idx) => (
+                  <div key={member.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 dark:from-orange-800 dark:to-amber-900 flex items-center justify-center flex-shrink-0">
+                          <span className="text-sm font-medium text-white">
+                            {member.name ? member.name.charAt(0).toUpperCase() : 'N'}
+                          </span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{member.name || 'Unknown'}</h3>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Member #{startIdx + idx + 1}</p>
+                          <span className="inline-block px-2 py-1 bg-red-100 text-red-800 border border-red-200 rounded-full text-xs font-medium">
+                            Expired
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors p-1"
+                          onClick={() => setViewMember(member)}
+                          title="View Member"
+                        >
+                          <FiEye size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <FiPhone className="text-gray-400 flex-shrink-0" size={14} />
+                        <span className="text-gray-700 dark:text-gray-300 truncate">{member.phone_num || member.contact || 'No contact'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FiMail className="text-gray-400 flex-shrink-0" size={14} />
+                        <span className="text-gray-700 dark:text-gray-300 truncate">{member.email || 'No email'}</span>
+                      </div>
+                      {member.address && (
+                        <div className="flex items-start gap-2">
+                          <FiMapPin className="text-gray-400 flex-shrink-0 mt-0.5" size={14} />
+                          <span className="text-gray-700 dark:text-gray-300 text-xs line-clamp-2">
+                            {member.address}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <FiHome className="text-gray-400 flex-shrink-0" size={14} />
+                        <span className="text-gray-700 dark:text-gray-300 truncate">{member.company_name || member.company || 'No company'}</span>
+                      </div>
+                      
+                      {/* Dynamic Additional Fields for Mobile */}
+                      {cardFields.map(field => {
+                        const fieldValue = member[field.backendKey] || member[field.key];
+                        if (fieldValue) {
+                          return (
+                            <div key={field.key} className="flex items-center gap-2">
+                              <FiUser className="text-gray-400 flex-shrink-0" size={14} />
+                              <span className="text-gray-700 dark:text-gray-300 text-xs">
+                                <span className="font-medium">{field.name}:</span> {fieldValue}
+                              </span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })}
+                      
+                      <div className="flex items-center gap-2">
+                        <FiCalendar className="text-red-400 flex-shrink-0" size={14} />
+                        <span className="text-red-600 dark:text-red-400 text-xs">
+                          <span className="font-medium">Expired:</span> {member.membershipExpired || member.membership_expired || member.ad5 || member.valid_upto || "Unknown"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+          
+          {/* Pagination Controls */}
+          {totalEntries > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-t border-gray-100 dark:border-gray-700">
               <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Show</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Show</span>
                 <select
-                className="border rounded-lg px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                  className="border rounded-lg px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
                   value={entriesPerPage}
                   onChange={handleEntriesChange}
                 >
@@ -645,127 +809,37 @@ export default function MembershipExpired() {
                     <option key={num} value={num}>{num}</option>
                   ))}
                 </select>
-              <span className="text-sm text-gray-600 dark:text-gray-400">entries per page</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">entries per page</span>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={handlePrev}
                   disabled={currentPage === 1}
-                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                  className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
                     currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                   title="Previous"
                 >
-                  Previous
+                  &lt;
                 </button>
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                   Page {currentPage} of {totalPages}
                 </span>
                 <button
                   onClick={handleNext}
                   disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                  className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
                     currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                   title="Next"
                 >
-                  Next
+                  &gt;
                 </button>
-            </div>
-          </div>
-        </div>
-        
-        {/* Enhanced Modify Membership Modal */}
-        {modifyMember && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl dark:shadow-2xl p-8 w-full max-w-lg relative">
-              <button
-                className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-rose-500 transition-colors"
-                onClick={closeModify}
-                title="Close"
-              >
-                <FiX size={24} />
-              </button>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-amber-600 rounded-full flex items-center justify-center text-white font-semibold text-xl">
-                  {modifyMember.name ? modifyMember.name.charAt(0).toUpperCase() : 'N'}
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Renew Membership</h2>
-                  <p className="text-gray-600 dark:text-gray-400">Update membership for {modifyMember.name || 'Unknown Member'}</p>
-                </div>
               </div>
-              <form className="space-y-6" onSubmit={e => e.preventDefault()}>
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">Membership Plan *</label>
-                  <select
-                    name="plan"
-                    value={form.plan}
-                    onChange={handleFormChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                    required
-                  >
-                    <option value="">Select Plan</option>
-                    {plans.map(plan => (
-                      <option key={plan.id} value={plan.id}>{plan.plan_name || plan.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">Valid Until *</label>
-                  <div className="relative">
-                    <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="date"
-                      name="validUpto"
-                      value={form.validUpto}
-                      onChange={handleDateChange}
-                      min={new Date().toISOString().split('T')[0]}
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                      required
-                    />
-                  </div>
-                </div>
-                {updateError && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <FiAlertCircle />
-                      <span>{updateError}</span>
-                    </div>
-                  </div>
-                )}
-                {updateSuccess && (
-                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <FiUsers />
-                      <span>{updateSuccess}</span>
-                    </div>
-                  </div>
-                )}
-                <div className="flex gap-4 justify-end pt-4 border-t border-gray-100">
-                  <button
-                    type="button"
-                    className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
-                    onClick={closeModify}
-                    disabled={updateLoading}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="px-6 py-2 rounded-lg bg-orange-600 text-white font-semibold hover:bg-orange-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-                    onClick={handleUpdate}
-                    disabled={updateLoading || !form.plan || !form.validUpto}
-                  >
-                    {updateLoading && <FiRefreshCw className="animate-spin" size={16} />}
-                    {updateLoading ? 'Updating...' : 'Update Membership'}
-                  </button>
-                </div>
-              </form>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </DashboardLayout>
   );
-};
+}

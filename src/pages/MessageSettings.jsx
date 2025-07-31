@@ -16,33 +16,6 @@ export default function MessageSettings() {
   const [form, setForm] = useState(initialData);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [docTypes, setDocTypes] = useState([]);
-
-  // Fetch document types from API
-  useEffect(() => {
-    const fetchDocTypes = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const uid = localStorage.getItem('uid');
-        if (!token || !uid) {
-          throw new Error('Authentication required.');
-        }
-        const response = await api.post('/UserDetails/getdocType', {}, {
-          headers: {
-            'Client-Service': 'COHAPPRT',
-            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-            'uid': uid,
-            'token': token,
-            'rurl': 'login.etribes.in',
-          }
-        });
-        setDocTypes(response.data?.data || []);
-      } catch (err) {
-        console.error('Fetch doc types error:', err);
-      }
-    };
-    fetchDocTypes();
-  }, []);
 
   // Fetch message settings from API
   const fetchMessageSettings = async () => {
@@ -254,7 +227,7 @@ export default function MessageSettings() {
     <DashboardLayout>
       <div className="flex flex-col gap-4 py-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-2xl font-bold text-orange-600">Message Settings</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-orange-600">Message Settings</h1>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <FiMessageSquare className="text-indigo-600" />
             <span>Status: {isConfigured ? 'Configured' : 'Not Configured'}</span>
@@ -263,8 +236,8 @@ export default function MessageSettings() {
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto border border-gray-200 dark:border-gray-700">
           {/* Header Controls */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="flex items-center gap-2">
                 <FiMessageSquare className="text-indigo-600 text-xl" />
                 <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">Message Configuration</span>
@@ -276,18 +249,24 @@ export default function MessageSettings() {
                 </div>
               )}
             </div>
-            <div className="flex gap-2 items-center">
+            <div className="flex flex-wrap items-center justify-between gap-4">
             {!editMode && (
                 <>
-                  <button className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition" onClick={handleRefresh} disabled={loading} title="Refresh Settings"><FiRefreshCw className={loading ? "animate-spin" : ""} /> Refresh</button>
-                  <button className="flex items-center gap-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition" onClick={handleEdit}><FiEdit2 /> Edit Settings</button>
+                  <button className="flex items-center gap-1 bg-blue-500 text-white px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-600 transition" onClick={handleRefresh} disabled={loading} title="Refresh Settings">
+                    <FiRefreshCw className={loading ? "animate-spin" : ""} /> 
+                    <span>Refresh</span>
+                  </button>
+                  <button className="flex items-center gap-1 bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-indigo-700 transition" onClick={handleEdit}>
+                    <FiEdit2 /> 
+                    <span>Edit Settings</span>
+                  </button>
                 </>
             )}
             </div>
           </div>
           
           {/* Content */}
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {loading ? (
               <div className="flex items-center justify-center h-32 text-indigo-700 dark:text-indigo-300">
                 <FiRefreshCw className="animate-spin text-indigo-600 dark:text-indigo-300 text-xl mr-2" />
@@ -306,7 +285,7 @@ export default function MessageSettings() {
                   </p>
                 </div>
                 {/* Settings Display */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
                   <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                     <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
                       <FiLink className="text-indigo-600" />
@@ -358,7 +337,7 @@ export default function MessageSettings() {
                   <p className="text-yellow-700 dark:text-yellow-200 text-sm">Configure your SMS/WhatsApp API settings. Ensure all fields are properly configured for message functionality.</p>
                 </div>
                 {/* Form Fields */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-4">
                     <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                       <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-4 flex items-center gap-2">
@@ -396,9 +375,9 @@ export default function MessageSettings() {
                   </div>
                 </div>
                 {/* Form Actions */}
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
-                  <button type="button" className="px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50" onClick={handleCancel} disabled={submitting}>Cancel</button>
-                  <button type="submit" className="flex items-center gap-2 px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition-colors disabled:opacity-50" disabled={submitting}>{submitting ? (<><FiRefreshCw className="animate-spin" />Saving...</>) : (<><FiSave />Save Settings</>)}</button>
+                <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  <button type="button" className="px-4 sm:px-6 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 text-sm sm:text-base" onClick={handleCancel} disabled={submitting}>Cancel</button>
+                  <button type="submit" className="flex items-center gap-2 px-4 sm:px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition-colors disabled:opacity-50 text-sm sm:text-base" disabled={submitting}>{submitting ? (<><FiRefreshCw className="animate-spin" />Saving...</>) : (<><FiSave />Save Settings</>)}</button>
                 </div>
               </form>
             )}

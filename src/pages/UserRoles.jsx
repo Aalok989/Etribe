@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
-import { FiEdit2, FiPlus, FiFileText, FiFile, FiX, FiTrash2, FiRefreshCw, FiUser, FiShield, FiCheckCircle, FiAlertCircle, FiCopy, FiDownload } from "react-icons/fi";
+import { FiEdit2, FiPlus, FiFileText, FiFile, FiX, FiTrash2, FiRefreshCw, FiUser, FiShield, FiCheckCircle, FiAlertCircle, FiCopy, FiDownload, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import api from "../api/axiosConfig";
 import { toast } from 'react-toastify';
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function UserRoles() {
   const [roles, setRoles] = useState([]);
@@ -18,6 +21,21 @@ export default function UserRoles() {
   const [submitting, setSubmitting] = useState(false);
   const [sortField, setSortField] = useState("role");
   const [sortDirection, setSortDirection] = useState("asc");
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+
+  // Handle click outside for export dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest('.export-dropdown')) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportDropdown]);
 
   // Fetch roles from API
   const fetchRoles = async () => {
@@ -329,8 +347,33 @@ export default function UserRoles() {
   };
 
   const handleExportPDF = () => {
-    toast.info("PDF export functionality would be implemented here!");
-    setTimeout(() => toast.dismiss(), 3000);
+    if (!roles.length) return;
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "pt",
+      format: "a4"
+    });
+    const headers = [[
+      "Role ID", "Role Name"
+    ]];
+    const rows = roles.map(role => [
+      role.id,
+      role.role
+    ]);
+    try {
+      autoTable(doc, {
+        head: headers,
+        body: rows,
+        startY: 20,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [41, 128, 185] }
+      });
+      doc.save("user_roles.pdf");
+      toast.success("User roles exported to PDF!");
+    } catch (err) {
+      console.error("autoTable failed:", err);
+      toast.error("PDF export failed: " + err.message);
+    }
   };
 
   if (loading && roles.length === 0) {
@@ -360,77 +403,131 @@ export default function UserRoles() {
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Filter and Export Controls */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="relative flex-1">
+                <FiFileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by role name..."
+                  className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  style={{ minWidth: '100%', maxWidth: '100%' }}
+                />
+              </div>
+              
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 flex-shrink-0">
+                <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, totalEntries)} of {totalEntries} entries</span>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              {/* Export Buttons - Left Side */}
               <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">Filter:</label>
-                <div className="relative">
-            <input
-              type="text"
-                    placeholder="Type to filter..."
-                    className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-                    style={{ minWidth: 200 }}
-                  />
-                  <FiFileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                {/* Desktop Export Buttons - Show on larger screens */}
+                <div className="hidden xl:flex gap-2">
+                  <button 
+                    className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
+                    onClick={handleExportCopy}
+                    title="Copy to Clipboard"
+                  >
+                    <FiCopy /> Copy
+                  </button>
+                  <button 
+                    className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition"
+                    onClick={handleExportExcel}
+                    title="Export to Excel"
+                  >
+                    <FiFile /> Excel
+                  </button>
+                  <button 
+                    className="flex items-center gap-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
+                    onClick={handleExportCSV}
+                    title="Export to CSV"
+                  >
+                    <FiDownload /> CSV
+                  </button>
+                  <button 
+                    className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition"
+                    onClick={handleExportPDF}
+                    title="Export to PDF"
+                  >
+                    <FiFile /> PDF
+                  </button>
+                </div>
+                
+                {/* Mobile/Tablet Export Dropdown - Show on smaller screens */}
+                <div className="relative xl:hidden">
+                  <button
+                    className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-600 transition"
+                    onClick={() => setShowExportDropdown(!showExportDropdown)}
+                  >
+                    <FiDownload />
+                    <span>Export</span>
+                    <FiChevronDown className={`transition-transform ${showExportDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {showExportDropdown && (
+                    <div className="absolute left-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20 min-w-32">
+                      <button
+                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                        onClick={() => {
+                          handleExportCopy();
+                          setShowExportDropdown(false);
+                        }}
+                      >
+                        <FiCopy className="text-gray-500" />
+                        Copy
+                      </button>
+                      <button
+                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        onClick={() => {
+                          handleExportCSV();
+                          setShowExportDropdown(false);
+                        }}
+                      >
+                        <FiDownload className="text-green-500" />
+                        CSV
+                      </button>
+                      <button
+                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        onClick={() => {
+                          handleExportExcel();
+                          setShowExportDropdown(false);
+                        }}
+                      >
+                        <FiFile className="text-emerald-500" />
+                        Excel
+                      </button>
+                      <button
+                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
+                        onClick={() => {
+                          handleExportPDF();
+                          setShowExportDropdown(false);
+                        }}
+                      >
+                        <FiFile className="text-red-500" />
+                        PDF
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-gray-700">Show:</label>
-                <select
-                  className="px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                  value={entriesPerPage}
-                  onChange={handleEntriesChange}
-                >
-                  {[10, 25, 50, 100].map(num => (
-                    <option key={num} value={num}>{num}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-2 items-center">
-              <button 
-                className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
-                onClick={handleExportCopy}
-                title="Copy to Clipboard"
-              >
-                <FiCopy /> Copy
-              </button>
-              <button 
-                className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition"
-                onClick={handleExportExcel}
-                title="Export to Excel"
-              >
-                <FiFile /> Excel
-              </button>
-              <button 
-                className="flex items-center gap-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
-                onClick={handleExportCSV}
-                title="Export to CSV"
-              >
-                <FiDownload /> CSV
-              </button>
-              <button 
-                className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition"
-                onClick={handleExportPDF}
-                title="Export to PDF"
-              >
-                <FiFile /> PDF
-              </button>
+              {/* Add Role Button - Right Side */}
               <button
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold shadow hover:bg-green-700 transition"
+                className="flex items-center gap-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition flex-shrink-0"
                 onClick={openAddModal}
                 disabled={submitting}
+                title="Add Role"
               >
-                <FiPlus />Add Role
+                <FiPlus /> Add
               </button>
             </div>
           </div>
 
-          {/* User Roles Table */}
-          <div className="overflow-x-auto">
+          {/* User Roles Table - Desktop View */}
+          <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
                 <tr className="border-b-2 border-indigo-200">
@@ -511,6 +608,37 @@ export default function UserRoles() {
             </table>
           </div>
 
+          {/* Mobile Cards View */}
+          <div className="lg:hidden p-4 sm:p-6 space-y-4">
+            {paginated.map((role, idx) => (
+              <div key={role.id || idx} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 dark:from-indigo-800 dark:to-purple-900 flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-medium text-white">
+                        {role.role.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{role.role}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Role #{startIdx + idx + 1}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors p-1"
+                      onClick={() => openEditModal(idx)}
+                      title="Edit Role"
+                      disabled={submitting}
+                    >
+                      <FiEdit2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* Empty State */}
           {paginated.length === 0 && !loading && (
             <div className="text-center py-12 text-gray-500">
@@ -524,33 +652,48 @@ export default function UserRoles() {
             </div>
           )}
 
-          {/* Enhanced Pagination */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 py-4 border-t border-gray-100">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, totalEntries)} of {totalEntries} entries</span>
+          {/* Pagination Controls */}
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700 dark:text-gray-400">Show</span>
+                <select
+                className="border rounded-lg px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                  value={entriesPerPage}
+                  onChange={handleEntriesChange}
+                >
+                {[5, 10, 25, 50, 100].map(num => (
+                    <option key={num} value={num}>{num}</option>
+                  ))}
+                </select>
+                <span className="text-sm text-gray-600 dark:text-gray-400">entries per page</span>
               </div>
-            <div className="flex items-center gap-4">
+              
               <div className="flex items-center gap-2">
                 <button
                   onClick={handlePrev}
                   disabled={currentPage === 1}
-                  className={`px-3 py-1 rounded-lg text-indigo-600 hover:bg-indigo-100 transition dark:text-indigo-300 ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  title="Previous"
-                >
-                  &lt;
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                    currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                title="Previous"
+                  >
+                    &lt;
                 </button>
-                <span className="text-sm font-semibold text-gray-700 px-3 py-1 bg-gray-100 rounded-lg">
-                  Page {currentPage} of {totalPages}
-                </span>
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    Page {currentPage} of {totalPages}
+                  </span>
                 <button
                   onClick={handleNext}
                   disabled={currentPage === totalPages}
-                  className={`px-3 py-1 rounded-lg text-indigo-600 hover:bg-indigo-100 transition dark:text-indigo-300 ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  title="Next"
-                >
-                  &gt;
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                    currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                title="Next"
+                  >
+                    &gt;
                 </button>
-              </div>
+                </div>
             </div>
           </div>
         </div>

@@ -182,11 +182,11 @@ export default function TopBar() {
   };
 
   return (
-    <header className="flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow px-6 py-3 mb-8 rounded-xl">
-      <div className="font-bold text-xl text-gray-800 dark:text-gray-100">Dashboard Overview</div>
-      <div className="flex items-center gap-4">
+    <header className="flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow px-3 sm:px-6 py-3 mb-8 rounded-xl min-h-[60px]">
+      <div className="font-bold text-lg sm:text-xl text-gray-800 dark:text-gray-100 truncate">Dashboard Overview</div>
+      <div className="flex items-center gap-2 sm:gap-4">
         <button
-          className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none"
+          className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none flex items-center justify-center"
           title="Toggle theme"
           onClick={toggleTheme}
         >
@@ -196,7 +196,7 @@ export default function TopBar() {
         <div className="relative" ref={notificationsRef}>
           <button
             onClick={() => setNotificationsOpen((prev) => !prev)}
-            className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none relative"
+            className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none relative flex items-center justify-center"
           >
             <FiBell size={20} />
             {unreadCount > 0 && (
@@ -206,22 +206,22 @@ export default function TopBar() {
             )}
           </button>
           {isNotificationsOpen && (
-            <div className="absolute right-0 mt-2 w-96 max-w-xs bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-20">
+            <div className="absolute right-0 mt-2 w-64 sm:w-72 md:w-80 lg:w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-20">
               {/* Header */}
-              <div className="px-6 pt-5 pb-2 border-b border-gray-100 dark:border-gray-800">
+              <div className="px-3 sm:px-4 md:px-6 pt-4 sm:pt-5 pb-2 border-b border-gray-100 dark:border-gray-800">
                 <div className="font-bold text-lg text-gray-900 dark:text-gray-100">Notification</div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">You have {unreadCount} unread message{unreadCount !== 1 ? 's' : ''}</div>
               </div>
               {/* Notification List */}
-              <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
+              <div className="max-h-64 sm:max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
                 {notifications.filter(n => !n.read).length > 0 ? (
                   notifications.filter(n => !n.read).map((event) => (
-                    <div key={event.id} className="flex items-start gap-3 px-6 py-4 group bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 transition">
-                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                        <FiCalendar className="text-blue-500 dark:text-blue-300 text-xl" />
+                    <div key={event.id} className="flex items-start gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 py-3 sm:py-4 group bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+                      <div className="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                        <FiCalendar className="text-blue-500 dark:text-blue-300 text-sm sm:text-xl" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-gray-900 dark:text-white truncate">
+                        <div className="font-semibold text-gray-900 dark:text-white truncate text-sm sm:text-base">
                           {event.name}
                         </div>
                         <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 mt-1">
@@ -231,14 +231,14 @@ export default function TopBar() {
                       </div>
                       <button
                         onClick={() => markAsRead(event.id)}
-                        className="ml-2 px-2 py-1 text-xs rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 font-medium hover:bg-emerald-200 dark:hover:bg-emerald-800 transition"
+                        className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 font-medium hover:bg-emerald-200 dark:hover:bg-emerald-800 transition flex-shrink-0"
                       >
                         Mark as read
         </button>
                     </div>
                   ))
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                  <div className="flex flex-col items-center justify-center py-8 sm:py-12 px-3 sm:px-4 md:px-6 text-center">
                     <FiCheckCircle className="text-4xl text-green-400 mb-2" />
                     <div className="text-gray-500 dark:text-gray-400 font-medium">You're all caught up!</div>
                     <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">No new notifications.</div>
@@ -246,11 +246,11 @@ export default function TopBar() {
                 )}
               </div>
               {/* Footer */}
-              <div className="px-6 py-3 border-t border-gray-100 dark:border-gray-800 flex justify-center">
+              <div className="px-3 sm:px-4 md:px-6 py-2 sm:py-3 border-t border-gray-100 dark:border-gray-800 flex justify-center">
                 <Link
                   to="/event-management/all"
                   onClick={() => setNotificationsOpen(false)}
-                  className="inline-block px-5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow transition text-sm"
+                  className="inline-block px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow transition text-sm"
                 >
                   View All Events
                 </Link>
@@ -258,26 +258,28 @@ export default function TopBar() {
             </div>
           )}
         </div>
-        <div className="h-8 w-px bg-gray-200 dark:bg-gray-700"></div>
-        <div className="flex items-center gap-3">
-          <div>
+        <div className="h-6 sm:h-8 w-px bg-gray-200 dark:bg-gray-700"></div>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex-shrink-0 flex items-center justify-center">
             {groupLogo ? (
-              <img src={groupLogo} alt="Group Logo" className="h-8 w-8 rounded-full object-cover border border-gray-300 dark:border-gray-700" />
+              <img src={groupLogo} alt="Group Logo" className="h-6 w-6 sm:h-8 sm:w-8 rounded-full object-cover border border-gray-300 dark:border-gray-700 shadow-sm" />
             ) : (
-            <FiUser className="text-blue-500 dark:text-blue-300" size={20} />
+              <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center border border-gray-300 dark:border-gray-700 shadow-sm">
+                <FiUser className="text-blue-500 dark:text-blue-300" size={14} />
+              </div>
             )}
           </div>
-          <div className="hidden sm:block text-right">
+          <div className="hidden sm:block text-right min-w-0">
             {loading ? (
               <div className="text-xs text-gray-400 dark:text-gray-500">Loading...</div>
             ) : error ? (
               <div className="text-xs text-red-500">{error}</div>
             ) : (
               <>
-                <div className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                <div className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
                   {profile.name}
                 </div>
-                <div className="text-xs text-gray-400 dark:text-gray-400">
+                <div className="text-xs text-gray-400 dark:text-gray-400 truncate">
                   {profile.email}
                 </div>
               </>

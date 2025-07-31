@@ -124,10 +124,10 @@ export default function AnalyticsGraph() {
 
       // Chart data: all months, no dummy entry
       const chartData = months.map((month, idx) => ({
-        month,
-        Active: activeByMonth[idx] || 0,
-        Inactive: inactiveByMonth[idx] || 0,
-        Expired: expiredByMonth[idx] || 0,
+          month,
+          Active: activeByMonth[idx] || 0,
+          Inactive: inactiveByMonth[idx] || 0,
+          Expired: expiredByMonth[idx] || 0,
       }));
       setData(chartData);
       setLastUpdated(new Date());
