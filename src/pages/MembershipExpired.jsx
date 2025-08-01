@@ -3,6 +3,7 @@ import DashboardLayout from "../components/Layout/DashboardLayout";
 import { FiEdit2, FiPlus, FiKey, FiX, FiFileText, FiFile, FiEye, FiRefreshCw, FiTrash2, FiUser, FiMail, FiPhone, FiMapPin, FiShield, FiCheckCircle, FiAlertCircle, FiCopy, FiDownload, FiChevronDown, FiChevronUp, FiChevronLeft, FiChevronRight, FiSearch, FiUsers, FiHome, FiCalendar } from "react-icons/fi";
 import api from "../api/axiosConfig";
 import { toast } from 'react-toastify';
+import { getAuthHeaders } from "../utils/apiHeaders";
 
 import * as XLSX from 'xlsx';
 import jsPDF from "jspdf";
@@ -29,13 +30,7 @@ const fetchAdditionalFields = async () => {
     }
 
     const response = await api.post('/groupSettings/get_user_additional_fields', {}, {
-      headers: {
-        'Client-Service': 'COHAPPRT',
-        'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-        'uid': uid,
-        'token': token,
-        'rurl': 'login.etribes.in',
-      }
+      headers: getAuthHeaders()
     });
 
     console.log('Additional Fields Response:', response.data);
@@ -81,31 +76,19 @@ const fetchAdditionalFields = async () => {
 
 // Get table headers for member pages
 const getMemberTableHeaders = (additionalFields = []) => {
-  const baseHeaders = [
+  const headers = [
     { key: 'sr', name: 'SR No', sortable: true, width: '60px' },
     { key: 'name', name: 'Name', sortable: true, width: '120px' },
     { key: 'contact', name: 'Contact', sortable: true, width: '120px' },
-    { key: 'email', name: 'Email', sortable: true, width: '180px' },
     { key: 'address', name: 'Address', sortable: true, width: '200px' },
-  ];
-
-  // Add dynamic additional fields
-  const dynamicHeaders = additionalFields.map(field => ({
-    key: field.key,
-    name: field.name,
-    sortable: true,
-    width: '120px',
-    isAdditional: true
-  }));
-
-  const endHeaders = [
-    { key: 'company', name: 'Company Name', sortable: true, width: '150px' },
-    { key: 'validUpto', name: 'Valid Upto', sortable: true, width: '120px' },
-    { key: 'status', name: 'Status', sortable: true, width: '100px' },
+    { key: 'pan', name: 'PAN No', sortable: true, width: '120px' },
+    { key: 'aadhar', name: 'Aadhar', sortable: true, width: '120px' },
+    { key: 'drivingLicense', name: 'Driving License', sortable: true, width: '140px' },
+    { key: 'dateOfBirth', name: 'Date of Birth', sortable: true, width: '120px' },
     { key: 'actions', name: 'Actions', sortable: false, width: '120px' }
   ];
 
-  return [...baseHeaders, ...dynamicHeaders, ...endHeaders];
+  return headers;
 };
 
 // Get mobile card fields for member pages
@@ -134,13 +117,7 @@ function useMembershipPlans() {
       }
       
         const response = await api.get('/groupSettings/get_membership_plans', {
-          headers: {
-            'Client-Service': 'COHAPPRT',
-            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-            'uid': uid,
-            'token': token,
-            'rurl': 'login.etribes.in',
-          }
+          headers: getAuthHeaders()
         });
       
       console.log('Membership Plans Response:', response.data);
@@ -189,17 +166,10 @@ const activateMembership = async ({ company_detail_id, membership_plan_id, valid
     membership_plan_id: String(membership_plan_id),
     valid_upto: valid_upto,
   };
-  const response = await api.post('/UserDetail/activate_membership', payload, {
-    headers: {
-      'Client-Service': 'COHAPPRT',
-      'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-      'uid': uid,
-      'token': token,
-      'rurl': 'login.etribes.in',
-      'Content-Type': 'application/json',
-    },
-    timeout: 15000,
-  });
+        const response = await api.post('/UserDetail/activate_membership', payload, {
+        headers: getAuthHeaders(),
+        timeout: 15000,
+      });
   return response.data;
 };
 
@@ -216,21 +186,15 @@ export default function MembershipExpired() {
   const [additionalFields, setAdditionalFields] = useState([]);
   const [tableHeaders, setTableHeaders] = useState([]);
   const [cardFields, setCardFields] = useState([]);
-  const [viewMember, setViewMember] = useState(null);
+  const [modifyMember, setModifyMember] = useState(null);
+  const [form, setForm] = useState({ plan: "", validUpto: "" });
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [updateError, setUpdateError] = useState(null);
+  const [updateSuccess, setUpdateSuccess] = useState(null);
 
-  // Load additional fields on component mount
+  // Load table headers on component mount
   useEffect(() => {
-    const loadAdditionalFields = async () => {
-      try {
-        const fields = await fetchAdditionalFields();
-        setAdditionalFields(fields);
-        setTableHeaders(getMemberTableHeaders(fields));
-        setCardFields(getMemberCardFields(fields));
-      } catch (error) {
-        console.error('Failed to load additional fields:', error);
-      }
-    };
-    loadAdditionalFields();
+    setTableHeaders(getMemberTableHeaders());
   }, []);
 
   // Close export dropdown when clicking outside
@@ -258,10 +222,7 @@ export default function MembershipExpired() {
       }
 
       const response = await api.post('/userDetail/membership_expired', { uid }, {
-        headers: {
-          'token': token,
-          'uid': uid,
-        }
+        headers: getAuthHeaders()
       });
 
       console.log('Expired Members Response:', response.data);
@@ -276,7 +237,7 @@ export default function MembershipExpired() {
         membersData = response.data.members;
       }
       
-      setMembers(membersData);
+        setMembers(membersData);
     } catch (err) {
       console.error('Fetch expired members error:', err);
       toast.error('Failed to fetch expired members');
@@ -334,6 +295,8 @@ export default function MembershipExpired() {
   const totalPages = Math.ceil(totalEntries / entriesPerPage);
   const startIdx = (currentPage - 1) * entriesPerPage;
   const paginated = filtered.slice(startIdx, startIdx + entriesPerPage);
+  
+
 
   const handlePrev = () => setCurrentPage(p => Math.max(1, p - 1));
   const handleNext = () => setCurrentPage(p => Math.min(totalPages, p + 1));
@@ -353,19 +316,17 @@ export default function MembershipExpired() {
   const handleExportCSV = () => {
     if (!members.length) return;
     const headers = [
-      "Name", "Contact", "Email", "Address", "PAN Number", "Aadhar Number", "DL Number", "D.O.B", "Company Name", "Membership Expiry Date"
+      "SR No", "Name", "Contact", "Address", "PAN Number", "Aadhar Number", "DL Number", "D.O.B"
     ];
-    const rows = members.map(m => [
+    const rows = members.map((m, index) => [
+      index + 1,
       m.name,
       m.phone_num || m.contact,
-      m.email,
       m.address,
       m.ad1 || m.pan,
       m.ad2 || m.aadhar,
       m.ad3 || m.dl,
-      m.ad4 || m.dob,
-      m.company_name || m.company,
-      m.membershipExpired || m.membership_expired || ""
+      m.ad4 || m.dob
     ]);
     let csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n");
     const encodedUri = encodeURI(csvContent);
@@ -380,17 +341,15 @@ export default function MembershipExpired() {
   const handleExportExcel = () => {
     if (!members.length) return;
     const ws = XLSX.utils.json_to_sheet(
-      members.map(m => ({
+      members.map((m, index) => ({
+        "SR No": index + 1,
         Name: m.name,
         Contact: m.phone_num || m.contact,
-        Email: m.email,
         Address: m.address,
         "PAN Number": m.ad1 || m.pan,
         "Aadhar Number": m.ad2 || m.aadhar,
         "DL Number": m.ad3 || m.dl,
-        "D.O.B": m.ad4 || m.dob,
-        "Company Name": m.company_name || m.company,
-        "Membership Expiry Date": m.membershipExpired || m.membership_expired || ""
+        "D.O.B": m.ad4 || m.dob
       }))
     );
     const wb = XLSX.utils.book_new();
@@ -406,19 +365,17 @@ export default function MembershipExpired() {
       format: "a4"
     });
     const headers = [[
-      "Name", "Contact", "Email", "Address", "PAN Number", "Aadhar Number", "DL Number", "D.O.B", "Company Name", "Membership Expiry Date"
+      "SR No", "Name", "Contact", "Address", "PAN Number", "Aadhar Number", "DL Number", "D.O.B"
     ]];
-    const rows = members.map(m => [
+    const rows = members.map((m, index) => [
+      index + 1,
       m.name,
       m.phone_num || m.contact,
-      m.email,
       m.address,
       m.ad1 || m.pan,
       m.ad2 || m.aadhar,
       m.ad3 || m.dl,
-      m.ad4 || m.dob,
-      m.company_name || m.company,
-      m.membershipExpired || m.membership_expired || ""
+      m.ad4 || m.dob
     ]);
     try {
       autoTable(doc, {
@@ -437,10 +394,85 @@ export default function MembershipExpired() {
 
   const handleCopyToClipboard = () => {
     if (!members.length) return;
-    const data = members.map(m => 
-      `${m.name}, ${m.phone_num || m.contact}, ${m.email}, ${m.address}, ${m.ad1 || m.pan}, ${m.ad2 || m.aadhar}, ${m.ad3 || m.dl}, ${m.ad4 || m.dob}, ${m.company_name || m.company}, ${m.membershipExpired || m.membership_expired || ""}`
+    const data = members.map((m, index) => 
+      `${index + 1}. ${m.name}, ${m.phone_num || m.contact}, ${m.address}, ${m.ad1 || m.pan}, ${m.ad2 || m.aadhar}, ${m.ad3 || m.dl}, ${m.ad4 || m.dob}`
     ).join('\n');
     navigator.clipboard.writeText(data);
+  };
+
+  const openModify = (member) => {
+    setModifyMember(member);
+    setForm({
+      plan: "",
+      validUpto: ""
+    });
+  };
+
+  const closeModify = () => {
+    setModifyMember(null);
+    setForm({ plan: "", validUpto: "" });
+    setUpdateError(null);
+    setUpdateSuccess(null);
+  };
+
+  const handleFormChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleDateChange = (e) => {
+    setForm({ ...form, validUpto: e.target.value });
+  };
+
+  const handleUpdate = async () => {
+    if (!modifyMember) return;
+    // Validation
+    if (!form.plan) {
+      setUpdateError('Please select a membership plan.');
+      closeModify();
+      return;
+    }
+    if (!form.validUpto) {
+      setUpdateError('Please select a valid until date.');
+      closeModify();
+      return;
+    }
+    // Check if date is in future
+    const selectedDate = new Date(form.validUpto);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (selectedDate <= today) {
+      setUpdateError('Please select a future date for membership validity.');
+      closeModify();
+      return;
+    }
+    setUpdateLoading(true);
+    setUpdateError(null);
+    setUpdateSuccess(null);
+    try {
+      await activateMembership({
+        company_detail_id: modifyMember.company_detail_id || modifyMember.id,
+        membership_plan_id: form.plan,
+        valid_upto: form.validUpto,
+      });
+      toast.success('Membership renewed successfully!');
+      setMembers(prevMembers => prevMembers.filter(member => member.id !== modifyMember.id));
+      closeModify();
+    } catch (err) {
+      if (err.response) {
+        const errorMessage = err.response.data?.message || err.response.data?.error || 'Failed to renew membership';
+        setUpdateError(errorMessage);
+        toast.error(errorMessage);
+      } else if (err.request) {
+        setUpdateError('Network error. Please check your connection.');
+        toast.error('Network error. Please check your connection.');
+      } else {
+        setUpdateError('Failed to renew membership. Please try again.');
+        toast.error('Failed to renew membership.');
+      }
+      closeModify();
+    } finally {
+      setUpdateLoading(false);
+    }
   };
 
   const handleRefresh = () => {
@@ -587,33 +619,39 @@ export default function MembershipExpired() {
           </div>
           {/* Table - Desktop View */}
           <div className="hidden lg:block overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
-                <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
-                  {tableHeaders.map((header, index) => (
-                    <th 
-                      key={header.key}
-                      className={`p-3 font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap ${
-                        header.sortable ? '' : 'cursor-default'
-                      }`}
-                      onClick={() => header.sortable && handleSort(header.key)}
-                      style={{ minWidth: header.width, width: header.width }}
-                  >
-                    <div className="flex items-center gap-1">
-                        {header.name}
-                        {header.sortable && (
-                          <div className="flex flex-col">
-                            <span className={`text-xs ${sortField === header.key && sortDirection === "asc" ? "text-indigo-600" : "text-gray-400"}`}>▲</span>
-                            <span className={`text-xs ${sortField === header.key && sortDirection === "desc" ? "text-indigo-600" : "text-gray-400"}`}>▼</span>
-                    </div>
-                      )}
-                    </div>
-                  </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {paginated.map((m, idx) => (
+            {paginated.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-300">
+                <FiUsers className="mx-auto text-4xl mb-2 text-gray-300 dark:text-gray-700" />
+                <p className="text-sm">No expired members found</p>
+              </div>
+            ) : (
+              <table className="w-full text-sm border-collapse">
+                <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
+                  <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
+                    {tableHeaders.map((header, index) => (
+                      <th 
+                        key={header.key}
+                        className={`p-3 font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap ${
+                          header.sortable ? '' : 'cursor-default'
+                        }`}
+                        onClick={() => header.sortable && handleSort(header.key)}
+                        style={{ minWidth: header.width, width: header.width }}
+                    >
+                      <div className="flex items-center gap-1">
+                          {header.name}
+                          {header.sortable && (
+                            <div className="flex flex-col">
+                              <span className={`text-xs ${sortField === header.key && sortDirection === "asc" ? "text-indigo-600" : "text-gray-400"}`}>▲</span>
+                              <span className={`text-xs ${sortField === header.key && sortDirection === "desc" ? "text-indigo-600" : "text-gray-400"}`}>▼</span>
+                      </div>
+                        )}
+                      </div>
+                    </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginated.map((m, idx) => (
                   <tr 
                     key={m.id} 
                     className={`border-b border-gray-200 dark:border-gray-700 transition-colors ${
@@ -644,37 +682,35 @@ export default function MembershipExpired() {
                             {m.phone_num || m.contact}
                           </td>
                         );
-                      } else if (header.key === 'email') {
-                        return (
-                          <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
-                            {m.email}
-                          </td>
-                        );
                       } else if (header.key === 'address') {
                         return (
                           <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
                             {m.address}
                           </td>
                         );
-                      } else if (header.key === 'company') {
+                      } else if (header.key === 'pan') {
                         return (
                           <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
-                            {m.company_name || m.company}
+                            {m.ad1 || m.pan || '-'}
                           </td>
                         );
-                      } else if (header.key === 'validUpto') {
+                      } else if (header.key === 'aadhar') {
                         return (
                           <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
-                            {m.valid_upto || m.validUpto || '-'}
+                            {m.ad2 || m.aadhar || '-'}
                           </td>
                         );
-                      } else if (header.key === 'status') {
+                      } else if (header.key === 'drivingLicense') {
                         return (
                           <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
-                            <span className="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-full text-xs font-medium">
-                        {m.membershipExpired || m.membership_expired || "Expired"}
-                      </span>
-                    </td>
+                            {m.ad3 || m.driving_license || m.dl || '-'}
+                          </td>
+                        );
+                      } else if (header.key === 'dateOfBirth') {
+                        return (
+                          <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
+                            {m.ad4 || m.dob || m.date_of_birth || '-'}
+                          </td>
                         );
                       } else if (header.key === 'actions') {
                         return (
@@ -682,17 +718,11 @@ export default function MembershipExpired() {
                       <button
                               className="text-indigo-600 dark:text-indigo-300 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors"
                               title="Renew Membership"
-                        onClick={() => setViewMember(m)}
+                        onClick={() => openModify(m)}
                       >
                         <FiEdit2 size={18} />
                       </button>
                     </td>
-                        );
-                      } else if (header.isAdditional) {
-                        return (
-                          <td key={header.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
-                            {m[header.key] || m[header.key.replace('additionalField', 'ad')] || '-'}
-                          </td>
                         );
                       } else {
                         return (
@@ -706,6 +736,7 @@ export default function MembershipExpired() {
                 ))}
               </tbody>
             </table>
+            )}
           </div>
 
           {/* Mobile Cards View */}
@@ -737,10 +768,10 @@ export default function MembershipExpired() {
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <button
                           className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors p-1"
-                          onClick={() => setViewMember(member)}
-                          title="View Member"
+                          onClick={() => openModify(member)}
+                          title="Renew Membership"
                         >
-                          <FiEye size={16} />
+                          <FiEdit2 size={16} />
                         </button>
                       </div>
                     </div>
@@ -748,10 +779,6 @@ export default function MembershipExpired() {
                       <div className="flex items-center gap-2">
                         <FiPhone className="text-gray-400 flex-shrink-0" size={14} />
                         <span className="text-gray-700 dark:text-gray-300 truncate">{member.phone_num || member.contact || 'No contact'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <FiMail className="text-gray-400 flex-shrink-0" size={14} />
-                        <span className="text-gray-700 dark:text-gray-300 truncate">{member.email || 'No email'}</span>
                       </div>
                       {member.address && (
                         <div className="flex items-start gap-2">
@@ -762,30 +789,27 @@ export default function MembershipExpired() {
                         </div>
                       )}
                       <div className="flex items-center gap-2">
-                        <FiHome className="text-gray-400 flex-shrink-0" size={14} />
-                        <span className="text-gray-700 dark:text-gray-300 truncate">{member.company_name || member.company || 'No company'}</span>
+                        <FiShield className="text-gray-400 flex-shrink-0" size={14} />
+                        <span className="text-gray-700 dark:text-gray-300 text-xs">
+                          <span className="font-medium">PAN:</span> {member.ad1 || member.pan || 'Not provided'}
+                        </span>
                       </div>
-                      
-                      {/* Dynamic Additional Fields for Mobile */}
-                      {cardFields.map(field => {
-                        const fieldValue = member[field.backendKey] || member[field.key];
-                        if (fieldValue) {
-                          return (
-                            <div key={field.key} className="flex items-center gap-2">
-                              <FiUser className="text-gray-400 flex-shrink-0" size={14} />
-                              <span className="text-gray-700 dark:text-gray-300 text-xs">
-                                <span className="font-medium">{field.name}:</span> {fieldValue}
-                              </span>
-                            </div>
-                          );
-                        }
-                        return null;
-                      })}
-                      
                       <div className="flex items-center gap-2">
-                        <FiCalendar className="text-red-400 flex-shrink-0" size={14} />
-                        <span className="text-red-600 dark:text-red-400 text-xs">
-                          <span className="font-medium">Expired:</span> {member.membershipExpired || member.membership_expired || member.ad5 || member.valid_upto || "Unknown"}
+                        <FiUser className="text-gray-400 flex-shrink-0" size={14} />
+                        <span className="text-gray-700 dark:text-gray-300 text-xs">
+                          <span className="font-medium">Aadhar:</span> {member.ad2 || member.aadhar || 'Not provided'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FiKey className="text-gray-400 flex-shrink-0" size={14} />
+                        <span className="text-gray-700 dark:text-gray-300 text-xs">
+                          <span className="font-medium">Driving License:</span> {member.ad3 || member.driving_license || member.dl || 'Not provided'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FiCalendar className="text-gray-400 flex-shrink-0" size={14} />
+                        <span className="text-gray-700 dark:text-gray-300 text-xs">
+                          <span className="font-medium">Date of Birth:</span> {member.ad4 || member.dob || member.date_of_birth || 'Not provided'}
                         </span>
                       </div>
                     </div>
@@ -835,6 +859,101 @@ export default function MembershipExpired() {
                 >
                   &gt;
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Renew Membership Modal */}
+          {modifyMember && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Renew Membership
+                  </h3>
+                  <button
+                    onClick={closeModify}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    <FiX size={24} />
+                  </button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Member Name
+                    </label>
+                    <input
+                      type="text"
+                      value={modifyMember.name || ''}
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Membership Plan *
+                    </label>
+                    <select
+                      name="plan"
+                      value={form.plan}
+                      onChange={handleFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400"
+                    >
+                      <option value="">Select a plan</option>
+                      {plans.map(plan => (
+                        <option key={plan.id} value={plan.id}>
+                          {plan.name || plan.plan_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Valid Until *
+                    </label>
+                    <input
+                      type="date"
+                      name="validUpto"
+                      value={form.validUpto}
+                      onChange={handleDateChange}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400"
+                    />
+                  </div>
+                  
+                  {updateError && (
+                    <div className="p-3 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg text-sm">
+                      {updateError}
+                    </div>
+                  )}
+                  
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      onClick={closeModify}
+                      className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleUpdate}
+                      disabled={updateLoading}
+                      className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {updateLoading ? (
+                        <div className="flex items-center justify-center">
+                          <FiRefreshCw className="animate-spin mr-2" />
+                          Renewing...
+                        </div>
+                      ) : (
+                        'Renew Membership'
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}

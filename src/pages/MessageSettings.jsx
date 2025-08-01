@@ -3,6 +3,7 @@ import DashboardLayout from "../components/Layout/DashboardLayout";
 import { FiEdit2, FiX, FiRefreshCw, FiSave, FiMessageSquare, FiAlertCircle, FiCheckCircle, FiSettings, FiLink } from "react-icons/fi";
 import api from "../api/axiosConfig";
 import { toast } from 'react-toastify';
+import { getAuthHeaders } from "../utils/apiHeaders";
 
 const initialData = {
   messageUrl: "",
@@ -30,13 +31,7 @@ export default function MessageSettings() {
       }
 
       const response = await api.post('/groupSettings/get_message_setting', {}, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-        }
+        headers: getAuthHeaders()
       });
 
       const backendData = response.data?.data || response.data || {};
@@ -140,14 +135,7 @@ export default function MessageSettings() {
         mobile_key: settingsData.mobileNoKey,
         message_key: settingsData.messageKey,
       }, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        }
+        headers: getAuthHeaders()
       });
 
       if (response.data?.status === 'success') {

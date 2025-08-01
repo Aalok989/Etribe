@@ -1,40 +1,32 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/Layout/DashboardLayout";
-import { FiEdit2, FiX, FiCalendar, FiFileText, FiFile, FiUsers, FiSearch, FiRefreshCw, FiAlertCircle, FiCopy, FiDownload, FiUserX, FiChevronDown, FiChevronUp, FiPhone, FiMail, FiMapPin, FiUser, FiHome, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiDownload, FiEye, FiEdit2, FiFilter, FiCopy, FiFile, FiChevronDown, FiChevronLeft, FiChevronRight, FiUsers, FiArrowUp, FiArrowDown } from "react-icons/fi";
+import { toast } from "react-toastify";
 import api from "../api/axiosConfig";
+import { getAuthHeaders } from "../utils/apiHeaders";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { toast } from 'react-toastify';
 
 // Cache for additional fields to avoid repeated API calls
 let additionalFieldsCache = null;
-let cacheTimestamp = null;
+let cacheTimestamp = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-// Fetch additional fields function
+// Fetch additional fields from backend
 const fetchAdditionalFields = async () => {
-  // Return cached data if still valid
-  if (additionalFieldsCache && cacheTimestamp && (Date.now() - cacheTimestamp) < CACHE_DURATION) {
-    return additionalFieldsCache;
-  }
-
   try {
     const token = localStorage.getItem('token');
     const uid = localStorage.getItem('uid');
-    
+
     if (!token || !uid) {
-      throw new Error('Authentication required');
+      console.error('No token or uid found');
+      return [];
     }
 
     const response = await api.post('/groupSettings/get_user_additional_fields', {}, {
-      headers: {
-        'Client-Service': 'COHAPPRT',
-        'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-        'uid': uid,
-        'token': token,
-        'rurl': 'login.etribes.in',
-      }
+      headers: getAuthHeaders()
     });
 
     console.log('Additional Fields Response:', response.data);
@@ -85,17 +77,7 @@ const getMemberTableHeaders = (additionalFields = []) => {
     { key: 'name', name: 'Name', sortable: true, width: '120px' },
     { key: 'contact', name: 'Contact', sortable: true, width: '120px' },
     { key: 'email', name: 'Email', sortable: true, width: '180px' },
-    { key: 'address', name: 'Address', sortable: true, width: '200px' },
   ];
-
-  // Add dynamic additional fields
-  const dynamicHeaders = additionalFields.map(field => ({
-    key: field.key,
-    name: field.name,
-    sortable: true,
-    width: '120px',
-    isAdditional: true
-  }));
 
   const endHeaders = [
     { key: 'company', name: 'Company Name', sortable: true, width: '150px' },
@@ -116,7 +98,8 @@ const getMemberCardFields = (additionalFields = []) => {
   }));
 };
 
-export default function InactiveMembers() {
+export default function PendingApproval() {
+  const navigate = useNavigate();
   const [members, setMembers] = useState([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -175,13 +158,7 @@ export default function InactiveMembers() {
         }
         
           const response = await api.get('/groupSettings/get_membership_plans', {
-            headers: {
-              'Client-Service': 'COHAPPRT',
-              'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-              'uid': uid,
-              'token': token,
-              'rurl': 'login.etribes.in',
-            }
+            headers: getAuthHeaders()
           });
         
         console.log('Membership Plans Response:', response.data);
@@ -212,14 +189,14 @@ export default function InactiveMembers() {
   }, []);
 
   useEffect(() => {
-    const fetchInactiveMembers = async (isFirst = false) => {
+    const fetchPendingApprovalMembers = async (isFirst = false) => {
       if (isFirst) setLoading(true);
       // No need to clear error/success with toast
       try {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
         if (!token) {
-          toast.error('Please log in to view inactive members');
+          toast.error('Please log in to view pending approval members');
           window.location.href = '/';
           return;
         }
@@ -231,15 +208,15 @@ export default function InactiveMembers() {
         });
         setMembers(Array.isArray(response.data) ? response.data : response.data.data || []);
       } catch (err) {
-        toast.error(err.response?.data?.message || err.message || 'Failed to fetch inactive members');
+        toast.error(err.response?.data?.message || err.message || 'Failed to fetch pending approval members');
       } finally {
         if (isFirst) setLoading(false);
         if (isFirst) setFirstLoad(false);
       }
     };
-    fetchInactiveMembers(true); // Initial load
+    fetchPendingApprovalMembers(true); // Initial load
     // Removed setInterval for auto-refresh
-    // Only call fetchInactiveMembers after CRUD operations
+    // Only call fetchPendingApprovalMembers after CRUD operations
   }, []);
 
   // Sorting function
@@ -313,14 +290,7 @@ export default function InactiveMembers() {
       valid_upto: valid_upto,
     };
     const response = await api.post('/UserDetail/activate_membership', payload, {
-      headers: {
-        'Client-Service': 'COHAPPRT',
-        'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-        'uid': uid,
-        'token': token,
-        'rurl': 'login.etribes.in',
-        'Content-Type': 'application/json',
-      },
+      headers: getAuthHeaders(),
       timeout: 15000,
     });
     return response.data;
@@ -381,35 +351,20 @@ export default function InactiveMembers() {
   // Export Handlers
   const handleExportCSV = () => {
     if (!members.length) return;
-    const headers = tableHeaders.map(header => header.name);
-    const rows = members.map(m => {
-      const row = [
+    const headers = ['SR No', 'Name', 'Contact', 'Email', 'Company Name'];
+    const rows = members.map((m, index) => [
+      index + 1,
       m.name,
       m.phone_num || m.contact,
       m.email,
-        m.address
-      ];
-      
-      // Add dynamic additional fields
-      additionalFields.forEach(field => {
-        row.push(m[field.backendKey] || m[field.key] || '');
-      });
-      
-      // Add end fields
-      row.push(
-      m.company_name || m.company,
-      m.ad5 || m.validUpto,
-        m.plan || ''
-      );
-      
-      return row;
-    });
+      m.company_name || m.company
+    ]);
     
     let csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "inactive_members.csv");
+            link.setAttribute("download", "pending_approval_members.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -418,31 +373,18 @@ export default function InactiveMembers() {
 
   const handleExportExcel = () => {
     if (!members.length) return;
-    const exportData = members.map(m => {
-      const data = {
-        Name: m.name,
-        Contact: m.phone_num || m.contact,
-        Email: m.email,
-        Address: m.address
-      };
-      
-      // Add dynamic additional fields
-      additionalFields.forEach(field => {
-        data[field.name] = m[field.backendKey] || m[field.key] || '';
-      });
-      
-      // Add end fields
-      data['Company Name'] = m.company_name || m.company;
-      data['Valid Upto'] = m.ad5 || m.validUpto;
-      data['Plan'] = m.plan || '';
-      
-      return data;
-    });
+    const exportData = members.map((m, index) => ({
+      'SR No': index + 1,
+      'Name': m.name,
+      'Contact': m.phone_num || m.contact,
+      'Email': m.email,
+      'Company Name': m.company_name || m.company
+    }));
     
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Inactive Members");
-    XLSX.writeFile(wb, "inactive_members.xlsx");
+          XLSX.utils.book_append_sheet(wb, ws, "Pending Approval Members");
+      XLSX.writeFile(wb, "pending_approval_members.xlsx");
     toast.success("Members exported to Excel!");
   };
 
@@ -453,29 +395,14 @@ export default function InactiveMembers() {
       unit: "pt",
       format: "a4"
     });
-    const headers = [tableHeaders.map(header => header.name)];
-    const rows = members.map(m => {
-      const row = [
+    const headers = [['SR No', 'Name', 'Contact', 'Email', 'Company Name']];
+    const rows = members.map((m, index) => [
+      index + 1,
       m.name,
       m.phone_num || m.contact,
       m.email,
-        m.address
-      ];
-      
-      // Add dynamic additional fields
-      additionalFields.forEach(field => {
-        row.push(m[field.backendKey] || m[field.key] || '');
-      });
-      
-      // Add end fields
-      row.push(
-      m.company_name || m.company,
-      m.ad5 || m.validUpto,
-        m.plan || ''
-      );
-      
-      return row;
-    });
+      m.company_name || m.company
+    ]);
     try {
       autoTable(doc, {
         head: headers,
@@ -484,7 +411,7 @@ export default function InactiveMembers() {
         styles: { fontSize: 8 },
         headStyles: { fillColor: [41, 128, 185] }
       });
-      doc.save("inactive_members.pdf");
+      doc.save("pending_approval_members.pdf");
       toast.success("Members exported to PDF!");
     } catch (err) {
       console.error("autoTable failed:", err);
@@ -494,8 +421,8 @@ export default function InactiveMembers() {
 
   const handleCopyToClipboard = () => {
     if (!members.length) return;
-    const data = members.map(m => 
-      `${m.name}, ${m.phone_num || m.contact}, ${m.email}, ${m.address}, ${m.ad1 || m.pan}, ${m.ad2 || m.aadhar}, ${m.ad3 || m.dl}, ${m.ad4 || m.dob}, ${m.company_name || m.company}, ${m.ad5 || m.validUpto}, ${m.plan || ""}`
+    const data = members.map((m, index) => 
+      `${index + 1}. ${m.name}, ${m.phone_num || m.contact}, ${m.email}, ${m.company_name || m.company}`
     ).join('\n');
     navigator.clipboard.writeText(data);
     toast.success("All members copied to clipboard!");
@@ -512,7 +439,7 @@ export default function InactiveMembers() {
         <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-800">
           <div className="flex items-center gap-3">
             <FiRefreshCw className="animate-spin text-indigo-600 text-2xl" />
-            <p className="text-indigo-700 dark:text-indigo-300">Loading inactive members...</p>
+            <p className="text-indigo-700 dark:text-indigo-300">Loading pending approval members...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -536,10 +463,10 @@ export default function InactiveMembers() {
     <DashboardLayout>
       <div className="flex flex-col gap-4 py-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-orange-600">Inactive Members</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-orange-600">Pending Approval</h1>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <FiUsers className="text-indigo-600" />
-            <span>Total Inactive Members: {members.length}</span>
+            <span>Total Pending Approval: {members.length}</span>
           </div>
         </div>
 
@@ -719,25 +646,24 @@ export default function InactiveMembers() {
                     </td>
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.phone_num || m.contact}</td>
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.email}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.address}</td>
-                    
-                    {/* Dynamic Additional Fields */}
-                    {additionalFields.map(field => (
-                      <td key={field.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
-                        {m[field.backendKey] || m[field.key] || '-'}
-                    </td>
-                    ))}
-                    
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.company_name || m.company}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{m.ad5 || m.validUpto}</td>
                     <td className="p-3 text-center">
-                      <button
-                        className="text-indigo-600 dark:text-indigo-300 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors"
-                        title="Activate Membership"
-                        onClick={() => openModify(m)}
-                      >
-                        <FiEdit2 size={18} />
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          className="text-indigo-600 dark:text-indigo-300 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors"
+                          title="View Member"
+                          onClick={() => navigate(`/member/${m.id || m.company_detail_id}`)}
+                        >
+                          <FiEye size={16} />
+                        </button>
+                        <button
+                          className="text-indigo-600 dark:text-indigo-300 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors"
+                          title="Activate Membership"
+                          onClick={() => openModify(m)}
+                        >
+                          <FiEdit2 size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -765,6 +691,13 @@ export default function InactiveMembers() {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors p-1"
+                      onClick={() => navigate(`/member/${m.id || m.company_detail_id}`)}
+                      title="View Member"
+                    >
+                      <FiEye size={16} />
+                    </button>
+                    <button
+                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors p-1"
                       onClick={() => openModify(m)}
                       title="Activate Membership"
                     >
@@ -781,29 +714,7 @@ export default function InactiveMembers() {
                     <FiMail className="text-gray-400 flex-shrink-0" size={14} />
                     <span className="text-gray-700 dark:text-gray-300 truncate">{m.email}</span>
                   </div>
-                  {m.address && (
-                    <div className="flex items-start gap-2">
-                      <FiMapPin className="text-gray-400 flex-shrink-0 mt-0.5" size={14} />
-                      <span className="text-gray-700 dark:text-gray-300 text-xs line-clamp-2">
-                        {m.address}
-                      </span>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {/* Dynamic Additional Fields for Mobile */}
-                    {cardFields.map(field => {
-                      const fieldValue = m[field.backendKey] || m[field.key];
-                      if (fieldValue) {
-                        return (
-                          <div key={field.key} className="flex items-center gap-1">
-                            <FiUser className="text-gray-400 flex-shrink-0" size={12} />
-                            <span className="text-gray-600 dark:text-gray-400">{field.name}: {fieldValue}</span>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })}
-                  </div>
+
                   <div className="flex items-center gap-1 pt-2 border-t border-gray-100 dark:border-gray-700">
                     <FiHome className="text-gray-400 flex-shrink-0" size={12} />
                     <span className="text-gray-600 dark:text-gray-400 text-xs">Valid until: {m.ad5 || m.validUpto}</span>

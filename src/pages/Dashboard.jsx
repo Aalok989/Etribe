@@ -1,33 +1,25 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/Layout/DashboardLayout";
 import StatusCards from "../components/StatusCards/StatusCards";
 import AnalyticsGraph from "../components/AnalyticsGraph/AnalyticsGraph";
-import UpcomingEvents from "../components/UpcomingEvents/UpcomingEvents";
 import ImportantContacts from "../components/ImportantContacts/ImportantContacts";
 import PastEventCard from "../components/PastEventCard/PastEventCard";
 import TotalEventCard from "../components/TotalEventCard/TotalEventCard";
+import UpcomingEvents from "../components/UpcomingEvents/UpcomingEvents";
+import { getAuthHeaders } from "../utils/apiHeaders";
 import api from "../api/axiosConfig";
 
 // Simplified Upcoming Events Card for Mobile/Tablet
 function UpcomingEventsCard() {
-  const [upcomingCount, setUpcomingCount] = React.useState(0);
   const navigate = useNavigate();
+  const [upcomingCount, setUpcomingCount] = useState(0);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchUpcomingCount = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const uid = localStorage.getItem('uid');
         const response = await api.post('/event/future', {}, {
-          headers: {
-            'Client-Service': 'COHAPPRT',
-            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-            'uid': uid,
-            'token': token,
-            'rurl': 'login.etribes.in',
-            'Content-Type': 'application/json',
-          }
+          headers: getAuthHeaders()
         });
 
         let backendEvents = [];

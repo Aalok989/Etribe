@@ -65,12 +65,12 @@ export default function AnalyticsGraph() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [chartType, setChartType] = useState('line'); // line, area, bar, pie
-  const [selectedMetric, setSelectedMetric] = useState('all'); // all, active, inactive, expired
+  const [selectedMetric, setSelectedMetric] = useState('all'); // all, active, pending-approval, expired
   const [lastUpdated, setLastUpdated] = useState(null);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
-    inactive: 0,
+            'pending-approval': 0,
     expired: 0
   });
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -101,7 +101,7 @@ export default function AnalyticsGraph() {
       setStats({
         total: activeMembers.length + inactiveMembers.length + expiredMembers.length,
         active: activeMembers.length,
-        inactive: inactiveMembers.length,
+        'pending-approval': inactiveMembers.length,
         expired: expiredMembers.length
       });
 
@@ -126,7 +126,7 @@ export default function AnalyticsGraph() {
       const chartData = months.map((month, idx) => ({
           month,
           Active: activeByMonth[idx] || 0,
-          Inactive: inactiveByMonth[idx] || 0,
+          'Pending Approval': inactiveByMonth[idx] || 0,
           Expired: expiredByMonth[idx] || 0,
       }));
       setData(chartData);
@@ -153,7 +153,7 @@ export default function AnalyticsGraph() {
   const getChartComponent = () => {
     const colors = {
       Active: '#10b981',
-      Inactive: '#6366f1', 
+      'Pending Approval': '#6366f1', 
       Expired: '#f43f5e'
     };
 
@@ -173,7 +173,7 @@ export default function AnalyticsGraph() {
                 <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
                 <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
               </linearGradient>
-              <linearGradient id="inactiveGradient" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="pendingApprovalGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
                 <stop offset="95%" stopColor="#6366f1" stopOpacity={0.1}/>
               </linearGradient>
@@ -205,7 +205,7 @@ export default function AnalyticsGraph() {
             {selectedMetric === 'all' && (
               <>
                 <Area type="monotone" dataKey="Active" stroke="#10b981" fill="url(#activeGradient)" strokeWidth={3} />
-                <Area type="monotone" dataKey="Inactive" stroke="#6366f1" fill="url(#inactiveGradient)" strokeWidth={3} />
+                <Area type="monotone" dataKey="Pending Approval" stroke="#6366f1" fill="url(#pendingApprovalGradient)" strokeWidth={3} />
                 <Area type="monotone" dataKey="Expired" stroke="#f43f5e" fill="url(#expiredGradient)" strokeWidth={3} />
               </>
             )}
@@ -247,7 +247,7 @@ export default function AnalyticsGraph() {
             {selectedMetric === 'all' && (
               <>
                 <Bar dataKey="Active" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Inactive" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Pending Approval" fill="#6366f1" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="Expired" fill="#f43f5e" radius={[4, 4, 0, 0]} />
               </>
             )}
@@ -297,7 +297,7 @@ export default function AnalyticsGraph() {
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="Inactive" 
+                  dataKey="Pending Approval" 
                   stroke="#6366f1" 
                   strokeWidth={3} 
                   dot={{ r: 6, fill: '#6366f1', strokeWidth: 2, stroke: '#ffffff' }}
@@ -384,7 +384,7 @@ export default function AnalyticsGraph() {
           >
             <option value="all">All Metrics</option>
             <option value="Active">Active Only</option>
-            <option value="Inactive">Inactive Only</option>
+            <option value="Pending Approval">Pending Approval Only</option>
             <option value="Expired">Expired Only</option>
           </select>
         </div>

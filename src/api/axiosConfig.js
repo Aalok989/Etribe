@@ -4,9 +4,9 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: '/api', // Use proxy path in development
   headers: {
-    'Client-Service': 'COHAPPRT',
-    'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-    'rurl': 'login.etribes.in',
+    'Client-Service': import.meta.env.VITE_CLIENT_SERVICE,
+    'Auth-Key': import.meta.env.VITE_AUTH_KEY,
+    'rurl': import.meta.env.VITE_RURL,
     'Content-Type': 'application/json',
   },
   withCredentials: true, // Required for sending cookies (ci_session)

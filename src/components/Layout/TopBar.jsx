@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { FiSun, FiMoon, FiUser, FiBell, FiClock, FiCalendar, FiCheckCircle } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import api from "../../api/axiosConfig";
+import { getAuthHeaders } from "../../utils/apiHeaders";
 
 export default function TopBar() {
   const [profile, setProfile] = useState({ name: "", email: "" });
@@ -61,14 +62,7 @@ export default function TopBar() {
         return;
       }
       const { data } = await api.post('/event/future', {}, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        }
+        headers: getAuthHeaders()
       });
       let backendEvents = [];
       if (data && data.events) {
@@ -148,14 +142,7 @@ export default function TopBar() {
           return;
         }
         const response = await api.post('/groupSettings', {}, {
-          headers: {
-            'Client-Service': 'COHAPPRT',
-            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-            'uid': uid,
-            'token': token,
-            'rurl': 'login.etribes.in',
-            'Content-Type': 'application/json',
-          }
+          headers: getAuthHeaders()
         });
         const backendData = response.data?.data || response.data || {};
         if (isMounted) {

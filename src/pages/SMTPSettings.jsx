@@ -3,6 +3,7 @@ import DashboardLayout from "../components/Layout/DashboardLayout";
 import { FiEdit2, FiX, FiRefreshCw, FiSave, FiMail, FiAlertCircle, FiCheckCircle, FiSettings, FiServer } from "react-icons/fi";
 import api from "../api/axiosConfig";
 import { toast } from 'react-toastify';
+import { getAuthHeaders } from "../utils/apiHeaders";
 
 const initialData = {
   smtpHost: "",
@@ -34,13 +35,7 @@ export default function SMTPSettings() {
       }
 
       const response = await api.post('/groupSettings/get_smtp_setting', {}, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-        }
+        headers: getAuthHeaders()
       });
 
       const smtp = response.data?.data || {};
@@ -179,13 +174,7 @@ export default function SMTPSettings() {
         sender_name: smtpData.senderName,
         reply_to: smtpData.replyToEmail,
       }, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-        }
+        headers: getAuthHeaders()
       });
 
       if (response.data?.status === 'success') {
@@ -258,14 +247,7 @@ export default function SMTPSettings() {
         reply_to: form.replyToEmail,
       };
       const response = await api.post('/groupSettings/smtp_setting', payload, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        }
+        headers: getAuthHeaders()
       });
       if (response.data?.status === 'success') {
         setData({ ...form, smtpPassword: "********" });

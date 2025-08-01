@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { FiCalendar, FiMapPin, FiClock, FiUsers } from "react-icons/fi";
 import api from "../../api/axiosConfig";
+import { getAuthHeaders } from "../../utils/apiHeaders";
 
 // Utility function to strip HTML tags
 function stripHtmlTags(str) {
@@ -18,14 +20,7 @@ export default function UpcomingEvents() {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
         const response = await api.post('/event/future', {}, {
-          headers: {
-            'Client-Service': 'COHAPPRT',
-            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-            'uid': uid,
-            'token': token,
-            'rurl': 'login.etribes.in',
-            'Content-Type': 'application/json',
-          }
+          headers: getAuthHeaders()
         });
 
         let backendEvents = [];

@@ -3,6 +3,7 @@ import DashboardLayout from "../components/Layout/DashboardLayout";
 import { FiEdit2, FiX, FiRefreshCw, FiSave, FiUser, FiAlertCircle, FiCheckCircle, FiSettings, FiPlus } from "react-icons/fi";
 import api from "../api/axiosConfig";
 import { toast } from 'react-toastify';
+import { getAuthHeaders } from "../utils/apiHeaders";
 
 const initialData = {
   additionalField1: "Aadhar",
@@ -36,13 +37,7 @@ export default function UserAdditionalFields() {
       }
 
       const response = await api.post('/groupSettings/get_user_additional_fields', {}, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-        }
+        headers: getAuthHeaders()
       });
 
       console.log('User Additional Fields Response:', response.data);
@@ -174,14 +169,7 @@ export default function UserAdditionalFields() {
       };
 
       const response = await api.post('/groupSettings/user_additional_fields_setting', payload, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        }
+        headers: getAuthHeaders()
       });
 
       if (response.data?.status === 'success') {

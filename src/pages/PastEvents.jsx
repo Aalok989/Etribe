@@ -8,6 +8,7 @@ import api from "../api/axiosConfig";
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { toast } from 'react-toastify';
+import { getAuthHeaders } from "../utils/apiHeaders";
 
 
 // Helper to decode HTML entities
@@ -102,15 +103,13 @@ export default function PastEvents() {
       try {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
+        if (!token) {
+          toast.error("Please log in to view past events");
+          window.location.href = "/";
+          return;
+        }
         const response = await api.post('/event/past', {}, {
-          headers: {
-            'Client-Service': 'COHAPPRT',
-            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-            'uid': uid,
-            'token': token,
-            'rurl': 'login.etribes.in',
-            'Content-Type': 'application/json',
-          }
+          headers: getAuthHeaders()
         });
         let backendEvents = [];
         if (Array.isArray(response.data?.data?.event)) {
@@ -258,14 +257,7 @@ export default function PastEvents() {
       }
       await fetch('/api/event/add', {
         method: 'POST',
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || ''),
-        },
+        headers: getAuthHeaders(),
         credentials: 'include',
         body: formData,
       });

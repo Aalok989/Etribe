@@ -73,11 +73,11 @@ const statusData = [
     path: "/members-services/active",
   },
   {
-    label: "Inactive",
+    label: "Pending Approval",
       count: inactiveCount, // Real value
     gradient: "bg-gradient-to-br from-blue-200 via-indigo-200 to-white dark:from-blue-900 dark:via-indigo-900 dark:to-gray-900 ",
     icon: <FiUserX size={32} className="text-emerald-600 dark:text-blue-300 opacity-80" />, // Adjust icon color for contrast
-    path: "/members-services/inactive",
+    path: "/members-services/pending-approval",
   },
   {
     label: "Membership Expired",

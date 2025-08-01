@@ -27,6 +27,7 @@ import api from "../api/axiosConfig";
 import { CKEditor } from "@ckeditor/ckeditor5-react";
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import { toast } from "react-toastify";
+import { getAuthHeaders } from "../utils/apiHeaders";
 
 // Helper to get CKEditor contentsCss based on dark mode
 function getCKEditorContentsCss() {
@@ -127,14 +128,7 @@ export default function AllEvents() {
           "/event/index",
           {},
           {
-          headers: {
-              "Client-Service": "COHAPPRT",
-              "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
-              uid: uid,
-              token: token,
-              rurl: "login.etribes.in",
-              "Content-Type": "application/json",
-            },
+          headers: getAuthHeaders()
           }
         );
         let backendEvents = [];
@@ -303,14 +297,7 @@ export default function AllEvents() {
       }
       await fetch("/api/event/add", {
         method: "POST",
-        headers: {
-          "Client-Service": "COHAPPRT",
-          "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
-          uid: uid,
-          token: token,
-          rurl: "login.etribes.in",
-          Authorization: "Bearer " + (localStorage.getItem("authToken") || ""),
-        },
+        headers: getAuthHeaders(),
         credentials: "include",
         body: formData,
       });
@@ -334,14 +321,7 @@ export default function AllEvents() {
           "/event/index",
           {},
           {
-            headers: {
-              "Client-Service": "COHAPPRT",
-              "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
-              uid: uid,
-              token: token,
-              rurl: "login.etribes.in",
-              "Content-Type": "application/json",
-            },
+            headers: getAuthHeaders()
           }
         );
         let backendEvents = [];
@@ -562,15 +542,7 @@ export default function AllEvents() {
       }
       await fetch("/api/event/edit", {
         method: "POST",
-        headers: {
-          "Client-Service": "COHAPPRT",
-          "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
-          uid: uid,
-          token: token,
-          rurl: "login.etribes.in",
-          Authorization: "Bearer " + (localStorage.getItem("authToken") || ""),
-          // Do NOT set Content-Type for FormData
-        },
+        headers: getAuthHeaders(),
         credentials: "include",
         body: formData,
       });
@@ -584,14 +556,7 @@ export default function AllEvents() {
           "/event/index",
           {},
           {
-        headers: {
-              "Client-Service": "COHAPPRT",
-              "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
-              uid: uid,
-              token: token,
-              rurl: "login.etribes.in",
-              "Content-Type": "application/json",
-            },
+        headers: getAuthHeaders()
         }
         );
       let backendEvents = [];
@@ -648,15 +613,7 @@ export default function AllEvents() {
       const uid = localStorage.getItem("uid");
       await fetch("/api/event/remove", {
         method: "POST",
-        headers: {
-          "Client-Service": "COHAPPRT",
-          "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
-          uid: uid,
-          token: token,
-          rurl: "login.etribes.in",
-          "Content-Type": "text/plain",
-          Authorization: "Bearer " + (localStorage.getItem("authToken") || ""),
-        },
+        headers: getAuthHeaders(),
         credentials: "include",
         body: JSON.stringify({ id: eventId }),
       });
@@ -669,14 +626,7 @@ export default function AllEvents() {
             "/event/index",
             {},
             {
-            headers: {
-                "Client-Service": "COHAPPRT",
-                "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
-                uid: uid,
-                token: token,
-                rurl: "login.etribes.in",
-                "Content-Type": "application/json",
-              },
+            headers: getAuthHeaders()
             }
           );
           let backendEvents = [];

@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { getAuthHeaders } from "../utils/apiHeaders";
 
 export default function UserRoles() {
   const [roles, setRoles] = useState([]);
@@ -47,13 +48,7 @@ export default function UserRoles() {
         throw new Error('Please log in to view user roles');
       }
       const response = await api.post('/userRole', {}, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'Content-Type': 'application/json',
-        }
+        headers: getAuthHeaders()
       });
       let rolesData = [];
       if (Array.isArray(response.data)) {
@@ -97,13 +92,7 @@ export default function UserRoles() {
         name: roleData.role
       };
       const response = await api.post('/userRole/add_role', payload, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'Content-Type': 'application/json',
-        }
+        headers: getAuthHeaders()
       });
       if (response.data?.status === 'success' || response.data?.message?.toLowerCase().includes('success')) {
         await fetchRoles();
@@ -140,14 +129,7 @@ export default function UserRoles() {
       console.log('Updating user role:', payload);
       
       const response = await api.post('/userRole/update_role/', payload, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        }
+        headers: getAuthHeaders()
       });
 
       console.log('Update role response:', response.data);
@@ -187,10 +169,7 @@ export default function UserRoles() {
       console.log('Deleting user role:', payload);
       
       const response = await api.post('/userRole/delete', payload, {
-        headers: {
-          'token': token,
-          'uid': uid,
-        }
+        headers: getAuthHeaders()
       });
 
       console.log('Delete role response:', response.data);

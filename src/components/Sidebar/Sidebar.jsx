@@ -4,7 +4,10 @@ import {
   FiUsers,
   FiUserCheck,
   FiCalendar,
+  FiBell,
+  FiAlertTriangle,
   FiBookOpen,
+  FiFileText,
   FiSettings,
   FiLogOut,
   FiChevronLeft,
@@ -13,6 +16,7 @@ import {
 } from "react-icons/fi";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import api from "../../api/axiosConfig";
+import { getAuthHeaders } from "../../utils/apiHeaders";
 
 // Menu structure
 const menuItems = [
@@ -30,8 +34,9 @@ const menuItems = [
     dropdown: true,
     subItems: [
       { label: "Active Members", path: "/members-services/active" },
-      { label: "Inactive Members", path: "/members-services/inactive" },
+      { label: "Pending Approval", path: "/members-services/pending-approval" },
       { label: "Membership Expired", path: "/members-services/expired" },
+      { label: "Payment Details", path: "/members-services/payment-details" },
     ],
   },
   {
@@ -60,9 +65,38 @@ const menuItems = [
     ],
   },
   {
+    label: "Notification",
+    icon: <FiBell size={20} />,
+    path: "#",
+    basePath: "/notification",
+    dropdown: true,
+    subItems: [
+      { label: "Feedbacks", path: "/notification/feedbacks" },
+      { label: "Circulars", path: "/notification/circulars" },
+    ],
+  },
+  {
+    label: "Grievances",
+    icon: <FiAlertTriangle size={20} />,
+    path: "#",
+    basePath: "/grievances",
+    dropdown: true,
+    subItems: [
+      { label: "Active", path: "/grievances/active" },
+      { label: "Pending", path: "/grievances/pending" },
+      { label: "Closed", path: "/grievances/closed" },
+    ],
+  },
+  {
     label: "Important Contacts",
     icon: <FiBookOpen size={20} />,
     path: "/important-contacts",
+    dropdown: false,
+  },
+  {
+    label: "Resume",
+    icon: <FiFileText size={20} />,
+    path: "/resume",
     dropdown: false,
   },
   {
@@ -100,14 +134,7 @@ export default function Sidebar({ className = "", collapsed, setCollapsed }) {
           "/groupSettings",
           {},
           {
-            headers: {
-              "Client-Service": "COHAPPRT",
-              "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
-              uid,
-              token,
-              rurl: "login.etribes.in",
-              "Content-Type": "application/json",
-            },
+                      headers: getAuthHeaders(),
           }
         );
         const backendData = response.data?.data || response.data || {};
@@ -128,7 +155,17 @@ export default function Sidebar({ className = "", collapsed, setCollapsed }) {
   // Open the relevant dropdown if inside a nested path
   useEffect(() => {
     const activeItem = menuItems.find((item) =>
-      item.subItems?.some((sub) => sub.path === location.pathname)
+      item.subItems?.some((sub) => {
+        // Check exact match first
+        if (sub.path === location.pathname) return true;
+        
+        // Special case for member detail pages - they should open "Members Services" dropdown
+        if (sub.path === "/members-services/active" && location.pathname.startsWith("/member/")) {
+          return true;
+        }
+        
+        return false;
+      })
     );
     if (activeItem) {
       setOpenDropdown(activeItem.label);
@@ -206,7 +243,17 @@ export default function Sidebar({ className = "", collapsed, setCollapsed }) {
         <ul className="space-y-1">
           {menuItems.map((item) => {
             const isParentActive = item.subItems?.some(
-              (sub) => location.pathname === sub.path
+              (sub) => {
+                // Check exact match first
+                if (location.pathname === sub.path) return true;
+                
+                // Special case for member detail pages - they should highlight "Active Members"
+                if (sub.path === "/members-services/active" && location.pathname.startsWith("/member/")) {
+                  return true;
+                }
+                
+                return false;
+              }
             );
 
             if (item.dropdown) {
@@ -249,14 +296,20 @@ export default function Sidebar({ className = "", collapsed, setCollapsed }) {
                         <li key={sub.path}>
                           <NavLink
                             to={sub.path}
-                            className={({ isActive }) =>
-                              `block text-sm px-3 py-1 rounded whitespace-nowrap transition-colors
+                            className={({ isActive }) => {
+                              // Special case for member detail pages - they should highlight "Active Members"
+                              let shouldBeActive = isActive;
+                              if (sub.path === "/members-services/active" && location.pathname.startsWith("/member/")) {
+                                shouldBeActive = true;
+                              }
+                              
+                              return `block text-sm px-3 py-1 rounded whitespace-nowrap transition-colors
                                 ${
-                                  isActive
+                                  shouldBeActive
                                     ? "text-blue-800 dark:text-blue-300"
                                     : "text-gray-500 dark:text-gray-400"
-                                } hover:text-blue-900 dark:hover:text-blue-400`
-                            }
+                                } hover:text-blue-900 dark:hover:text-blue-400`;
+                            }}
                           >
                             {sub.label}
                           </NavLink>

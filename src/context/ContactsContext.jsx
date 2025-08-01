@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import api from '../api/axiosConfig';
+import { getAuthHeaders } from '../utils/apiHeaders';
 
 const ContactsContext = createContext();
 
@@ -17,14 +18,7 @@ export const ContactsProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid');
       const response = await api.get('/contact', {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders()
       });
 
       let contacts = [];
@@ -77,14 +71,7 @@ export const ContactsProvider = ({ children }) => {
         address: contact.address,
       };
       const response = await api.post('/contact/add', payload, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders()
       });
       await fetchContacts(); 
       return response.data;
@@ -106,14 +93,7 @@ export const ContactsProvider = ({ children }) => {
         address: contact.address,
       };
       const response = await api.post('/contact/edit', payload, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders()
       });
       await fetchContacts(); 
       return response.data;
@@ -127,14 +107,7 @@ export const ContactsProvider = ({ children }) => {
     const uid = localStorage.getItem('uid');
     try {
       const response = await api.post('/contact/remove', { id: contactId }, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders()
       });
       await fetchContacts(); 
       return response.data;

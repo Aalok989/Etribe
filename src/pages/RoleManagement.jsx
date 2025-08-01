@@ -3,6 +3,7 @@ import DashboardLayout from "../components/Layout/DashboardLayout";
 import { FiFileText, FiFile, FiRefreshCw, FiX, FiShield, FiCheckCircle, FiAlertCircle, FiSave, FiSettings } from "react-icons/fi";
 import api from "../api/axiosConfig";
 import { toast } from 'react-toastify';
+import { getAuthHeaders } from "../utils/apiHeaders";
 
 const modules = [
   "Group Settings",
@@ -117,14 +118,7 @@ export default function RoleManagement() {
       const response = await api.post('/userRole/get_modules', {
         role_id: roleId.toString()
       }, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        }
+        headers: getAuthHeaders()
       });
 
       console.log('Role Permissions Response:', response.data);
@@ -224,13 +218,7 @@ export default function RoleManagement() {
       console.log('Saving permissions payload:', payload);
       
       const response = await api.post('/userRole/assign_roles', payload, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'Content-Type': 'application/json',
-        }
+        headers: getAuthHeaders()
       });
 
       console.log('Save permissions response:', response.data);

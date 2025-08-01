@@ -4,6 +4,10 @@ import { FiPlus, FiX, FiEdit2, FiTrash2, FiRefreshCw, FiSave, FiAlertCircle, FiC
 import { BiRupee } from "react-icons/bi";
 import api from "../api/axiosConfig";
 import { toast } from 'react-toastify';
+import { getAuthHeaders } from "../utils/apiHeaders";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function MembershipPlans() {
   const [plans, setPlans] = useState([]);
@@ -25,6 +29,7 @@ export default function MembershipPlans() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState("asc");
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   // Fetch membership plans from API
   const fetchPlans = async () => {
@@ -38,13 +43,7 @@ export default function MembershipPlans() {
       }
 
       const response = await api.get('/groupSettings/get_membership_plans', {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-        }
+        headers: getAuthHeaders()
       });
 
       console.log('Membership Plans Response:', response.data);
@@ -142,14 +141,7 @@ export default function MembershipPlans() {
           type: 'edit',
         };
         response = await api.post('/groupSettings/update_mem_plan', payload, {
-          headers: {
-            'Client-Service': 'COHAPPRT',
-            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-            'uid': uid,
-            'token': token,
-            'rurl': 'login.etribes.in',
-            'Content-Type': 'application/json',
-          }
+          headers: getAuthHeaders()
         });
       } else {
         // Create new plan (unchanged)
@@ -161,13 +153,7 @@ export default function MembershipPlans() {
           status: planData.status,
         };
         response = await api.post('/groupSettings/create_membership_plan', payload, {
-          headers: {
-            'Client-Service': 'COHAPPRT',
-            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-            'uid': uid,
-            'token': token,
-            'rurl': 'login.etribes.in',
-          }
+          headers: getAuthHeaders()
         });
       }
 
@@ -209,13 +195,7 @@ export default function MembershipPlans() {
       }
 
       const response = await api.delete(`/groupSettings/delete_membership_plan/${planId}`, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-        }
+        headers: getAuthHeaders()
       });
 
       if (response.data?.status === 'success') {
@@ -328,14 +308,7 @@ export default function MembershipPlans() {
           type: 'edit',
         };
         const response = await api.post('/groupSettings/update_mem_plan', payload, {
-          headers: {
-            'Client-Service': 'COHAPPRT',
-            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-            'uid': uid,
-            'token': token,
-            'rurl': 'login.etribes.in',
-            'Content-Type': 'application/json',
-          }
+          headers: getAuthHeaders()
         });
         if (response.data?.status === 'success' || (response.data?.message && response.data.message.toLowerCase().includes('success'))) {
           await fetchPlans();
@@ -359,14 +332,7 @@ export default function MembershipPlans() {
           plan_validity: form.validity
         };
         const response = await api.post('/groupSettings/add_mem_plan', payload, {
-          headers: {
-            'Client-Service': 'COHAPPRT',
-            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-            'uid': uid,
-            'token': token,
-            'rurl': 'login.etribes.in',
-            'Content-Type': 'application/json',
-          }
+          headers: getAuthHeaders()
         });
         if (response.data?.status === 'success' || (response.data?.message && response.data.message.toLowerCase().includes('success'))) {
           await fetchPlans();

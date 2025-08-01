@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { getAuthHeaders } from "../utils/apiHeaders";
 
 // Role color mapping
 const getRoleColor = (role) => {
@@ -128,14 +129,7 @@ export default function AdminAccounts() {
         return;
       }
       const response = await api.post('/userDetail', {}, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        }
+        headers: getAuthHeaders()
       });
       let usersData = [];
       if (Array.isArray(response.data)) {
@@ -174,12 +168,7 @@ export default function AdminAccounts() {
       const token = localStorage.getItem('token');
       // You may need to use the correct token/header for Authorization
       const response = await api.post('/common/countries', {}, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'rurl': 'login.etribes.in',
-          // 'Authorization': 'Bearer ' + token, // Uncomment if needed
-        }
+        headers: getAuthHeaders()
       });
       if (response.data && Array.isArray(response.data.data)) {
         setCountries(response.data.data);
@@ -274,13 +263,7 @@ export default function AdminAccounts() {
         password: passwordForm.password,
         confirm_password: passwordForm.confirmPassword
       }, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'Content-Type': 'application/json',
-        }
+        headers: getAuthHeaders()
       });
       if (response.data?.status === 'success' || response.data?.message?.toLowerCase().includes('success')) {
         toast.success('Password updated successfully!');
@@ -359,14 +342,7 @@ export default function AdminAccounts() {
         area_id: addUserForm.state, // state id
       };
       const response = await api.post('/userDetail/add_user', payload, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        }
+        headers: getAuthHeaders()
       });
       if (response.data?.status === 'success' || response.data?.message?.toLowerCase().includes('success')) {
         toast.success('System user created successfully!');
@@ -466,12 +442,7 @@ export default function AdminAccounts() {
       const fetchStates = async () => {
         try {
           const response = await api.post('/common/states', { country: addUserForm.country }, {
-            headers: {
-              'Client-Service': 'COHAPPRT',
-              'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-              'rurl': 'login.etribes.in',
-              'Content-Type': 'application/json',
-            }
+            headers: getAuthHeaders()
           });
           if (response.data && Array.isArray(response.data.data)) {
             setStates(response.data.data); // [{ id, state }]

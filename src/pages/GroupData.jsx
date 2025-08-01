@@ -5,6 +5,7 @@ import defaultSignature from "../assets/company-logo/parent.jpg";
 import { FiEdit2, FiX, FiUpload, FiCheckCircle } from "react-icons/fi";
 import api from "../api/axiosConfig";
 import { toast } from 'react-toastify';
+import { getAuthHeaders } from "../utils/apiHeaders";
 
 const initialData = {};
 
@@ -35,14 +36,7 @@ export default function GroupData() {
           return;
         }
         const response = await api.post('/groupSettings', {}, {
-          headers: {
-            'Client-Service': 'COHAPPRT',
-            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-            'uid': uid,
-            'token': token,
-            'rurl': 'login.etribes.in',
-            'Content-Type': 'application/json',
-          }
+          headers: getAuthHeaders()
         });
         const backendData = response.data?.data || response.data || {};
         const mappedData = {
@@ -111,14 +105,7 @@ export default function GroupData() {
       formData.append('id', uid || '1');
       formData.append('file', file);
       const response = await api.post('/GroupSettings/upload_logo', formData, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: getAuthHeaders(),
         withCredentials: true,
       });
       // The backend should return the new logo path
@@ -163,14 +150,7 @@ export default function GroupData() {
       formData.append('id', uid || '1');
       formData.append('file', file);
       const response = await api.post('/groupSettings/upload_signature', formData, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: getAuthHeaders(),
         withCredentials: true,
       });
       // The backend should return the new signature path
@@ -233,14 +213,7 @@ export default function GroupData() {
       console.log('Saving group data (cURL):', payload);
       
       await api.post('/groupSettings/master_data', payload, {
-        headers: {
-          'Client-Service': 'COHAPPRT',
-          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-          'uid': uid,
-          'token': token,
-          'rurl': 'login.etribes.in',
-          'Content-Type': 'application/json',
-        }
+        headers: getAuthHeaders()
       });
 
     setData(form);

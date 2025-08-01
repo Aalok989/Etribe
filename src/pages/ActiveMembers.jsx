@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/Layout/DashboardLayout";
-import { FiEdit2, FiPlus, FiKey, FiX, FiFileText, FiFile, FiEye, FiRefreshCw, FiTrash2, FiUser, FiMail, FiPhone, FiMapPin, FiShield, FiCheckCircle, FiAlertCircle, FiCopy, FiDownload, FiChevronDown, FiChevronUp, FiChevronLeft, FiChevronRight, FiSearch, FiUsers, FiHome, FiCalendar } from "react-icons/fi";
+import { FiEdit2, FiPlus, FiKey, FiX, FiFileText, FiFile, FiEye, FiRefreshCw, FiTrash2, FiUser, FiUserX, FiMail, FiPhone, FiMapPin, FiShield, FiCheckCircle, FiAlertCircle, FiCopy, FiDownload, FiChevronDown, FiChevronUp, FiChevronLeft, FiChevronRight, FiSearch, FiUsers, FiHome, FiCalendar } from "react-icons/fi";
 import api from "../api/axiosConfig";
 import { toast } from 'react-toastify';
+import { getAuthHeaders } from "../utils/apiHeaders";
 
 import * as XLSX from 'xlsx';
 import jsPDF from "jspdf";
@@ -29,13 +31,7 @@ const fetchAdditionalFields = async () => {
     }
 
     const response = await api.post('/groupSettings/get_user_additional_fields', {}, {
-      headers: {
-        'Client-Service': 'COHAPPRT',
-        'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-        'uid': uid,
-        'token': token,
-        'rurl': 'login.etribes.in',
-      }
+      headers: getAuthHeaders()
     });
 
     console.log('Additional Fields Response:', response.data);
@@ -86,26 +82,15 @@ const getMemberTableHeaders = (additionalFields = []) => {
     { key: 'name', name: 'Name', sortable: true, width: '120px' },
     { key: 'contact', name: 'Contact', sortable: true, width: '120px' },
     { key: 'email', name: 'Email', sortable: true, width: '180px' },
-    { key: 'address', name: 'Address', sortable: true, width: '200px' },
   ];
-
-  // Add dynamic additional fields
-  const dynamicHeaders = additionalFields.map(field => ({
-    key: field.key,
-    name: field.name,
-    sortable: true,
-    width: '120px',
-    isAdditional: true
-  }));
 
   const endHeaders = [
     { key: 'company', name: 'Company Name', sortable: true, width: '150px' },
     { key: 'validUpto', name: 'Valid Upto', sortable: true, width: '120px' },
-    { key: 'status', name: 'Status', sortable: true, width: '100px' },
-    { key: 'actions', name: 'Actions', sortable: false, width: '120px' }
+    { key: 'actions', name: 'Actions', sortable: false, width: '150px' }
   ];
 
-  return [...baseHeaders, ...dynamicHeaders, ...endHeaders];
+  return [...baseHeaders, ...endHeaders];
 };
 
 // Get mobile card fields for member pages
@@ -118,6 +103,7 @@ const getMemberCardFields = (additionalFields = []) => {
 };
 
 export default function ActiveMembers() {
+  const navigate = useNavigate();
   const [members, setMembers] = useState([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -129,7 +115,6 @@ export default function ActiveMembers() {
   const [additionalFields, setAdditionalFields] = useState([]);
   const [tableHeaders, setTableHeaders] = useState([]);
   const [cardFields, setCardFields] = useState([]);
-  const [viewMember, setViewMember] = useState(null);
 
   // Close export dropdown when clicking outside
   useEffect(() => {
@@ -211,6 +196,41 @@ export default function ActiveMembers() {
     }
   };
 
+  // Disable member function
+  const handleDisableMember = async (member) => {
+    if (!window.confirm(`Are you sure you want to disable ${member.name}?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid');
+      
+      if (!token || !uid) {
+        toast.error('Please log in to perform this action');
+        return;
+      }
+
+      // Call API to disable member
+      const response = await api.post('/userDetail/disable_member', {
+        company_detail_id: member.company_detail_id || member.id
+      }, {
+        headers: getAuthHeaders()
+      });
+
+      if (response.data.success) {
+        toast.success(`${member.name} has been disabled successfully`);
+        // Refresh the members list
+        fetchActiveMembers();
+      } else {
+        toast.error(response.data.message || 'Failed to disable member');
+      }
+    } catch (error) {
+      console.error('Disable member error:', error);
+      toast.error(error.response?.data?.message || error.message || 'Failed to disable member');
+    }
+  };
+
   // Sort data
   const sortedData = [...members].sort((a, b) => {
     const aValue = a[sortField] || '';
@@ -251,7 +271,7 @@ export default function ActiveMembers() {
     }
     console.log("Copying data:", members);
     const data = members.map(member => 
-      `${member.name}, ${member.phone_num || member.contact}, ${member.email}, ${member.address}, ${member.company_name || member.company}, ${member.ad5 || member.valid_upto}`
+      `${member.name}, ${member.phone_num || member.contact}, ${member.email}, ${member.company_name || member.company}, ${member.ad5 || member.valid_upto}`
     ).join('\n');
     navigator.clipboard.writeText(data);
     toast.success("All members copied to clipboard!");
@@ -268,7 +288,6 @@ export default function ActiveMembers() {
         Name: member.name || '',
         Contact: member.phone_num || member.contact || '',
         Email: member.email || '',
-        Address: member.address || '',
         Company: member.company_name || member.company || '',
         'Valid Upto': member.ad5 || member.valid_upto || '',
         Status: 'Active'
@@ -292,13 +311,12 @@ export default function ActiveMembers() {
     }
     console.log("Exporting CSV with data:", members);
     const headers = [
-      "Name", "Contact", "Email", "Address", "Company", "Valid Upto", "Status"
+      "Name", "Contact", "Email", "Company", "Valid Upto", "Status"
     ];
     const rows = members.map(member => [
       member.name,
       member.phone_num || member.contact,
       member.email,
-      member.address,
       member.company_name || member.company,
       member.ad5 || member.valid_upto,
       'Active'
@@ -339,13 +357,12 @@ export default function ActiveMembers() {
       format: "a4"
     });
     const headers = [[
-      "Name", "Contact", "Email", "Address", "Company", "Valid Upto", "Status"
+      "Name", "Contact", "Email", "Company", "Valid Upto", "Status"
     ]];
     const rows = members.map(member => [
       member.name,
       member.phone_num || member.contact,
       member.email,
-      member.address,
       member.company_name || member.company,
       member.ad5 || member.valid_upto,
       'Active'
@@ -554,13 +571,13 @@ export default function ActiveMembers() {
                   {tableHeaders.map((header, index) => (
                     <th 
                       key={header.key}
-                      className={`p-3 font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap ${
+                      className={`p-3 font-semibold cursor-pointer hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors border-r border-indigo-200 dark:border-indigo-800 whitespace-nowrap text-center ${
                         header.sortable ? '' : 'cursor-default'
                       }`}
                       onClick={() => header.sortable && handleSort(header.key)}
                       style={{ minWidth: header.width, width: header.width }}
                   >
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-center gap-1">
                         {header.name}
                         {header.sortable && (
                           <div className="flex flex-col">
@@ -594,31 +611,24 @@ export default function ActiveMembers() {
                     </td>
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{member.phone_num || member.contact}</td>
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{member.email}</td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{member.address}</td>
-                    
-                    {/* Dynamic Additional Fields */}
-                    {additionalFields.map(field => (
-                      <td key={field.key} className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
-                        {member[field.backendKey] || member[field.key] || '-'}
-                      </td>
-                    ))}
-                    
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{member.company_name || member.company}</td>
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">{member.ad5 || member.valid_upto}</td>
-                    <td className="p-3 text-center border-r border-gray-200 dark:border-gray-700">
-                      <span className="px-2 py-1 bg-green-100 text-green-800 border border-green-200 rounded-full text-xs font-medium">
-                        Active
-                      </span>
-                    </td>
                     <td className="p-3 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                      <button
+                      <div className="flex items-center justify-center gap-2">
+                        <button
                           className="text-indigo-600 dark:text-indigo-300 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors"
                           title="View Member"
-                          onClick={() => setViewMember(member)}
+                          onClick={() => navigate(`/member/${member.id || member.company_detail_id}`)}
                         >
                           <FiEye size={16} />
-                      </button>
+                        </button>
+                        <button
+                          className="text-red-600 dark:text-red-400 hover:text-red-900 p-1 rounded-full hover:bg-red-100 dark:hover:bg-gray-700 transition-colors"
+                          title="Disable Member"
+                          onClick={() => handleDisableMember(member)}
+                        >
+                          <FiUserX size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -649,10 +659,17 @@ export default function ActiveMembers() {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors p-1"
-                      onClick={() => setViewMember(member)}
+                      onClick={() => navigate(`/member/${member.id || member.company_detail_id}`)}
                       title="View Member"
                     >
                       <FiEye size={16} />
+                    </button>
+                    <button
+                      className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-colors p-1"
+                      onClick={() => handleDisableMember(member)}
+                      title="Disable Member"
+                    >
+                      <FiUserX size={16} />
                     </button>
                   </div>
                 </div>
@@ -665,34 +682,10 @@ export default function ActiveMembers() {
                     <FiMail className="text-gray-400 flex-shrink-0" size={14} />
                     <span className="text-gray-700 dark:text-gray-300 truncate">{member.email}</span>
                   </div>
-                  {member.address && (
-                    <div className="flex items-start gap-2">
-                      <FiMapPin className="text-gray-400 flex-shrink-0 mt-0.5" size={14} />
-                      <span className="text-gray-700 dark:text-gray-300 text-xs line-clamp-2">
-                        {member.address}
-                      </span>
-                    </div>
-                  )}
                   <div className="flex items-center gap-2">
                     <FiHome className="text-gray-400 flex-shrink-0" size={14} />
                     <span className="text-gray-700 dark:text-gray-300 truncate">{member.company_name || member.company}</span>
                   </div>
-                  
-                  {/* Dynamic Additional Fields for Mobile */}
-                  {cardFields.map(field => {
-                    const fieldValue = member[field.backendKey] || member[field.key];
-                    if (fieldValue) {
-                      return (
-                        <div key={field.key} className="flex items-center gap-2">
-                          <FiUser className="text-gray-400 flex-shrink-0" size={14} />
-                          <span className="text-gray-700 dark:text-gray-300 text-xs">
-                            <span className="font-medium">{field.name}:</span> {fieldValue}
-                          </span>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })}
                   
                   <div className="flex items-center gap-2">
                     <FiCalendar className="text-gray-400 flex-shrink-0" size={14} />
@@ -749,90 +742,6 @@ export default function ActiveMembers() {
             </div>
           </div>
         </div>
-        
-        {/* Enhanced View Profile Modal */}
-        {viewMember && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl dark:shadow-2xl p-8 w-full max-w-2xl relative max-h-[90vh] overflow-y-auto">
-              <button
-              className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-rose-500 transition-colors"
-                onClick={() => setViewMember(null)}
-                title="Close"
-              >
-                <FiX size={24} />
-              </button>
-              
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xl">
-                  {viewMember.name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{viewMember.name}</h2>
-                  <p className="text-gray-600 dark:text-gray-400">Active Member Profile</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Contact Information</h3>
-                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                    <div><span className="font-medium text-gray-800 dark:text-gray-100">Phone:</span> {viewMember.phone_num || viewMember.contact}</div>
-                      <div><span className="font-medium text-gray-800 dark:text-gray-100">Email:</span> {viewMember.email}</div>
-                      <div><span className="font-medium text-gray-800 dark:text-gray-100">Address:</span> {viewMember.address}</div>
-                    </div>
-                  </div>
-                  
-                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Company Details</h3>
-                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                    <div><span className="font-medium text-gray-800 dark:text-gray-100">Company:</span> {viewMember.company_name || viewMember.company}</div>
-                    <div><span className="font-medium text-gray-800 dark:text-gray-100">Valid Until:</span> {viewMember.ad5 || viewMember.valid_upto}</div>
-                  </div>
-                </div>
-                    </div>
-              
-              <div className="space-y-4">
-                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                  <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Identity Documents</h3>
-                  <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                    <div><span className="font-medium text-gray-800 dark:text-gray-100">PAN Number:</span> {viewMember.ad1 || '-'}</div>
-                    <div><span className="font-medium text-gray-800 dark:text-gray-100">Aadhar Number:</span> {viewMember.ad2 || '-'}</div>
-                    <div><span className="font-medium text-gray-800 dark:text-gray-100">DL Number:</span> {viewMember.ad3 || '-'}</div>
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                  <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Personal Information</h3>
-                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                    <div><span className="font-medium text-gray-800 dark:text-gray-100">Date of Birth:</span> {viewMember.ad4 || '-'}</div>
-                    </div>
-                  </div>
-                  
-                {/* Dynamic Additional Fields */}
-                {additionalFields.length > 0 && (
-                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Additional Information</h3>
-                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                      {additionalFields.map(field => {
-                        const fieldValue = viewMember[field.backendKey] || viewMember[field.key];
-                        if (fieldValue) {
-                          return (
-                            <div key={field.key}>
-                              <span className="font-medium text-gray-800 dark:text-gray-100">{field.name}:</span> {fieldValue}
-                            </div>
-                          );
-                        }
-                        return null;
-                      })}
-                    </div>
-                  </div>
-                )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-    </DashboardLayout>
-  );
-} 
+      </DashboardLayout>
+    );
+  } 

@@ -11,6 +11,7 @@ import {
 } from "react-icons/fi";
 import api from "../api/axiosConfig";
 import { toast } from "react-toastify";
+import { getAuthHeaders } from "../utils/apiHeaders";
 
 const initialData = {
   companyField1: "",
@@ -47,13 +48,7 @@ export default function CompanyAdditionalFields() {
         "/groupSettings/get_company_additional_fields",
         {},
         {
-          headers: {
-            "Client-Service": "COHAPPRT",
-            "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
-            uid,
-            token,
-            rurl: "login.etribes.in",
-          },
+          headers: getAuthHeaders(),
         }
       );
 
@@ -171,14 +166,7 @@ export default function CompanyAdditionalFields() {
         "/GroupSettings/company_additional_fields_setting",
         payload,
         {
-          headers: {
-            "Client-Service": "COHAPPRT",
-            "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
-            uid,
-            token,
-            rurl: "login.etribes.in",
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(),
         }
       );
 
