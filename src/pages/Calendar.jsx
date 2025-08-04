@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { FiPlus, FiEdit2, FiTrash2, FiCalendar, FiMapPin, FiClock, FiUsers, FiX, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import { toast } from 'react-toastify';
-import DashboardLayout from '../components/Layout/DashboardLayout';
-import api from '../api/axiosConfig';
-import { getAuthHeaders } from '../utils/apiHeaders';
+import React, { useState, useEffect } from "react";
+import DashboardLayout from "../components/Layout/DashboardLayout";
+import { FiCalendar, FiPlus, FiClock, FiUsers, FiMapPin, FiSearch, FiFilter, FiRefreshCw, FiEye, FiEdit2, FiTrash2, FiX } from "react-icons/fi";
+import api from "../api/axiosConfig";
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import { toast } from 'react-toastify';
 
 // Helper functions
 function isSameDay(d1, d2) {
@@ -83,15 +82,13 @@ const SimpleCalendar = ({ selectedDate, onDateSelect, events }) => {
   };
 
   return (
-    <div className="h-full flex flex-col justify-center min-h-[400px] lg:min-h-0">
+    <div className="h-full flex flex-col justify-center">
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={() => navigateMonth(-1)}
           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
         >
-          <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
+          {/* ...icon unchanged */}
         </button>
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
           {monthNames[currentMonth]} {currentYear}
@@ -100,9 +97,7 @@ const SimpleCalendar = ({ selectedDate, onDateSelect, events }) => {
           onClick={() => navigateMonth(1)}
           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
         >
-          <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+          {/* ...icon unchanged */}
         </button>
       </div>
       <div className="grid grid-cols-7 gap-1 mb-2">
@@ -112,7 +107,7 @@ const SimpleCalendar = ({ selectedDate, onDateSelect, events }) => {
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1 dark:bg-gray-700 rounded-xl p-2 flex-1 border border-gray-200 dark:border-gray-600">
+      <div className="grid grid-cols-7 gap-1 dark:bg-gray-700 rounded-xl p-2 flex-1">
         {days.map((day, index) => {
           if (day === null) {
             return <div key={index} className="aspect-square"></div>;
@@ -124,7 +119,7 @@ const SimpleCalendar = ({ selectedDate, onDateSelect, events }) => {
           const dotColor = getEventDotColor(eventsForDay);
 
           // --- CORRECTED CLASSES ---
-          let cellClass = "aspect-square p-2 cursor-pointer rounded-xl transition-all duration-200 transform hover:scale-105 hover:shadow-lg relative group border border-gray-200 dark:border-gray-600 ";
+          let cellClass = "aspect-square p-2 cursor-pointer rounded-xl transition-all duration-200 transform hover:scale-105 hover:shadow-lg relative group ";
           // Selected date
           if (isSelected) {
             cellClass +=
@@ -248,7 +243,14 @@ export default function Calendar() {
       }
       await fetch('/api/event/add', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'etribes.ezcrm.site',
+          'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || ''),
+        },
         credentials: 'include',
         body: formData,
       });
@@ -368,7 +370,11 @@ export default function Calendar() {
       await fetch('/api/event/edit', {
         method: 'POST',
         headers: {
-          ...getAuthHeaders(),
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'etribes.ezcrm.site',
           'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || ''),
         },
         credentials: 'include',
@@ -383,7 +389,14 @@ export default function Calendar() {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
         const response = await api.post('/event/index', {}, {
-          headers: getAuthHeaders()
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'etribes.ezcrm.site',
+            'Content-Type': 'application/json',
+          }
         });
         let backendEvents = [];
         if (Array.isArray(response.data?.data?.event)) {
@@ -461,7 +474,15 @@ export default function Calendar() {
       const uid = localStorage.getItem('uid');
       await fetch('/api/event/remove', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'etribes.ezcrm.site',
+          'Content-Type': 'text/plain',
+          'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || ''),
+        },
         credentials: 'include',
         body: JSON.stringify({ id: eventId }),
       });
@@ -483,7 +504,14 @@ export default function Calendar() {
         const uid = localStorage.getItem('uid');
         // Upcoming events count
         const futureRes = await api.post('/event/future', {}, {
-          headers: getAuthHeaders()
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'etribes.ezcrm.site',
+            'Content-Type': 'application/json',
+          }
         });
         let futureEvents = [];
         if (Array.isArray(futureRes.data?.data?.event)) {
@@ -503,7 +531,14 @@ export default function Calendar() {
 
         // Past events count
         const pastRes = await api.post('/event/past', {}, {
-          headers: getAuthHeaders()
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'etribes.ezcrm.site',
+            'Content-Type': 'application/json',
+          }
         });
         let pastEvents = [];
         if (Array.isArray(pastRes.data?.data?.event)) {
@@ -563,7 +598,14 @@ export default function Calendar() {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
         const response = await api.post('/event/index', {}, {
-          headers: getAuthHeaders()
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'etribes.ezcrm.site',
+            'Content-Type': 'application/json',
+          }
         });
         let backendEvents = [];
         if (Array.isArray(response.data?.data?.event)) {
@@ -651,7 +693,7 @@ export default function Calendar() {
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Header Controls */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <FiCalendar className="text-indigo-600 text-xl" />
                 <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">Calendar Management</span>
@@ -663,31 +705,31 @@ export default function Calendar() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold">{events.filter(ev => isSameDay(new Date(ev.date), new Date())).length} Today</span>
-                <span className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold">{upcomingCount} Upcoming</span>
-                <span className="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold">{pastCount} Past</span>
-                <span className="text-gray-700 dark:text-gray-200 font-semibold text-xs sm:text-sm">{time.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+            <div className="flex gap-2 items-center">
+              <div className="flex items-center gap-2">
+                <span className="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 px-3 py-1 rounded-full text-sm font-semibold">{events.filter(ev => isSameDay(new Date(ev.date), new Date())).length} Today</span>
+                <span className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-semibold">{upcomingCount} Upcoming</span>
+                <span className="bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 px-3 py-1 rounded-full text-sm font-semibold">{pastCount} Past</span>
+                <span className="text-gray-700 dark:text-gray-200 font-semibold ml-2">{time.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
                 <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">{time.toLocaleTimeString([], { hour12: false })}</span>
               </div>
               {!showAddEventForm && (
                 <button
-                  className="flex items-center gap-2 bg-green-600 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-green-700 transition flex-shrink-0"
+                  className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
                   onClick={handleShowAddEventForm}
                 >
-                  <FiPlus size={14} />
-                  <span>Add Event</span>
+                  <FiPlus />
+                  Add Event
                 </button>
               )}
             </div>
           </div>
 
           {/* Main Content: Two Columns */}
-          <div className="flex flex-col lg:flex-row gap-6 p-6 h-auto lg:h-[800px]">
+          <div className="flex flex-col xl:flex-row gap-6 p-6 h-[800px]">
             {/* Left: Calendar Card */}
-            <div className="flex-1 min-w-0 h-auto lg:h-full flex flex-col">
-                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 relative h-auto lg:h-full flex flex-col">
+            <div className="flex-1 min-w-0 h-full flex flex-col">
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 relative h-full flex flex-col">
                  <div className="p-4 flex-1 flex flex-col">
                   <SimpleCalendar 
                     selectedDate={selectedDate}
@@ -698,8 +740,8 @@ export default function Calendar() {
               </div>
             </div>
             
-            {/* Right: Event Details Card - Desktop Only */}
-            <div className="hidden lg:block w-full lg:w-96 flex-shrink-0 h-full flex-col">
+            {/* Right: Event Details Card */}
+            <div className="w-full xl:w-96 flex-shrink-0 h-full flex flex-col">
               <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 h-full flex flex-col">
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
                   <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
@@ -778,92 +820,12 @@ export default function Calendar() {
               </div>
             </div>
           </div>
-
-          {/* Mobile Events Cards View */}
-          <div className="lg:hidden p-6">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700">
-              <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                  <FiEye className="text-indigo-600" />
-                  Events for {selectedDate.toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
-                </h2>
-              </div>
-              
-              <div className="p-4 space-y-3">
-                {eventsForDate.length === 0 ? (
-                  <div className="text-center py-8">
-                    <FiCalendar className="text-gray-300 dark:text-gray-600 text-3xl mx-auto mb-3" />
-                    <p className="text-gray-400 dark:text-gray-300 text-sm">No events scheduled for this date</p>
-                  </div>
-                ) : (
-                  eventsForDate.map((ev, idx) => (
-                    <div key={idx} className={`rounded-xl p-4 shadow-sm border transition-all hover:shadow-md ${
-                      ev.type === 'today' 
-                        ? 'bg-green-50 dark:bg-green-900/40 border-green-200 dark:border-green-700' 
-                        : ev.type === 'upcoming' 
-                          ? 'bg-blue-50 dark:bg-blue-900/40 border-blue-200 dark:border-blue-700' 
-                          : 'bg-gray-50 dark:bg-gray-800/40 border-gray-200 dark:border-gray-700'
-                    }`}>
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <div className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                            ev.type === 'today' 
-                              ? 'bg-green-500' 
-                              : ev.type === 'upcoming' 
-                                ? 'bg-blue-500' 
-                                : 'bg-gray-500'
-                          }`}></div>
-                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">{ev.name}</h3>
-                        </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
-                          ev.type === 'today' 
-                            ? 'bg-green-200 dark:bg-green-800 text-green-700 dark:text-green-200' 
-                            : ev.type === 'upcoming' 
-                              ? 'bg-blue-200 dark:bg-blue-800 text-blue-700 dark:text-blue-200' 
-                              : 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200'
-                        }`}>
-                          {ev.type.charAt(0).toUpperCase() + ev.type.slice(1)}
-                        </span>
-                      </div>
-                      
-                      <div className="space-y-2 text-xs text-gray-600 dark:text-gray-300">
-                        <div className="flex items-center gap-2">
-                          <FiCalendar className="text-gray-400" size={12} />
-                          <span>{ev.date.toLocaleDateString()}</span>
-                        </div>
-                        {stripHtml(ev.description) && (
-                          <div className="text-xs">
-                            <span className="font-medium text-gray-800 dark:text-gray-100">Agenda:</span> 
-                            <span className="ml-1">{stripHtml(ev.description).substring(0, 100)}{stripHtml(ev.description).length > 100 ? '...' : ''}</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                        <button className="text-blue-600 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-400 transition-colors" title="Edit Event" onClick={() => openEditEventModal(ev)} disabled={editLoading}>
-                          <FiEdit2 size={14} />
-                        </button>
-                        <button className="text-red-600 dark:text-red-300 hover:text-red-900 dark:hover:text-red-400 transition-colors" title="Delete Event" onClick={() => handleDeleteEvent(ev.id)} disabled={deleteLoading}>
-                          <FiTrash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Add Event Modal */}
         {showAddEventForm && (
-          <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-8 w-full max-w-2xl relative max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-2xl mx-4 relative max-h-[90vh] overflow-y-auto">
               <button
                 className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
                 onClick={handleHideAddEventForm}
@@ -1005,8 +967,8 @@ export default function Calendar() {
 
         {/* Edit Event Modal */}
         {showEditEventModal && (
-          <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 sm:p-8 w-full max-w-2xl relative max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 w-full max-w-2xl mx-4 relative max-h-[90vh] overflow-y-auto">
               <button
                 className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
                 onClick={closeEditEventModal}

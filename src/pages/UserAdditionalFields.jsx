@@ -40,57 +40,58 @@ export default function UserAdditionalFields() {
         headers: getAuthHeaders()
       });
 
-      console.log('User Additional Fields Response:', response.data);
-      
-      // Map backend data to frontend format - handle nested structure
       const backendData = response.data?.data || response.data || {};
-      console.log('Backend data received:', backendData);
-      console.log('All available fields:', Object.keys(backendData));
-      console.log('Response status:', response.data?.status);
       
-      // Map backend data to frontend format based on actual API response
-      const mappedData = {
-        additionalField1: backendData.ad1 || "",
-        additionalField2: backendData.ad2 || "",
-        additionalField3: backendData.ad3 || "",
-        additionalField4: backendData.ad4 || "",
-        additionalField5: backendData.ad5 || "",
-        additionalField6: backendData.ad6 || "",
-        additionalField7: backendData.ad7 || "",
-        additionalField8: backendData.ad8 || "",
-        additionalField9: backendData.ad9 || "",
-        additionalField10: backendData.ad10 || "",
-      };
+      let mappedData = {};
       
-      console.log('Backend ad1 value:', backendData.ad1);
-      console.log('Mapped additionalField1 value:', mappedData.additionalField1);
-
-      console.log('Mapped data:', mappedData);
-      
-      // Check if backend data is an array (different structure)
       if (Array.isArray(backendData)) {
-        console.log('Backend data is an array, processing differently');
-        const arrayMappedData = { ...initialData };
-        backendData.forEach((field, index) => {
-          if (index < 10) {
-            arrayMappedData[`additionalField${index + 1}`] = field.name || field.label || field.value || field || initialData[`additionalField${index + 1}`];
-          }
-        });
-        setData(arrayMappedData);
-        setForm(arrayMappedData);
-      } else if (!backendData || Object.keys(backendData).length === 0) {
-        console.log('No data from API, using default data');
-        setData(initialData);
-        setForm(initialData);
+        // Handle array response
+        mappedData = {
+          additionalField1: backendData[0] || '',
+          additionalField2: backendData[1] || '',
+          additionalField3: backendData[2] || '',
+          additionalField4: backendData[3] || '',
+          additionalField5: backendData[4] || '',
+          additionalField6: backendData[5] || '',
+          additionalField7: backendData[6] || '',
+          additionalField8: backendData[7] || '',
+          additionalField9: backendData[8] || '',
+          additionalField10: backendData[9] || '',
+        };
+      } else if (backendData && Object.keys(backendData).length > 0) {
+        // Handle object response
+        mappedData = {
+          additionalField1: backendData.ad1 || '',
+          additionalField2: backendData.ad2 || '',
+          additionalField3: backendData.ad3 || '',
+          additionalField4: backendData.ad4 || '',
+          additionalField5: backendData.ad5 || '',
+          additionalField6: backendData.ad6 || '',
+          additionalField7: backendData.ad7 || '',
+          additionalField8: backendData.ad8 || '',
+          additionalField9: backendData.ad9 || '',
+          additionalField10: backendData.ad10 || '',
+        };
       } else {
-        console.log('Setting data to state:', mappedData);
-        console.log('Current data state before update:', data);
-        setData(mappedData);
-        setForm(mappedData);
-        console.log('Data state should be updated to:', mappedData);
+        // No data from API, use default data
+        mappedData = {
+          additionalField1: '',
+          additionalField2: '',
+          additionalField3: '',
+          additionalField4: '',
+          additionalField5: '',
+          additionalField6: '',
+          additionalField7: '',
+          additionalField8: '',
+          additionalField9: '',
+          additionalField10: '',
+        };
       }
+      
+      setData(mappedData);
+      setLoading(false);
     } catch (err) {
-      console.error('Fetch user additional fields error:', err);
+      console.error('Failed to fetch user additional fields:', err);
       const errorMessage = err.message || 'Failed to fetch user additional fields';
       toast.error(errorMessage);
       

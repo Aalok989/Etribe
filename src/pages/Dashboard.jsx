@@ -14,10 +14,12 @@ import api from "../api/axiosConfig";
 function UpcomingEventsCard() {
   const navigate = useNavigate();
   const [upcomingCount, setUpcomingCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUpcomingCount = async () => {
       try {
+        setLoading(true);
         const response = await api.post('/event/future', {}, {
           headers: getAuthHeaders()
         });
@@ -38,7 +40,10 @@ function UpcomingEventsCard() {
         }
         setUpcomingCount(backendEvents.length);
       } catch (err) {
+        console.error('Error fetching upcoming events:', err);
         setUpcomingCount(0);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -58,7 +63,9 @@ function UpcomingEventsCard() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
         <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Upcoming Events</div>
-        <div className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 drop-shadow">{upcomingCount}</div>
+        <div className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 drop-shadow">
+          {loading ? '...' : upcomingCount}
+        </div>
       </div>
     </div>
   );

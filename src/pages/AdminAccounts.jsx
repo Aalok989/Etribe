@@ -186,11 +186,6 @@ export default function AdminAccounts() {
       fetchCountries();
       isCountriesFetched.current = true;
     }
-    const interval = setInterval(() => {
-      fetchRoles();
-      fetchSystemUsers();
-    }, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   // Sorting function

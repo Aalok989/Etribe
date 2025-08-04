@@ -70,7 +70,7 @@ export default function AnalyticsGraph() {
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
-            'pending-approval': 0,
+    'pending-approval': 0,
     expired: 0
   });
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -82,8 +82,6 @@ export default function AnalyticsGraph() {
     try {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid') || '1';
-      
-      console.log('Fetching analytics data...');
       
       // Fetch all member data
       const [activeRes, inactiveRes, expiredRes] = await Promise.all([
@@ -105,13 +103,12 @@ export default function AnalyticsGraph() {
         expired: expiredMembers.length
       });
 
-      // Group by month using month index for accurate mapping, with debug logging
+      // Group by month using month index for accurate mapping
       const groupByMonth = (members) => {
         const monthMap = {};
         members.forEach(m => {
           const date = m.lct ? new Date(m.lct) : new Date();
           const monthIdx = date.getMonth(); // 0 = Jan, 6 = July
-          console.log('Member:', m, 'Parsed date:', date, 'Month index:', monthIdx, 'Month:', months[monthIdx]);
           if (!monthMap[monthIdx]) monthMap[monthIdx] = 0;
           monthMap[monthIdx]++;
         });
@@ -399,7 +396,7 @@ export default function AnalyticsGraph() {
 
       {/* Chart Container */}
       <div className="flex-1 min-h-0 h-0 flex items-center justify-center" style={{ outline: 'none', userSelect: 'none' }}>
-        <style jsx>{`
+        <style>{`
           .recharts-surface {
             outline: none !important;
             border: none !important;

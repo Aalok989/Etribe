@@ -107,7 +107,7 @@ export default function Resume() {
       //     "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
       //     uid,
       //     token,
-      //     rurl: "login.etribes.in",
+      //     rurl: "etribes.ezcrm.site",
       //     "Content-Type": "application/json",
       //   },
       // });
@@ -336,7 +336,7 @@ export default function Resume() {
       //     "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
       //     uid: localStorage.getItem("uid"),
       //     token: localStorage.getItem("token"),
-      //     rurl: "login.etribes.in",
+      //     rurl: "etribes.ezcrm.site",
       //     "Content-Type": "multipart/form-data",
       //   },
       // });
@@ -392,7 +392,6 @@ export default function Resume() {
 
   const handleViewResume = (resume) => {
     // Implement view resume functionality
-    console.log("View resume:", resume);
     toast.info("View resume functionality to be implemented");
   };
 
@@ -406,7 +405,7 @@ export default function Resume() {
         //     "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
         //     uid: localStorage.getItem("uid"),
         //     token: localStorage.getItem("token"),
-        //     rurl: "login.etribes.in",
+        //     rurl: "etribes.ezcrm.site",
         //     "Content-Type": "application/json",
         //   },
         // });

@@ -187,8 +187,6 @@ export default function CompanyAdditionalFields() {
 
   useEffect(() => {
     fetchCompanyAdditionalFields();
-    const interval = setInterval(fetchCompanyAdditionalFields, 60000);
-    return () => clearInterval(interval);
   }, []);
 
   const handleEdit = () => {

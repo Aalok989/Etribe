@@ -33,15 +33,11 @@ const fetchAdditionalFields = async () => {
       headers: getAuthHeaders()
     });
 
-    console.log('Additional Fields Response:', response.data);
-    
-    // Map backend data to frontend format
     const backendData = response.data?.data || response.data || {};
     
     let mappedFields = [];
     
     if (Array.isArray(backendData)) {
-      // Handle array response
       mappedFields = backendData
         .filter(field => field && (field.name || field.label || field.value || field))
         .map((field, index) => ({
@@ -51,7 +47,6 @@ const fetchAdditionalFields = async () => {
           backendKey: `ad${index + 1}` || `field${index + 1}`
         }));
     } else {
-      // Handle object response
       mappedFields = Object.keys(backendData)
         .filter(key => backendData[key] && backendData[key].trim() !== '')
         .map((key, index) => ({
@@ -62,14 +57,9 @@ const fetchAdditionalFields = async () => {
         }));
     }
 
-    // Cache the result
-    additionalFieldsCache = mappedFields;
-    cacheTimestamp = Date.now();
-    
     return mappedFields;
   } catch (err) {
     console.error('Fetch additional fields error:', err);
-    // Return empty array on error
     return [];
   }
 };

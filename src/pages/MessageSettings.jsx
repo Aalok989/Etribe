@@ -159,10 +159,6 @@ export default function MessageSettings() {
   // Load message settings on component mount
   useEffect(() => {
     fetchMessageSettings();
-    
-    // Set up polling every 60 seconds to keep data fresh
-    const interval = setInterval(fetchMessageSettings, 60000);
-    return () => clearInterval(interval);
   }, []);
 
   const handleEdit = () => {

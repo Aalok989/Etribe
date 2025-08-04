@@ -3,6 +3,7 @@ import { FiSun, FiMoon, FiUser, FiBell, FiClock, FiCalendar, FiCheckCircle } fro
 import { Link } from "react-router-dom";
 import api from "../../api/axiosConfig";
 import { getAuthHeaders } from "../../utils/apiHeaders";
+import { useGroupData } from "../../context/GroupDataContext";
 
 export default function TopBar() {
   const [profile, setProfile] = useState({ name: "", email: "" });
@@ -13,7 +14,9 @@ export default function TopBar() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const notificationsRef = useRef(null);
-  const [groupLogo, setGroupLogo] = useState("");
+  
+  // Use GroupDataContext for real-time logo updates
+  const { groupData } = useGroupData();
 
   useEffect(() => {
     if (theme === "dark") {
@@ -129,38 +132,16 @@ export default function TopBar() {
     });
   };
 
+  // Use groupData from context for profile info
   useEffect(() => {
-    let isMounted = true;
-    const fetchProfile = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = localStorage.getItem('token');
-        const uid = localStorage.getItem('uid');
-        if (!token) {
-          setError('Please log in');
-          return;
-        }
-        const response = await api.post('/groupSettings', {}, {
-          headers: getAuthHeaders()
-        });
-        const backendData = response.data?.data || response.data || {};
-        if (isMounted) {
-          setProfile({
-            name: backendData.name || "Admin",
-            email: backendData.email || "admin@company.com"
-          });
-          setGroupLogo(backendData.logo ? (backendData.logo.startsWith('http') ? backendData.logo : `https://api.etribes.in/${backendData.logo}`) : "");
-        }
-      } catch (err) {
-        if (isMounted) setError('Failed to fetch profile');
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    fetchProfile();
-    return () => { isMounted = false; };
-  }, []);
+    if (groupData) {
+      setProfile({
+        name: groupData.name || "Admin",
+        email: groupData.email || "admin@company.com"
+      });
+      setLoading(false);
+    }
+  }, [groupData]);
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
@@ -248,8 +229,8 @@ export default function TopBar() {
         <div className="h-6 sm:h-8 w-px bg-gray-200 dark:bg-gray-700"></div>
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="flex-shrink-0 flex items-center justify-center">
-            {groupLogo ? (
-              <img src={groupLogo} alt="Group Logo" className="h-6 w-6 sm:h-8 sm:w-8 rounded-full object-cover border border-gray-300 dark:border-gray-700 shadow-sm" />
+            {groupData?.logo ? (
+              <img src={groupData.logo} alt="Group Logo" className="h-6 w-6 sm:h-8 sm:w-8 rounded-full object-cover border border-gray-300 dark:border-gray-700 shadow-sm" />
             ) : (
               <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center border border-gray-300 dark:border-gray-700 shadow-sm">
                 <FiUser className="text-blue-500 dark:text-blue-300" size={14} />

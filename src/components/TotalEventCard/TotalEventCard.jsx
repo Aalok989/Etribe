@@ -6,6 +6,7 @@ import { getAuthHeaders } from "../../utils/apiHeaders";
 
 export default function TotalEventCard() {
   const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -14,28 +15,57 @@ export default function TotalEventCard() {
 
   const fetchTotalCount = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid');
-      const response = await api.post('/event/all', {}, {
-        headers: getAuthHeaders()
-      });
-      let backendEvents = [];
-      if (Array.isArray(response.data?.data?.event)) {
-        backendEvents = response.data.data.event;
-      } else if (Array.isArray(response.data?.data?.events)) {
-        backendEvents = response.data.data.events;
-      } else if (Array.isArray(response.data?.data)) {
-        backendEvents = response.data.data;
-      } else if (Array.isArray(response.data)) {
-        backendEvents = response.data;
-      } else if (response.data?.data && typeof response.data.data === 'object') {
-        backendEvents = Object.values(response.data.data);
-      } else {
-        backendEvents = [];
+      
+      // Try to get total count by combining future and past events
+      const [futureResponse, pastResponse] = await Promise.all([
+        api.post('/event/future', {}, {
+          headers: getAuthHeaders()
+        }),
+        api.post('/event/past', {}, {
+          headers: getAuthHeaders()
+        })
+      ]);
+
+      let futureEvents = [];
+      let pastEvents = [];
+
+      // Parse future events
+      if (Array.isArray(futureResponse.data?.data?.event)) {
+        futureEvents = futureResponse.data.data.event;
+      } else if (Array.isArray(futureResponse.data?.data?.events)) {
+        futureEvents = futureResponse.data.data.events;
+      } else if (Array.isArray(futureResponse.data?.data)) {
+        futureEvents = futureResponse.data.data;
+      } else if (Array.isArray(futureResponse.data)) {
+        futureEvents = futureResponse.data;
+      } else if (futureResponse.data?.data && typeof futureResponse.data.data === 'object') {
+        futureEvents = Object.values(futureResponse.data.data);
       }
-      setTotalCount(backendEvents.length);
+
+      // Parse past events
+      if (Array.isArray(pastResponse.data?.data?.event)) {
+        pastEvents = pastResponse.data.data.event;
+      } else if (Array.isArray(pastResponse.data?.data?.events)) {
+        pastEvents = pastResponse.data.data.events;
+      } else if (Array.isArray(pastResponse.data?.data)) {
+        pastEvents = pastResponse.data.data;
+      } else if (Array.isArray(pastResponse.data)) {
+        pastEvents = pastResponse.data;
+      } else if (pastResponse.data?.data && typeof pastResponse.data.data === 'object') {
+        pastEvents = Object.values(pastResponse.data.data);
+      }
+
+      // Combine both arrays for total count
+      const totalEvents = [...futureEvents, ...pastEvents];
+      setTotalCount(totalEvents.length);
     } catch (err) {
+      console.error('Error fetching total events:', err);
       setTotalCount(0);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -50,7 +80,9 @@ export default function TotalEventCard() {
       <div className="relative z-10 flex flex-col items-center justify-center h-full w-full">
         <FiCalendar size={32} className="text-blue-500 opacity-80 mb-1" />
         <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Total Event</div>
-        <div className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 drop-shadow">{totalCount}</div>
+        <div className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 drop-shadow">
+          {loading ? '...' : totalCount}
+        </div>
       </div>
     </div>
   );

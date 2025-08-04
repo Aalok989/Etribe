@@ -126,28 +126,21 @@ export default function UserRoles() {
         name: roleData.role
       };
 
-      console.log('Updating user role:', payload);
-      
-      const response = await api.post('/userRole/update_role/', payload, {
+      const response = await api.post('/userRole/update_role', payload, {
         headers: getAuthHeaders()
       });
 
-      console.log('Update role response:', response.data);
-      
-      if (response.data?.status === 'success' || response.data?.message?.includes('success')) {
-        // Refresh the roles list
-        await fetchRoles();
-        toast.success("Role updated successfully!");
-        setTimeout(() => toast.dismiss(), 3000);
-        return { success: true };
+      if (response.data?.success || response.data?.status === 'success') {
+        toast.success('Role updated successfully!');
+        fetchRoles();
+        setEditMode(false);
+        setEditData({});
       } else {
-        throw new Error(response.data?.message || 'Failed to update role');
+        toast.error('Failed to update role');
       }
     } catch (err) {
       console.error('Update role error:', err);
-      toast.error(err.message);
-    } finally {
-      setSubmitting(false);
+      toast.error('Failed to update role');
     }
   };
 
@@ -166,14 +159,10 @@ export default function UserRoles() {
         role_id: roleId
       };
 
-      console.log('Deleting user role:', payload);
-      
       const response = await api.post('/userRole/delete', payload, {
         headers: getAuthHeaders()
       });
 
-      console.log('Delete role response:', response.data);
-      
       if (response.data?.status === 'success' || response.data?.message?.includes('success')) {
         // Refresh the roles list
         await fetchRoles();
@@ -194,10 +183,6 @@ export default function UserRoles() {
   // Load roles on component mount
   useEffect(() => {
     fetchRoles();
-    
-    // Set up polling every 30 seconds to keep data fresh
-    const interval = setInterval(fetchRoles, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   // Sorting function

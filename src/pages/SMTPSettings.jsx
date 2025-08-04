@@ -199,10 +199,6 @@ export default function SMTPSettings() {
   // Load SMTP settings on component mount
   useEffect(() => {
     fetchSMTP();
-    
-    // Set up polling every 60 seconds to keep data fresh
-    const interval = setInterval(fetchSMTP, 60000);
-    return () => clearInterval(interval);
   }, []);
 
   const handleEdit = () => {

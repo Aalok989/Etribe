@@ -46,9 +46,6 @@ export default function MembershipPlans() {
         headers: getAuthHeaders()
       });
 
-      console.log('Membership Plans Response:', response.data);
-      
-      // Map backend fields to frontend fields
       const plansData = Array.isArray(response.data?.data) ? response.data.data : [];
       const mappedPlans = plansData.map(plan => ({
         id: plan.id || plan.plan_id || Math.random().toString(36).substr(2, 9),
@@ -293,7 +290,6 @@ export default function MembershipPlans() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Save Plan button clicked', form);
     try {
       // Attach cURL logic directly here for edit
       if (editMode && editingPlan) {

@@ -17,6 +17,7 @@ import {
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import api from "../../api/axiosConfig";
 import { getAuthHeaders } from "../../utils/apiHeaders";
+import { useGroupData } from "../../context/GroupDataContext";
 
 // Menu structure
 const menuItems = [
@@ -121,36 +122,9 @@ export default function Sidebar({ className = "", collapsed, setCollapsed }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const [signatureUrl, setSignatureUrl] = useState("");
-
-  // Fetch logo URL
-  useEffect(() => {
-    const fetchSignature = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const uid = localStorage.getItem("uid");
-        if (!token) return;
-        const response = await api.post(
-          "/groupSettings",
-          {},
-          {
-                      headers: getAuthHeaders(),
-          }
-        );
-        const backendData = response.data?.data || response.data || {};
-        if (backendData.signature) {
-          setSignatureUrl(
-            backendData.signature.startsWith("http")
-              ? backendData.signature
-              : `https://api.etribes.in/${backendData.signature}`
-          );
-        }
-      } catch {
-        setSignatureUrl("");
-      }
-    };
-    fetchSignature();
-  }, []);
+  
+  // Use GroupDataContext for real-time signature updates
+  const { groupData } = useGroupData();
 
   // Open the relevant dropdown if inside a nested path
   useEffect(() => {
@@ -202,28 +176,28 @@ export default function Sidebar({ className = "", collapsed, setCollapsed }) {
           collapsed ? "w-20" : "w-72"
         } hidden lg:flex ${className}`}
       >
-      {/* Top bar with logo */}
-      <div className="flex items-center gap-3 p-4 border-b border-blue-100 dark:border-gray-700 flex-shrink-0">
-        {signatureUrl ? (
-          <img
-            src={signatureUrl}
-            alt="Signature Logo"
-            className={`object-contain ${collapsed ? "w-16 h-6" : "w-32 h-8"}`}
-          />
-        ) : (
-          <div className="flex items-center gap-3">
+              {/* Top bar with logo */}
+        <div className="flex items-center gap-3 p-4 border-b border-blue-100 dark:border-gray-700 flex-shrink-0">
+          {groupData?.signature ? (
             <img
-              src="/src/assets/Etribe-logo.jpg"
-              alt="Etribe Logo"
-              className={`rounded-lg ${collapsed ? "w-8 h-8" : "w-8 h-8"}`}
+              src={groupData.signature}
+              alt="Signature Logo"
+              className={`object-contain ${collapsed ? "w-16 h-6" : "w-32 h-8"}`}
             />
-            {!collapsed && (
-              <span className="text-lg font-bold text-gray-800 dark:text-white">
-                Etribe
-              </span>
-            )}
-          </div>
-        )}
+          ) : (
+            <div className="flex items-center gap-3">
+              <img
+                src="/src/assets/Etribe-logo.jpg"
+                alt="Etribe Logo"
+                className={`rounded-lg ${collapsed ? "w-8 h-8" : "w-8 h-8"}`}
+              />
+              {!collapsed && (
+                <span className="text-lg font-bold text-gray-800 dark:text-white">
+                  Etribe
+                </span>
+              )}
+            </div>
+          )}
         <button
           className="ml-auto p-2 bg-blue-600 dark:bg-gray-700 text-white rounded-lg shadow-lg hover:bg-blue-700 dark:hover:bg-gray-600 transition-colors"
           onClick={() => setCollapsed((prev) => !prev)}

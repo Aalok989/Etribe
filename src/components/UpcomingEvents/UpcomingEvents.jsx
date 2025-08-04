@@ -38,7 +38,7 @@ export default function UpcomingEvents() {
           backendEvents = [];
         }
 
-        const BASE_URL = "https://api.etribes.in";
+        const BASE_URL = "https://api.etribes.ezcrm.site";
         const mappedEvents = backendEvents.map((e, idx) => {
           const eventDate = e.event_date && e.event_time
             ? new Date(`${e.event_date}T${e.event_time}`)
@@ -74,9 +74,7 @@ export default function UpcomingEvents() {
     };
 
     fetchUpcomingEvents();
-    const interval = setInterval(fetchUpcomingEvents, 30000); // Poll every 30 seconds
-    return () => clearInterval(interval);
-  }, [selected]);
+  }, []);
 
   // If no events, show a message
   if (loading) {

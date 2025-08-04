@@ -49,15 +49,9 @@ export default function RoleManagement() {
       }
 
       const response = await api.post('/userRole', {}, {
-        headers: {
-          'token': token,
-          'uid': uid,
-        }
+        headers: getAuthHeaders()
       });
 
-      console.log('Role Management - Roles Response:', response.data);
-      
-      // Handle different response formats
       let rolesData = [];
       if (Array.isArray(response.data)) {
         rolesData = response.data;
@@ -65,35 +59,15 @@ export default function RoleManagement() {
         rolesData = response.data.data;
       } else if (response.data?.roles && Array.isArray(response.data.roles)) {
         rolesData = response.data.roles;
-      } else {
-        // If no roles found, use empty array
-        rolesData = [];
+      } else if (response.data?.status && response.data.data) {
+        rolesData = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
       }
 
-      // Transform data to match expected format
-      const transformedRoles = rolesData.map((role, index) => ({
-        id: role.id || role.role_id || index + 1,
-        role: role.role || role.role_name || role.name || `Role ${index + 1}`,
-        ...role
-      }));
-
-      setRoles(transformedRoles);
-      
-      // Don't auto-select first role - let user choose
-      // if (transformedRoles.length > 0 && !selectedRole) {
-      //   setSelectedRole(transformedRoles[0].role);
-      // }
+      setRoles(rolesData);
+      setLoading(false);
     } catch (err) {
-      console.error('Fetch roles error:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch roles';
-      toast.error(errorMessage);
-      
-      if (errorMessage.toLowerCase().includes('token') || errorMessage.toLowerCase().includes('unauthorized')) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('uid');
-        window.location.href = '/login';
-      }
-    } finally {
+      console.error('Failed to fetch roles:', err);
+      setError('Failed to fetch roles');
       setLoading(false);
     }
   };
@@ -107,13 +81,9 @@ export default function RoleManagement() {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid') || '1';
       
-      console.log('Fetching permissions for role:', roleName);
-      
       // Find the role ID for the selected role
       const selectedRoleObj = roles.find(role => role.role === roleName);
       const roleId = selectedRoleObj?.id || '1';
-      
-      console.log('Using role ID:', roleId);
       
       const response = await api.post('/userRole/get_modules', {
         role_id: roleId.toString()
@@ -121,23 +91,17 @@ export default function RoleManagement() {
         headers: getAuthHeaders()
       });
 
-      console.log('Role Permissions Response:', response.data);
-      
       // Handle the current API response format with actual permission states
       let permissionsData = [];
       if (response.data?.status === true && Array.isArray(response.data?.data)) {
         permissionsData = response.data.data;
-        console.log('Found permissions data with actual states:', permissionsData);
       } else if (Array.isArray(response.data)) {
         permissionsData = response.data;
       } else if (response.data?.data && Array.isArray(response.data.data)) {
         permissionsData = response.data.data;
       } else {
-        console.log('No permissions data found, using default (all disabled)');
         permissionsData = [];
       }
-
-      console.log('Processed permissions data:', permissionsData);
 
       // Transform permissions data to match our modules
       const transformedPermissions = modules.map(module => {
@@ -149,8 +113,6 @@ export default function RoleManagement() {
           p.module_name === module
         );
         
-        console.log(`Module: ${module}, Found permission:`, foundPermission);
-        
         // If permission found, use actual values; otherwise default to false
         return {
           module: module,
@@ -161,12 +123,10 @@ export default function RoleManagement() {
         };
       });
 
-      console.log('Final transformed permissions:', transformedPermissions);
       setPermissions(transformedPermissions);
     } catch (err) {
       console.error('Fetch permissions error:', err);
       // If permissions fetch fails, use default permissions (all false)
-      console.log('Using default permissions due to error');
       setPermissions(modules.map(module => ({
         module: module,
         view: false,
@@ -189,8 +149,6 @@ export default function RoleManagement() {
       // Find the role ID for the selected role
       const selectedRoleObj = roles.find(role => role.role === roleName);
       const roleId = selectedRoleObj?.id || '1';
-      
-      console.log('Saving permissions for role ID:', roleId);
       
       // Transform permissions data to match API format
       // Convert permissions to module IDs based on their position in the modules array
@@ -215,14 +173,10 @@ export default function RoleManagement() {
         delete: deleteModules
       };
       
-      console.log('Saving permissions payload:', payload);
-      
       const response = await api.post('/userRole/assign_roles', payload, {
         headers: getAuthHeaders()
       });
 
-      console.log('Save permissions response:', response.data);
-      
       if (response.data?.success || response.data?.status === 'success') {
         toast.success('Permissions saved successfully!');
         return { success: true };
@@ -241,10 +195,6 @@ export default function RoleManagement() {
   // Load roles on component mount
   useEffect(() => {
     fetchRoles();
-    
-    // Set up polling every 30 seconds to keep data fresh
-    const interval = setInterval(fetchRoles, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   // Load permissions when role changes

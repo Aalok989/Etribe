@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
-import { FiPlus, FiFileText, FiFile, FiEye, FiX, FiCalendar, FiMapPin, FiClock, FiSearch, FiFilter, FiDownload, FiCopy, FiEdit2, FiTrash2, FiRefreshCw, FiImage, FiTrendingUp, FiChevronDown, FiChevronUp } from "react-icons/fi";
+import { FiPlus, FiFileText, FiFile, FiEye, FiX, FiCalendar, FiMapPin, FiClock, FiSearch, FiFilter, FiDownload, FiCopy, FiEdit2, FiTrash2, FiRefreshCw, FiImage, FiTrendingUp } from "react-icons/fi";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -8,7 +8,6 @@ import api from "../api/axiosConfig";
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { toast } from 'react-toastify';
-import { getAuthHeaders } from "../utils/apiHeaders";
 
 
 // Helper to decode HTML entities
@@ -94,7 +93,6 @@ export default function UpcomingEventsPage() {
   });
   const [editLoading, setEditLoading] = useState(false);
   const [editFormErrors, setEditFormErrors] = useState({});
-  const [showExportDropdown, setShowExportDropdown] = useState(false);
 
 
   useEffect(() => {
@@ -104,13 +102,15 @@ export default function UpcomingEventsPage() {
       try {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
-        if (!token) {
-          toast.error("Please log in to view upcoming events");
-          window.location.href = "/";
-          return;
-        }
         const response = await api.post('/event/future', {}, {
-          headers: getAuthHeaders()
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'etribes.ezcrm.site',
+            'Content-Type': 'application/json',
+          }
         });
         let backendEvents = [];
         if (Array.isArray(response.data?.data?.event)) {
@@ -126,7 +126,7 @@ export default function UpcomingEventsPage() {
         } else {
           backendEvents = [];
         }
-        const BASE_URL = "https://api.etribes.in"; // Change to your backend's base URL
+        const BASE_URL = "https://api.etribes.ezcrm.site"; // Change to your backend's base URL
         const mappedEvents = backendEvents.map((e, idx) => {
           let datetime = '';
           if (e.event_date && e.event_time) {
@@ -261,7 +261,14 @@ export default function UpcomingEventsPage() {
       }
       await fetch('/api/event/add', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'etribes.ezcrm.site',
+          'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || ''),
+        },
         credentials: 'include',
         body: formData,
       });
@@ -280,7 +287,14 @@ export default function UpcomingEventsPage() {
       setLoading(true);
       try {
         const response = await api.post('/event/future', {}, {
-          headers: getAuthHeaders()
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'etribes.ezcrm.site',
+            'Content-Type': 'application/json',
+          }
         });
         let backendEvents = [];
         if (Array.isArray(response.data?.data?.event)) {
@@ -296,7 +310,7 @@ export default function UpcomingEventsPage() {
         } else {
           backendEvents = [];
         }
-        const BASE_URL = "https://api.etribes.in";
+        const BASE_URL = "https://api.etribes.ezcrm.site";
         const mappedEvents = backendEvents.map((e, idx) => {
           let datetime = '';
           if (e.event_date && e.event_time) {
@@ -425,7 +439,15 @@ export default function UpcomingEventsPage() {
       const uid = localStorage.getItem('uid');
       await fetch('/api/event/remove', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'etribes.ezcrm.site',
+          'Content-Type': 'text/plain',
+          'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || ''),
+        },
         credentials: 'include',
         body: JSON.stringify({ id: eventId }),
       });
@@ -436,7 +458,14 @@ export default function UpcomingEventsPage() {
       setLoading(true);
       try {
         const response = await api.post('/event/future', {}, {
-          headers: getAuthHeaders()
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'etribes.ezcrm.site',
+            'Content-Type': 'application/json',
+          }
         });
         let backendEvents = [];
         if (Array.isArray(response.data?.data?.event)) {
@@ -452,7 +481,7 @@ export default function UpcomingEventsPage() {
         } else {
           backendEvents = [];
         }
-        const BASE_URL = "https://api.etribes.in";
+        const BASE_URL = "https://api.etribes.ezcrm.site";
         const mappedEvents = backendEvents.map((e, idx) => {
           let datetime = '';
           if (e.event_date && e.event_time) {
@@ -552,7 +581,14 @@ export default function UpcomingEventsPage() {
       }
       await fetch('/api/event/edit', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'etribes.ezcrm.site',
+          'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || ''),
+        },
         credentials: 'include',
         body: formData,
       });
@@ -563,7 +599,14 @@ export default function UpcomingEventsPage() {
       setLoading(true);
       try {
         const response = await api.post('/event/future', {}, {
-          headers: getAuthHeaders()
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'etribes.ezcrm.site',
+            'Content-Type': 'application/json',
+          }
         });
         let backendEvents = [];
         if (Array.isArray(response.data?.data?.event)) {
@@ -579,7 +622,7 @@ export default function UpcomingEventsPage() {
         } else {
           backendEvents = [];
         }
-        const BASE_URL = "https://api.etribes.in";
+        const BASE_URL = "https://api.etribes.ezcrm.site";
         const mappedEvents = backendEvents.map((e, idx) => {
           let datetime = '';
           if (e.event_date && e.event_time) {
@@ -624,154 +667,76 @@ export default function UpcomingEventsPage() {
 
   return (
     <DashboardLayout>
-              <div className="flex flex-col gap-4 py-3">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h1 className="text-xl sm:text-2xl font-bold text-orange-600">Upcoming Events</h1>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <FiTrendingUp className="text-indigo-600" />
-              <span>Total Upcoming Events: {events.length}</span>
-            </div>
+      <div className="flex flex-col gap-4 py-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-2xl font-bold text-orange-600">Upcoming Events</h1>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <span>Total Upcoming Events: {events.length}</span>
           </div>
+        </div>
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto border border-gray-200 dark:border-gray-700">
-          {/* Controls */}
+          {/* Header Controls */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="relative flex-1 max-w-md">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search upcoming events, agenda, or venue..."
-                  className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors w-full"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">Upcoming Event Management</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 flex-shrink-0">
-                <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, totalEntries)} of {totalEntries} entries</span>
+              
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <FiCalendar className="text-indigo-600" />
+                <span>Manage future events and schedules</span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                {!showAddEventModal && (
-                  <button
-                    className="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
-                    onClick={handleShowAddEventForm}
-                    title="Add Event"
-                  >
-                    <FiPlus />
-                    <span>Add Event</span>
-                  </button>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <button 
-                  className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
-                  onClick={handleRefresh}
-                  title="Refresh Data"
-                >
-                  <FiRefreshCw /> 
-                  <span>Refresh</span>
-                </button>
-              </div>
-              
-              {/* Desktop Export Buttons - Show only on desktop */}
-              <div className="hidden lg:flex items-center gap-2">
-                <button 
-                  className="flex items-center gap-1 bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
-                  onClick={handleCopyToClipboard}
-                  title="Copy to Clipboard"
-                >
-                  <FiCopy /> 
-                  Copy
-                </button>
-                
-                <button 
-                  className="flex items-center gap-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition"
-                  onClick={handleExportCSV}
-                  title="Export CSV"
-                >
-                  <FiDownload /> 
-                  CSV
-                </button>
-                
-                <button 
-                  className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition"
-                  onClick={handleExportExcel}
-                  title="Export Excel"
-                >
-                  <FiFile /> 
-                  Excel
-                </button>
-                
-                <button 
-                  className="flex items-center gap-1 bg-rose-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-rose-600 transition"
-                  onClick={handleExportPDF}
-                  title="Export PDF"
-                >
-                  <FiFile /> 
-                  PDF
-                </button>
-              </div>
-              
-              {/* Export Dropdown - Show on all responsive devices (tablet, mobile) */}
-              <div className="relative lg:hidden">
-                <button
-                  className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-600 transition"
-                  onClick={() => setShowExportDropdown(!showExportDropdown)}
-                >
-                  <FiDownload />
-                  <span>Export</span>
-                  <FiChevronDown className={`transition-transform ${showExportDropdown ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {showExportDropdown && (
-                  <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20 min-w-32 export-dropdown">
-                    <button
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
-                      onClick={() => {
-                        handleCopyToClipboard();
-                        setShowExportDropdown(false);
-                      }}
-                    >
-                      <FiCopy className="text-gray-500" />
-                      Copy
-                    </button>
-                    <button
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      onClick={() => {
-                        handleExportCSV();
-                        setShowExportDropdown(false);
-                      }}
-                    >
-                      <FiDownload className="text-green-500" />
-                      CSV
-                    </button>
-                    <button
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      onClick={() => {
-                        handleExportExcel();
-                        setShowExportDropdown(false);
-                      }}
-                    >
-                      <FiFile className="text-emerald-500" />
-                      Excel
-                    </button>
-                    <button
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
-                      onClick={() => {
-                        handleExportPDF();
-                        setShowExportDropdown(false);
-                      }}
-                    >
-                      <FiFile className="text-rose-500" />
-                      PDF
-                    </button>
-                  </div>
-                )}
-              </div>
+            <div className="flex gap-2 items-center">
+              <button
+                className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
+                onClick={handleExportCSV}
+                title="Export to CSV"
+              >
+                <FiFileText />
+                CSV
+              </button>
+              <button
+                className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition"
+                onClick={handleExportExcel}
+                title="Export to Excel"
+              >
+                <FiFile />
+                Excel
+              </button>
+              <button
+                className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition"
+                onClick={handleExportPDF}
+                title="Export to PDF"
+              >
+                <FiFile />
+                PDF
+              </button>
+              <button
+                className="flex items-center gap-1 bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
+                onClick={handleCopyToClipboard}
+                title="Copy to Clipboard"
+              >
+                <FiCopy />
+                Copy
+              </button>
+              <button
+                className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-600 transition"
+                onClick={handleRefresh}
+                title="Refresh Events"
+              >
+                <FiRefreshCw />
+                Refresh
+              </button>
+              <button
+                className="flex items-center gap-1 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
+                onClick={handleShowAddEventForm}
+              >
+                <FiPlus />
+                Add Event
+              </button>
             </div>
           </div>
 
@@ -795,8 +760,8 @@ export default function UpcomingEventsPage() {
             </div>
           </div>
 
-          {/* Table - Desktop View */}
-          <div className="hidden lg:block overflow-x-auto">
+          {/* Table */}
+          <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
                 <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
@@ -851,16 +816,14 @@ export default function UpcomingEventsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                          <FiMapPin className="mr-1" size={10} />
-                          {event.venue || 'No venue'}
+                          Venue
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-                          <FiClock className="mr-1" size={10} />
-                          {event.datetime ? new Date(event.datetime).toLocaleDateString() : 'TBD'}
+                          Date & Time
                         </span>
                       </div>
                     </td>
@@ -886,85 +849,13 @@ export default function UpcomingEventsPage() {
               </tbody>
             </table>
           </div>
-
-          {/* Mobile Cards View */}
-          <div className="lg:hidden p-4 sm:p-6 space-y-4">
-            {paginated.map((event, idx) => (
-              <div key={event.id || idx} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 dark:from-indigo-800 dark:to-purple-900 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-medium text-white">
-                        {event.event.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{event.event}</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Upcoming Event #{startIdx + idx + 1}</p>
-                      <div className="flex flex-wrap items-center gap-1 mt-1">
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                          <FiMapPin className="mr-1" size={10} />
-                          <span className="truncate">{event.venue}</span>
-                        </span>
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-                          <FiClock className="mr-1" size={10} />
-                          <span className="truncate">{event.datetime ? new Date(event.datetime).toLocaleDateString() : "TBD"}</span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                    <button
-                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors p-1"
-                      onClick={() => openViewEventModal(idx)}
-                      title="View Event Details"
-                    >
-                      <FiEye size={14} />
-                    </button>
-                    <button
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 transition-colors p-1"
-                      title="Edit Event"
-                      onClick={() => openEditEventModal(event)}
-                    >
-                      <FiEdit2 size={14} />
-                    </button>
-                    <button
-                      className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-colors p-1"
-                      title="Delete Event"
-                      onClick={() => handleDeleteEvent(event.id)}
-                      disabled={saveLoading}
-                    >
-                      <FiTrash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-start gap-2">
-                    <FiCalendar className="text-gray-400 flex-shrink-0 mt-0.5" size={14} />
-                    <div className="text-gray-700 dark:text-gray-300 text-xs line-clamp-3">
-                      {stripHtml(event.agenda).slice(0, 100)}
-                      {stripHtml(event.agenda).length > 100 && "..."}
-                    </div>
-                  </div>
-                  {event.datetime && (
-                    <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                      <FiClock className="text-gray-400 flex-shrink-0" size={12} />
-                      <span>{new Date(event.datetime).toLocaleString()}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
           {/* Pagination Controls - moved outside scrollable area */}
           <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-400">
                 <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, filtered.length)} of {filtered.length} results</span>
               </div>
-              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+              <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-700 dark:text-gray-400">Show</span>
                 <select
@@ -982,26 +873,24 @@ export default function UpcomingEventsPage() {
                 <button
                   onClick={handlePrev}
                   disabled={currentPage === 1}
-                  className={`px-2 sm:px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
                     currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                  title="Previous"
-                >
-                  &lt;
+                    }`}
+                  >
+                    Previous
                 </button>
-                <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200 px-1 sm:px-2">
-                  {currentPage}/{totalPages}
-                </span>
-                <button
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    Page {currentPage} of {totalPages}
+                  </span>
+          <button
                   onClick={handleNext}
                   disabled={currentPage === totalPages}
-                  className={`px-2 sm:px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
                     currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                  title="Next"
-                >
-                  &gt;
-                </button>
+                    }`}
+                  >
+                    Next
+          </button>
                 </div>
               </div>
             </div>

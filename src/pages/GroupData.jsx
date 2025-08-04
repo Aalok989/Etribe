@@ -6,6 +6,7 @@ import { FiEdit2, FiX, FiUpload, FiCheckCircle } from "react-icons/fi";
 import api from "../api/axiosConfig";
 import { toast } from 'react-toastify';
 import { getAuthHeaders } from "../utils/apiHeaders";
+import { useGroupData } from "../context/GroupDataContext";
 
 const initialData = {};
 
@@ -22,6 +23,26 @@ export default function GroupData() {
   const [saveSuccess, setSaveSuccess] = useState(null);
   const logoInputRef = useRef();
   const signatureInputRef = useRef();
+  
+  // Use GroupDataContext for immediate updates
+  const { fetchGroupData } = useGroupData();
+
+  // Get API base URL from environment
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.etribes.ezcrm.site';
+
+  // Test API connectivity
+  const testAPI = async () => {
+    try {
+      const response = await api.post('/groupSettings', {}, {
+        headers: getAuthHeaders()
+      });
+      console.log('API test successful:', response.data);
+      return true;
+    } catch (error) {
+      console.error('API test failed:', error);
+      return false;
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -35,6 +56,14 @@ export default function GroupData() {
           setError('Please log in to view group data');
           return;
         }
+        
+        // Test API connectivity first
+        const apiWorking = await testAPI();
+        if (!apiWorking) {
+          setError('Unable to connect to server. Please check your connection.');
+          return;
+        }
+        
         const response = await api.post('/groupSettings', {}, {
           headers: getAuthHeaders()
         });
@@ -50,8 +79,8 @@ export default function GroupData() {
           country: backendData.country || '',
           signatureName: backendData.signatory_name || '',
           signatureDesignation: backendData.signatory_designation || '',
-          logo: backendData.logo ? `https://api.etribes.in/${backendData.logo}` : '',
-          signature: backendData.signature ? `https://api.etribes.in/${backendData.signature}` : '',
+          logo: backendData.logo ? `${API_BASE_URL}/${backendData.logo}` : '',
+          signature: backendData.signature ? `${API_BASE_URL}/${backendData.signature}` : '',
         };
         if (isMounted) {
           setData(mappedData);
@@ -101,24 +130,107 @@ export default function GroupData() {
     try {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid');
+      
+      if (!token || !uid) {
+        toast.error('Please log in to upload files.');
+        return;
+      }
+      
       const formData = new FormData();
-      formData.append('id', uid || '1');
+      formData.append('id', uid);
       formData.append('file', file);
+      
+      console.log('Uploading logo with data:', {
+        id: uid,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type
+      });
+      
       const response = await api.post('/GroupSettings/upload_logo', formData, {
-        headers: getAuthHeaders(),
+        headers: {
+          'Client-Service': import.meta.env.VITE_CLIENT_SERVICE || 'frontend-client',
+          'Auth-Key': import.meta.env.VITE_AUTH_KEY || 'simplerestapi',
+          'uid': uid,
+          'token': token,
+          'rurl': import.meta.env.VITE_RURL || 'https://api.etribes.ezcrm.site',
+          // Don't set Content-Type for FormData - let browser set it with boundary
+        },
         withCredentials: true,
       });
-      // The backend should return the new logo path
-      const newLogo = response.data?.data?.logo || response.data?.logo || '';
+      
+      console.log('Logo upload response:', response.data);
+      console.log('Response structure:', {
+        data: response.data,
+        dataData: response.data?.data,
+        logo: response.data?.logo,
+        dataLogo: response.data?.data?.logo,
+        message: response.data?.message,
+        status: response.data?.status
+      });
+      
+      // Try multiple possible paths for the logo
+      let newLogo = '';
+      if (response.data?.data?.logo) {
+        newLogo = response.data.data.logo;
+      } else if (response.data?.logo) {
+        newLogo = response.data.logo;
+      } else if (response.data?.data?.file) {
+        newLogo = response.data.data.file;
+      } else if (response.data?.file) {
+        newLogo = response.data.file;
+      } else if (response.data?.data?.path) {
+        newLogo = response.data.data.path;
+      } else if (response.data?.path) {
+        newLogo = response.data.path;
+      }
+      
+      console.log('Extracted logo path:', newLogo);
+      
       if (newLogo) {
-        const logoUrl = newLogo.startsWith('http') ? newLogo : `https://api.etribes.in/${newLogo}`;
+        const logoUrl = newLogo.startsWith('http') ? newLogo : `${API_BASE_URL}/${newLogo}`;
         setLogoPreview(logoUrl);
         setForm((prev) => ({ ...prev, logo: logoUrl }));
         setData((prev) => ({ ...prev, logo: logoUrl }));
+        toast.success('Logo uploaded successfully!');
+      } else {
+        // If no logo path found, try to refresh the data
+        console.log('No logo path found, refreshing data...');
+        toast.info('Upload completed. Refreshing data...');
+        
+        // Refresh the group data to get updated logo
+        try {
+          const refreshResponse = await api.post('/groupSettings', {}, {
+            headers: getAuthHeaders()
+          });
+          const backendData = refreshResponse.data?.data || refreshResponse.data || {};
+          if (backendData.logo) {
+            const logoUrl = backendData.logo.startsWith('http') ? backendData.logo : `${API_BASE_URL}/${backendData.logo}`;
+            setLogoPreview(logoUrl);
+            setForm((prev) => ({ ...prev, logo: logoUrl }));
+            setData((prev) => ({ ...prev, logo: logoUrl }));
+            toast.success('Logo uploaded and updated successfully!');
+          } else {
+            toast.error('Upload successful but logo not found in refreshed data.');
+          }
+        } catch (refreshErr) {
+          console.error('Error refreshing data:', refreshErr);
+          toast.error('Upload successful but could not refresh data.');
+        }
       }
-      toast.success('Logo uploaded successfully!');
     } catch (err) {
-      toast.error('Failed to upload logo.');
+      console.error('Logo upload error:', err);
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      console.error('Error headers:', err.response?.headers);
+      
+      if (err.response?.status === 401) {
+        toast.error('Session expired. Please log in again.');
+      } else if (err.response?.status === 413) {
+        toast.error('File too large. Please select a smaller image.');
+      } else {
+        toast.error('Failed to upload logo. Please try again.');
+      }
     } finally {
       setSaveLoading(false);
     }
@@ -128,12 +240,25 @@ export default function GroupData() {
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file.');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size should be less than 5MB.');
+        return;
+      }
+      
       // Show preview immediately
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoPreview(reader.result);
       };
       reader.readAsDataURL(file);
+      
       // Upload to backend
       uploadLogo(file);
     }
@@ -146,24 +271,107 @@ export default function GroupData() {
     try {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid');
+      
+      if (!token || !uid) {
+        toast.error('Please log in to upload files.');
+        return;
+      }
+      
       const formData = new FormData();
-      formData.append('id', uid || '1');
+      formData.append('id', uid);
       formData.append('file', file);
+      
+      console.log('Uploading signature with data:', {
+        id: uid,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type
+      });
+      
       const response = await api.post('/groupSettings/upload_signature', formData, {
-        headers: getAuthHeaders(),
+        headers: {
+          'Client-Service': import.meta.env.VITE_CLIENT_SERVICE || 'frontend-client',
+          'Auth-Key': import.meta.env.VITE_AUTH_KEY || 'simplerestapi',
+          'uid': uid,
+          'token': token,
+          'rurl': import.meta.env.VITE_RURL || 'https://api.etribes.ezcrm.site',
+          // Don't set Content-Type for FormData - let browser set it with boundary
+        },
         withCredentials: true,
       });
-      // The backend should return the new signature path
-      const newSignature = response.data?.data?.signature || response.data?.signature || '';
+      
+      console.log('Signature upload response:', response.data);
+      console.log('Response structure:', {
+        data: response.data,
+        dataData: response.data?.data,
+        signature: response.data?.signature,
+        dataSignature: response.data?.data?.signature,
+        message: response.data?.message,
+        status: response.data?.status
+      });
+      
+      // Try multiple possible paths for the signature
+      let newSignature = '';
+      if (response.data?.data?.signature) {
+        newSignature = response.data.data.signature;
+      } else if (response.data?.signature) {
+        newSignature = response.data.signature;
+      } else if (response.data?.data?.file) {
+        newSignature = response.data.data.file;
+      } else if (response.data?.file) {
+        newSignature = response.data.file;
+      } else if (response.data?.data?.path) {
+        newSignature = response.data.data.path;
+      } else if (response.data?.path) {
+        newSignature = response.data.path;
+      }
+      
+      console.log('Extracted signature path:', newSignature);
+      
       if (newSignature) {
-        const signatureUrl = newSignature.startsWith('http') ? newSignature : `https://api.etribes.in/${newSignature}`;
+        const signatureUrl = newSignature.startsWith('https') ? newSignature : `${API_BASE_URL}/${newSignature}`;
         setSignaturePreview(signatureUrl);
         setForm((prev) => ({ ...prev, signature: signatureUrl }));
         setData((prev) => ({ ...prev, signature: signatureUrl }));
+        toast.success('Signature uploaded successfully!');
+      } else {
+        // If no signature path found, try to refresh the data
+        console.log('No signature path found, refreshing data...');
+        toast.info('Upload completed. Refreshing data...');
+        
+        // Refresh the group data to get updated signature
+        try {
+          const refreshResponse = await api.post('/groupSettings', {}, {
+            headers: getAuthHeaders()
+          });
+          const backendData = refreshResponse.data?.data || refreshResponse.data || {};
+          if (backendData.signature) {
+            const signatureUrl = backendData.signature.startsWith('https') ? backendData.signature : `${API_BASE_URL}/${backendData.signature}`;
+            setSignaturePreview(signatureUrl);
+            setForm((prev) => ({ ...prev, signature: signatureUrl }));
+            setData((prev) => ({ ...prev, signature: signatureUrl }));
+            toast.success('Signature uploaded and updated successfully!');
+          } else {
+            toast.error('Upload successful but signature not found in refreshed data.');
+          }
+        } catch (refreshErr) {
+          console.error('Error refreshing data:', refreshErr);
+          toast.error('Upload successful but could not refresh data.');
+        }
       }
-      toast.success('Signature uploaded successfully!');
     } catch (err) {
-      toast.error('Failed to upload signature.');
+      console.error('Signature upload error:', err);
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      console.error('Error headers:', err.response?.headers);
+      
+      if (err.response?.status === 401) {
+        toast.error('Session expired. Please log in again.');
+      } else if (err.response?.status === 413) {
+        toast.error('File too large. Please select a smaller image.');
+      } else {
+        toast.error('Failed to upload signature. Please try again.');
+      }
     } finally {
       setSaveLoading(false);
     }
@@ -173,12 +381,25 @@ export default function GroupData() {
   const handleSignatureChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file.');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size should be less than 5MB.');
+        return;
+      }
+      
       // Show preview immediately
       const reader = new FileReader();
       reader.onloadend = () => {
         setSignaturePreview(reader.result);
       };
       reader.readAsDataURL(file);
+      
       // Upload to backend
       uploadSignature(file);
     }
@@ -186,10 +407,8 @@ export default function GroupData() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Save button clicked', form);
     setSaveLoading(true);
     setSaveError(null);
-    // No need to clear error/success with toast
     
     try {
       const token = localStorage.getItem('token');
@@ -210,18 +429,17 @@ export default function GroupData() {
         signatory_designation: form.signatureDesignation,
       };
 
-      console.log('Saving group data (cURL):', payload);
-      
       await api.post('/groupSettings/master_data', payload, {
         headers: getAuthHeaders()
       });
 
-    setData(form);
-    setEditMode(false);
+      setData(form);
+      setEditMode(false);
       toast.success('Group data updated successfully!');
-      setTimeout(() => {
-        toast.success(null);
-      }, 3000);
+      
+      // Refresh the GroupDataContext to update logo/signature in real-time
+      await fetchGroupData();
+      
     } catch (err) {
       console.error('Save group data error:', err);
       toast.error('Failed to update group data.');

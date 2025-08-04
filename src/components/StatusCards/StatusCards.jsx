@@ -64,29 +64,29 @@ export default function StatusCards() {
     // Auto-refresh removed
   }, []);
 
-const statusData = [
-  {
-    label: "Active",
+  const statusData = [
+    {
+      label: "Active",
       count: activeCount, // Real value
-    gradient: "bg-gradient-to-br from-emerald-200 via-green-100 to-white dark:from-emerald-800 dark:via-green-900 dark:to-gray-800",
-    icon: <FiUserCheck size={32} className="text-blue-600 dark:text-emerald-300 opacity-80" />, // Adjust icon color for contrast
-    path: "/members-services/active",
-  },
-  {
-    label: "Pending Approval",
+      gradient: "bg-gradient-to-br from-emerald-200 via-green-100 to-white dark:from-emerald-800 dark:via-green-900 dark:to-gray-800",
+      icon: <FiUserCheck size={32} className="text-blue-600 dark:text-emerald-300 opacity-80" />, // Adjust icon color for contrast
+      path: "/members-services/active",
+    },
+    {
+      label: "Pending Approval",
       count: inactiveCount, // Real value
-    gradient: "bg-gradient-to-br from-blue-200 via-indigo-200 to-white dark:from-blue-900 dark:via-indigo-900 dark:to-gray-900 ",
-    icon: <FiUserX size={32} className="text-emerald-600 dark:text-blue-300 opacity-80" />, // Adjust icon color for contrast
-    path: "/members-services/pending-approval",
-  },
-  {
-    label: "Membership Expired",
+      gradient: "bg-gradient-to-br from-blue-200 via-indigo-200 to-white dark:from-blue-900 dark:via-indigo-900 dark:to-gray-900 ",
+      icon: <FiUserX size={32} className="text-emerald-600 dark:text-blue-300 opacity-80" />, // Adjust icon color for contrast
+      path: "/members-services/pending-approval",
+    },
+    {
+      label: "Membership Expired",
       count: expiredCount, // Real value
-    gradient: "bg-gradient-to-br from-rose-200 via-pink-100 to-white dark:from-rose-900 dark:via-pink-900 dark:to-gray-900",
-    icon: <FiAlertCircle size={32} className="text-rose-600 dark:text-rose-300 opacity-80" />, // Adjust icon color for contrast
-    path: "/members-services/expired",
-  },
-];
+      gradient: "bg-gradient-to-br from-rose-200 via-pink-100 to-white dark:from-rose-900 dark:via-pink-900 dark:to-gray-900",
+      icon: <FiAlertCircle size={32} className="text-rose-600 dark:text-rose-300 opacity-80" />, // Adjust icon color for contrast
+      path: "/members-services/expired",
+    },
+  ];
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">

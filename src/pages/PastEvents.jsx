@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
-import { FiPlus, FiFileText, FiFile, FiEye, FiX, FiCalendar, FiMapPin, FiClock, FiSearch, FiFilter, FiDownload, FiCopy, FiEdit2, FiTrash2, FiRefreshCw, FiImage, FiArchive, FiAlertCircle, FiChevronDown, FiChevronUp } from "react-icons/fi";
+import { FiPlus, FiFileText, FiFile, FiEye, FiX, FiCalendar, FiMapPin, FiClock, FiSearch, FiFilter, FiDownload, FiCopy, FiEdit2, FiTrash2, FiRefreshCw, FiImage, FiArchive, FiAlertCircle } from "react-icons/fi";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -8,7 +8,6 @@ import api from "../api/axiosConfig";
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { toast } from 'react-toastify';
-import { getAuthHeaders } from "../utils/apiHeaders";
 
 
 // Helper to decode HTML entities
@@ -80,21 +79,6 @@ export default function PastEvents() {
   const [sortDirection, setSortDirection] = useState("desc");
   const [formErrors, setFormErrors] = useState({});
   const [showAddEventForm, setShowAddEventForm] = useState(false);
-  const [showExportDropdown, setShowExportDropdown] = useState(false);
-
-  // Handle click outside for export dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (showExportDropdown && !event.target.closest('.export-dropdown')) {
-        setShowExportDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showExportDropdown]);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -103,13 +87,15 @@ export default function PastEvents() {
       try {
         const token = localStorage.getItem('token');
         const uid = localStorage.getItem('uid');
-        if (!token) {
-          toast.error("Please log in to view past events");
-          window.location.href = "/";
-          return;
-        }
         const response = await api.post('/event/past', {}, {
-          headers: getAuthHeaders()
+          headers: {
+            'Client-Service': 'COHAPPRT',
+            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+            'uid': uid,
+            'token': token,
+            'rurl': 'etribes.ezcrm.site',
+            'Content-Type': 'application/json',
+          }
         });
         let backendEvents = [];
         if (Array.isArray(response.data?.data?.event)) {
@@ -125,7 +111,7 @@ export default function PastEvents() {
         } else {
           backendEvents = [];
         }
-        const BASE_URL = "https://api.etribes.in";
+        const BASE_URL = "https://api.etribes.ezcrm.site";
         const mappedEvents = backendEvents.map((e, idx) => ({
           id: e.id || idx,
           event: e.event_title || e.event || e.title || e.name || "",
@@ -257,7 +243,14 @@ export default function PastEvents() {
       }
       await fetch('/api/event/add', {
         method: 'POST',
-        headers: getAuthHeaders(),
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid,
+          'token': token,
+          'rurl': 'etribes.ezcrm.site',
+          'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || ''),
+        },
         credentials: 'include',
         body: formData,
       });
@@ -389,159 +382,101 @@ export default function PastEvents() {
     <DashboardLayout>
       <div className="flex flex-col gap-4 py-3">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-orange-600">Past Events</h1>
+          <h1 className="text-2xl font-bold text-orange-600">Past Events</h1>
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <FiArchive className="text-indigo-600" />
+            <FiAlertCircle className="text-indigo-600" />
             <span>Total Past Events: {events.length}</span>
           </div>
         </div>
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto border border-gray-200 dark:border-gray-700">
-          {/* Controls */}
+          {/* Header Controls */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="relative flex-1 max-w-md">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <FiFileText />
+                <span className="text-lg font-semibold text-gray-800 dark:text-gray-100">Past Event Management</span>
+              </div>
+              
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <FiCalendar className="text-indigo-600" />
+                <span>Manage completed events and history</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 items-center">
+              <button
+                className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
+                onClick={handleExportCSV}
+                title="Export to CSV"
+              >
+                <FiFileText />
+                CSV
+              </button>
+              <button
+                className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition"
+                onClick={handleExportExcel}
+                title="Export to Excel"
+              >
+                <FiFile />
+                Excel
+              </button>
+              <button
+                className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition"
+                onClick={handleExportPDF}
+                title="Export to PDF"
+              >
+                <FiFile />
+                PDF
+              </button>
+              <button
+                className="flex items-center gap-1 bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
+                onClick={handleCopyToClipboard}
+                title="Copy to Clipboard"
+              >
+                <FiCopy />
+                Copy
+              </button>
+              <button
+                className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-600 transition"
+                onClick={handleRefresh}
+                title="Refresh Events"
+              >
+                <FiRefreshCw />
+                Refresh
+              </button>
+            <button
+                className="flex items-center gap-1 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
+                onClick={handleShowAddEventForm}
+            >
+                <FiPlus />
+                Add Event
+            </button>
+            </div>
+          </div>
+
+          {/* Search and Filter */}
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 relative">
                 <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search past events, agenda, or venue..."
-                  className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors w-full"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
                 />
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 flex-shrink-0">
-                <span>Showing {startIdx + 1} to {Math.min(startIdx + entriesPerPage, totalEntries)} of {totalEntries} entries</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                {!showAddEventForm && (
-                  <button
-                    className="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
-                    onClick={handleShowAddEventForm}
-                    title="Add Event"
-                  >
-                    <FiPlus />
-                    <span>Add Event</span>
-                  </button>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <button 
-                  className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
-                  onClick={handleRefresh}
-                  title="Refresh Data"
-                >
-                  <FiRefreshCw /> 
-                  <span>Refresh</span>
-                </button>
-              </div>
-              
-              {/* Desktop Export Buttons - Show only on desktop */}
-              <div className="hidden lg:flex items-center gap-2">
-                <button 
-                  className="flex items-center gap-1 bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition"
-                  onClick={handleCopyToClipboard}
-                  title="Copy to Clipboard"
-                >
-                  <FiCopy /> 
-                  Copy
-                </button>
-                
-                <button 
-                  className="flex items-center gap-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition"
-                  onClick={handleExportCSV}
-                  title="Export CSV"
-                >
-                  <FiDownload /> 
-                  CSV
-                </button>
-                
-                <button 
-                  className="flex items-center gap-1 bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-600 transition"
-                  onClick={handleExportExcel}
-                  title="Export Excel"
-                >
-                  <FiFile /> 
-                  Excel
-                </button>
-                
-                <button 
-                  className="flex items-center gap-1 bg-rose-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-rose-600 transition"
-                  onClick={handleExportPDF}
-                  title="Export PDF"
-                >
-                  <FiFile /> 
-                  PDF
-                </button>
-              </div>
-              
-              {/* Export Dropdown - Show on all responsive devices (tablet, mobile) */}
-              <div className="relative lg:hidden">
-                <button
-                  className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-600 transition"
-                  onClick={() => setShowExportDropdown(!showExportDropdown)}
-                >
-                  <FiDownload />
-                  <span>Export</span>
-                  <FiChevronDown className={`transition-transform ${showExportDropdown ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {showExportDropdown && (
-                  <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20 min-w-32 export-dropdown">
-                    <button
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
-                      onClick={() => {
-                        handleCopyToClipboard();
-                        setShowExportDropdown(false);
-                      }}
-                    >
-                      <FiCopy className="text-gray-500" />
-                      Copy
-                    </button>
-                    <button
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      onClick={() => {
-                        handleExportCSV();
-                        setShowExportDropdown(false);
-                      }}
-                    >
-                      <FiDownload className="text-green-500" />
-                      CSV
-                    </button>
-                    <button
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      onClick={() => {
-                        handleExportExcel();
-                        setShowExportDropdown(false);
-                      }}
-                    >
-                      <FiFile className="text-emerald-500" />
-                      Excel
-                    </button>
-                    <button
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
-                      onClick={() => {
-                        handleExportPDF();
-                        setShowExportDropdown(false);
-                      }}
-                    >
-                      <FiFile className="text-rose-500" />
-                      PDF
-                    </button>
-                  </div>
-                )}
+                <FiFilter className="text-gray-400" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">Filtered: {filtered.length} of {events.length}</span>
               </div>
             </div>
           </div>
 
-
-
-          {/* Table - Desktop View */}
-          <div className="hidden lg:block overflow-x-auto">
+          {/* Table */}
+          <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead className="bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-gray-700 dark:text-gray-200 sticky top-0 z-10 shadow-sm">
                 <tr className="border-b-2 border-indigo-200 dark:border-indigo-800">
@@ -605,75 +540,9 @@ export default function PastEvents() {
             </table>
           </div>
 
-          {/* Mobile Cards View */}
-          <div className="lg:hidden p-4 sm:p-6 space-y-4">
-            {paginated.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-300">
-                <FiArchive className="mx-auto text-4xl mb-2 text-gray-300 dark:text-gray-700" />
-                <p className="text-sm">No past events found</p>
-              </div>
-            ) : (
-              <>
-                {paginated.map((event, idx) => (
-                  <div key={event.id || idx} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-gray-500 to-gray-600 dark:from-indigo-800 dark:to-purple-900 flex items-center justify-center flex-shrink-0">
-                          <span className="text-sm font-medium text-white">
-                            {event.event.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{event.event}</h3>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Past Event #{startIdx + idx + 1}</p>
-                          <div className="flex flex-wrap items-center gap-1 mt-1">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                              <FiMapPin className="mr-1" size={10} />
-                              <span className="truncate">{event.venue || 'No venue'}</span>
-                            </span>
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
-                              <FiClock className="mr-1" size={10} />
-                              <span className="truncate">{event.datetime ? new Date(event.datetime).toLocaleDateString() : "TBD"}</span>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                        <button
-                          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors p-1"
-                          onClick={() => openViewEventModal(idx)}
-                          title="View Event Details"
-                        >
-                          <FiEye size={14} />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-start gap-2">
-                        <FiCalendar className="text-gray-400 flex-shrink-0 mt-0.5" size={14} />
-                        <div className="text-gray-700 dark:text-gray-300 text-xs line-clamp-3">
-                          {stripHtml(event.agenda).slice(0, 100)}
-                          {stripHtml(event.agenda).length > 100 && "..."}
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <FiClock className="text-gray-400 flex-shrink-0" size={14} />
-                        <span className="text-gray-700 dark:text-gray-300 text-xs">
-                          <span className="font-medium">Full Date & Time:</span> {event.datetime ? new Date(event.datetime).toLocaleString() : "TBD"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-
           {/* Pagination */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-t border-gray-100 dark:border-gray-700">
-              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+              <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600 dark:text-gray-400">Show</span>
                 <select
                 className="border rounded-lg px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
@@ -687,31 +556,31 @@ export default function PastEvents() {
               <span className="text-sm text-gray-600 dark:text-gray-400">entries per page</span>
               </div>
                 
-              <div className="flex items-center gap-1 sm:gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={handlePrev}
                   disabled={currentPage === 1}
-                  className={`px-2 sm:px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
                     currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                    }`}
                   title="Previous"
-                >
-                  &lt;
+                  >
+                    Previous
                 </button>
-                <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200 px-1 sm:px-2">
-                  {currentPage}/{totalPages}
-                </span>
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    Page {currentPage} of {totalPages}
+                  </span>
                 <button
                   onClick={handleNext}
                   disabled={currentPage === totalPages}
-                  className={`px-2 sm:px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
                     currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                    }`}
                   title="Next"
-                >
-                  &gt;
+                  >
+                    Next
                 </button>
-              </div>
+            </div>
           </div>
         </div>
 

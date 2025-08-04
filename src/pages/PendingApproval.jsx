@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/Layout/DashboardLayout";
-import { FiSearch, FiRefreshCw, FiDownload, FiEye, FiEdit2, FiFilter, FiCopy, FiFile, FiChevronDown, FiChevronLeft, FiChevronRight, FiUsers, FiArrowUp, FiArrowDown } from "react-icons/fi";
+import { FiSearch, FiRefreshCw, FiDownload, FiEye, FiEdit2, FiFilter, FiCopy, FiFile, FiChevronDown, FiChevronLeft, FiChevronRight, FiUsers, FiArrowUp, FiArrowDown, FiPhone, FiMail, FiHome, FiX, FiCalendar, FiAlertCircle } from "react-icons/fi";
 import { toast } from "react-toastify";
 import api from "../api/axiosConfig";
 import { getAuthHeaders } from "../utils/apiHeaders";
@@ -29,15 +29,11 @@ const fetchAdditionalFields = async () => {
       headers: getAuthHeaders()
     });
 
-    console.log('Additional Fields Response:', response.data);
-    
-    // Map backend data to frontend format
     const backendData = response.data?.data || response.data || {};
     
     let mappedFields = [];
     
     if (Array.isArray(backendData)) {
-      // Handle array response
       mappedFields = backendData
         .filter(field => field && (field.name || field.label || field.value || field))
         .map((field, index) => ({
@@ -47,7 +43,6 @@ const fetchAdditionalFields = async () => {
           backendKey: `ad${index + 1}` || `field${index + 1}`
         }));
     } else {
-      // Handle object response
       mappedFields = Object.keys(backendData)
         .filter(key => backendData[key] && backendData[key].trim() !== '')
         .map((key, index) => ({
@@ -58,35 +53,23 @@ const fetchAdditionalFields = async () => {
         }));
     }
 
-    // Cache the result
-    additionalFieldsCache = mappedFields;
-    cacheTimestamp = Date.now();
-    
     return mappedFields;
   } catch (err) {
     console.error('Fetch additional fields error:', err);
-    // Return empty array on error
     return [];
   }
 };
 
 // Get table headers for member pages
 const getMemberTableHeaders = (additionalFields = []) => {
-  const baseHeaders = [
+  return [
     { key: 'sr', name: 'SR No', sortable: true, width: '60px' },
     { key: 'name', name: 'Name', sortable: true, width: '120px' },
     { key: 'contact', name: 'Contact', sortable: true, width: '120px' },
     { key: 'email', name: 'Email', sortable: true, width: '180px' },
-  ];
-
-  const endHeaders = [
     { key: 'company', name: 'Company Name', sortable: true, width: '150px' },
-    { key: 'validUpto', name: 'Valid Upto', sortable: true, width: '120px' },
-    { key: 'status', name: 'Status', sortable: true, width: '100px' },
     { key: 'actions', name: 'Actions', sortable: false, width: '120px' }
   ];
-
-  return [...baseHeaders, ...dynamicHeaders, ...endHeaders];
 };
 
 // Get mobile card fields for member pages
@@ -132,12 +115,9 @@ export default function PendingApproval() {
   // Load additional fields for dynamic headers
   const loadAdditionalFields = async () => {
     try {
-      const fields = await fetchAdditionalFields();
-      setAdditionalFields(fields);
-      setTableHeaders(getMemberTableHeaders(fields));
-      setCardFields(getMemberCardFields(fields));
+      setTableHeaders(getMemberTableHeaders());
     } catch (error) {
-      console.error('Failed to load additional fields:', error);
+      console.error('Failed to load table headers:', error);
     }
   };
 
@@ -206,7 +186,8 @@ export default function PendingApproval() {
             'uid': uid,
           }
         });
-        setMembers(Array.isArray(response.data) ? response.data : response.data.data || []);
+        const membersData = Array.isArray(response.data) ? response.data : response.data.data || [];
+        setMembers(membersData);
       } catch (err) {
         toast.error(err.response?.data?.message || err.message || 'Failed to fetch pending approval members');
       } finally {
@@ -652,7 +633,7 @@ export default function PendingApproval() {
                         <button
                           className="text-indigo-600 dark:text-indigo-300 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors"
                           title="View Member"
-                          onClick={() => navigate(`/member/${m.id || m.company_detail_id}`)}
+                          onClick={() => navigate(`/member/${m.id || m.user_detail_id || m.company_detail_id}`)}
                         >
                           <FiEye size={16} />
                         </button>
@@ -691,7 +672,7 @@ export default function PendingApproval() {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors p-1"
-                      onClick={() => navigate(`/member/${m.id || m.company_detail_id}`)}
+                      onClick={() => navigate(`/member/${m.id || m.user_detail_id || m.company_detail_id}`)}
                       title="View Member"
                     >
                       <FiEye size={16} />
@@ -713,11 +694,6 @@ export default function PendingApproval() {
                   <div className="flex items-center gap-2">
                     <FiMail className="text-gray-400 flex-shrink-0" size={14} />
                     <span className="text-gray-700 dark:text-gray-300 truncate">{m.email}</span>
-                  </div>
-
-                  <div className="flex items-center gap-1 pt-2 border-t border-gray-100 dark:border-gray-700">
-                    <FiHome className="text-gray-400 flex-shrink-0" size={12} />
-                    <span className="text-gray-600 dark:text-gray-400 text-xs">Valid until: {m.ad5 || m.validUpto}</span>
                   </div>
                 </div>
               </div>

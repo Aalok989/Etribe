@@ -18,30 +18,7 @@ export default function Feedbacks() {
   const [sortField, setSortField] = useState("");
   const [sortDirection, setSortDirection] = useState("asc");
 
-  // Mock data
-  const mockFeedbacks = [
-    {
-      id: 1,
-      company: "30days",
-      subject: "there is a problem in our sewer",
-      contents: "issue in the pipeline",
-      date: "26-Feb-2025"
-    },
-    {
-      id: 2,
-      company: "30days",
-      subject: "test",
-      contents: "test",
-      date: "27-Feb-2025"
-    },
-    {
-      id: 3,
-      company: "30days",
-      subject: "test",
-      contents: "eeeeeee",
-      date: "27-Feb-2025"
-    }
-  ];
+
 
   useEffect(() => {
     fetchFeedbacks();
@@ -62,23 +39,85 @@ export default function Feedbacks() {
         return;
       }
 
-      // For now, using mock data - replace with actual API call
-      // const response = await api.get("/feedbacks", {
-      //   headers: {
-      //     "Client-Service": "COHAPPRT",
-      //     "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
-      //     uid,
-      //     token,
-      //     rurl: "login.etribes.in",
-      //     "Content-Type": "application/json",
-      //   },
-      // });
+      console.log('Fetching feedbacks with credentials:', { uid, token });
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setFeedbacks(mockFeedbacks);
+      const response = await api.post("/attendance/get_feedback", {}, {
+        headers: {
+          "Client-Service": "COHAPPRT",
+          "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
+          uid: uid || '1',
+          token: token,
+          rurl: "etribes.ezcrm.site",
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      console.log('Feedbacks API response:', response.data);
+      
+      // Handle the API response data
+      console.log('Full API response structure:', response.data);
+      
+      // Check for feedback data in the response
+      if (response.data?.data && Array.isArray(response.data.data)) {
+        const apiFeedbacks = response.data.data;
+        console.log('Found feedbacks array with', apiFeedbacks.length, 'items');
+        
+        const mappedFeedbacks = apiFeedbacks.map((feedback, index) => {
+          console.log(`Mapping feedback ${index + 1}:`, feedback);
+          
+          return {
+            id: feedback.id || index + 1,
+            company: feedback.company_name || feedback.company || '',
+            subject: feedback.subject || '',
+            contents: feedback.content || feedback.contents || '',
+            date: feedback.feedback_date || feedback.date || ''
+          };
+        });
+        
+        setFeedbacks(mappedFeedbacks);
+        console.log('Final mapped feedbacks:', mappedFeedbacks);
+      } else if (response.data && Array.isArray(response.data)) {
+        // Fallback: if data is directly in response.data
+        const apiFeedbacks = response.data;
+        console.log('Found feedbacks array with', apiFeedbacks.length, 'items');
+        
+        const mappedFeedbacks = apiFeedbacks.map((feedback, index) => {
+          console.log(`Mapping feedback ${index + 1}:`, feedback);
+          
+          return {
+            id: feedback.id || index + 1,
+            company: feedback.company_name || feedback.company || '',
+            subject: feedback.subject || '',
+            contents: feedback.content || feedback.contents || '',
+            date: feedback.feedback_date || feedback.date || ''
+          };
+        });
+        
+        setFeedbacks(mappedFeedbacks);
+        console.log('Final mapped feedbacks:', mappedFeedbacks);
+      } else {
+        // No data found in API response
+        console.log('No data found in API response');
+        console.log('Available keys in response.data:', Object.keys(response.data || {}));
+        setFeedbacks([]);
+      }
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || "Failed to fetch feedbacks");
+      console.error('Error fetching feedbacks:', err);
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      
+      if (err.response?.status === 401) {
+        toast.error("Session expired. Please log in again.");
+        window.location.href = "/login";
+      } else if (err.response?.status === 404) {
+        toast.error("Feedbacks endpoint not found. Please check the API configuration.");
+      } else {
+        toast.error(err.response?.data?.message || err.message || "Failed to fetch feedbacks");
+      }
+      
+      // Set empty array on error
+      setFeedbacks([]);
     } finally {
       setLoading(false);
     }
@@ -87,9 +126,9 @@ export default function Feedbacks() {
   const filterFeedbacks = () => {
     const filtered = feedbacks.filter(
       (feedback) =>
-        feedback.company.toLowerCase().includes(search.toLowerCase()) ||
-        feedback.subject.toLowerCase().includes(search.toLowerCase()) ||
-        feedback.contents.toLowerCase().includes(search.toLowerCase())
+        (feedback.company || '').toLowerCase().includes(search.toLowerCase()) ||
+        (feedback.subject || '').toLowerCase().includes(search.toLowerCase()) ||
+        (feedback.contents || '').toLowerCase().includes(search.toLowerCase())
     );
     setFilteredFeedbacks(filtered);
     setCurrentPage(1);
@@ -104,10 +143,10 @@ export default function Feedbacks() {
   const exportToExcel = () => {
     const exportData = filteredFeedbacks.map((feedback, index) => ({
       "Sr No": index + 1,
-      Company: feedback.company,
-      Subject: feedback.subject,
-      Contents: feedback.contents,
-      Date: feedback.date,
+      Company: feedback.company || 'N/A',
+      Subject: feedback.subject || 'N/A',
+      Contents: feedback.contents || 'N/A',
+      Date: feedback.date || 'N/A',
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -122,10 +161,10 @@ export default function Feedbacks() {
       ["Sr No", "Company", "Subject", "Contents", "Date"],
       ...filteredFeedbacks.map((feedback, index) => [
         index + 1,
-        feedback.company,
-        feedback.subject,
-        feedback.contents,
-        feedback.date,
+        feedback.company || 'N/A',
+        feedback.subject || 'N/A',
+        feedback.contents || 'N/A',
+        feedback.date || 'N/A',
       ])
     ].map(row => row.join(",")).join("\n");
 
@@ -143,7 +182,7 @@ export default function Feedbacks() {
 
   const copyToClipboard = () => {
     const text = filteredFeedbacks.map((feedback, index) => 
-      `${index + 1}. ${feedback.company} - ${feedback.subject} - ${feedback.contents} - ${feedback.date}`
+      `${index + 1}. ${feedback.company || 'N/A'} - ${feedback.subject || 'N/A'} - ${feedback.contents || 'N/A'} - ${feedback.date || 'N/A'}`
     ).join("\n");
     
     navigator.clipboard.writeText(text).then(() => {
@@ -184,10 +223,10 @@ export default function Feedbacks() {
       // Prepare data rows
       const rows = filteredFeedbacks.map((feedback, index) => [
         index + 1,
-        feedback.company,
-        feedback.subject,
-        feedback.contents,
-        feedback.date
+        feedback.company || 'N/A',
+        feedback.subject || 'N/A',
+        feedback.contents || 'N/A',
+        feedback.date || 'N/A'
       ]);
 
       // Generate table
@@ -505,16 +544,16 @@ export default function Feedbacks() {
                       {indexOfFirstEntry + idx + 1}
                     </td>
                     <td className="p-3 text-center border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
-                      {feedback.company}
+                      {feedback.company || 'N/A'}
                     </td>
                     <td className="p-3 text-center border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
-                      {feedback.subject}
+                      {feedback.subject || 'N/A'}
                     </td>
                     <td className="p-3 text-center border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
-                      {feedback.contents}
+                      {feedback.contents || 'N/A'}
                     </td>
                     <td className="p-3 text-center border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
-                      {feedback.date}
+                      {feedback.date || 'N/A'}
                     </td>
                   </tr>
                 ))}
@@ -529,22 +568,22 @@ export default function Feedbacks() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                      {feedback.company.charAt(0).toUpperCase()}
+                      {(feedback.company || 'N').charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-800 dark:text-gray-100">{feedback.company}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{feedback.subject}</p>
+                      <h3 className="font-semibold text-gray-800 dark:text-gray-100">{feedback.company || 'N/A'}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{feedback.subject || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 gap-3 text-sm">
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">Contents:</span>
-                    <p className="font-medium text-gray-800 dark:text-gray-100">{feedback.contents}</p>
+                    <p className="font-medium text-gray-800 dark:text-gray-100">{feedback.contents || 'N/A'}</p>
                   </div>
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">Date:</span>
-                    <p className="font-medium text-gray-800 dark:text-gray-100">{feedback.date}</p>
+                    <p className="font-medium text-gray-800 dark:text-gray-100">{feedback.date || 'N/A'}</p>
                   </div>
                 </div>
               </div>

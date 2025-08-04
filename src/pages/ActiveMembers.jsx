@@ -211,14 +211,19 @@ export default function ActiveMembers() {
         return;
       }
 
-      // Call API to disable member
-      const response = await api.post('/userDetail/disable_member', {
-        company_detail_id: member.company_detail_id || member.id
+      console.log('Disabling member:', member);
+      console.log('Member ID:', member.id || member.user_id);
+
+      // Call API to disable member using the correct endpoint and payload format
+      const response = await api.post('/userDetail/disableMembership', {
+        user_id: member.id || member.user_id
       }, {
         headers: getAuthHeaders()
       });
 
-      if (response.data.success) {
+      console.log('Disable membership response:', response.data);
+
+      if (response.data.success || response.data.status === 'success') {
         toast.success(`${member.name} has been disabled successfully`);
         // Refresh the members list
         fetchActiveMembers();

@@ -30,89 +30,7 @@ export default function PaymentDetails() {
   const [filteredPayments, setFilteredPayments] = useState([]);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
 
-  // Mock data for demonstration
-  const mockPayments = [
-    {
-      id: 1,
-      company: "30days",
-      name: "naman",
-      paymentMode: "CASH",
-      bank: "Axis Bank Ltd.",
-      amount: 50000,
-      date: "2025-02-26",
-      status: "Cleared",
-    },
-    {
-      id: 2,
-      company: "MNHRM",
-      name: "sourav",
-      paymentMode: "NEFT",
-      bank: "Axis Bank Ltd.",
-      amount: 100,
-      date: "2025-02-24",
-      status: "Cleared",
-    },
-    {
-      id: 3,
-      company: "Greyhound Bold",
-      name: "Charu",
-      paymentMode: "CASH",
-      bank: "Axis Bank Ltd.",
-      amount: 3000,
-      date: "2025-02-22",
-      status: "Cleared",
-    },
-    {
-      id: 4,
-      company: "Greyhound Bold",
-      name: "Charu",
-      paymentMode: "NEFT",
-      bank: "Bank of Baroda",
-      amount: 50000,
-      date: "2025-02-22",
-      status: "Cleared",
-    },
-    {
-      id: 5,
-      company: "Anuradha",
-      name: "Anuradha",
-      paymentMode: "NEFT",
-      bank: "Au Small Finance Bank Limited",
-      amount: 200,
-      date: "2025-02-22",
-      status: "Cleared",
-    },
-    {
-      id: 6,
-      company: "Greyhound Bold",
-      name: "Charu",
-      paymentMode: "Cheque",
-      bank: "Bank of Baroda",
-      amount: 50000,
-      date: "2025-02-22",
-      status: "Processing",
-    },
-    {
-      id: 7,
-      company: "Greyhound Bold",
-      name: "Charu",
-      paymentMode: "Cheque",
-      bank: "Bank of Baroda",
-      amount: 50000,
-      date: "1970-01-01",
-      status: "Cleared",
-    },
-    {
-      id: 8,
-      company: "A.K. Mittal & Associates",
-      name: "Chirag Singhal",
-      paymentMode: "Cheque",
-      bank: "Bandhan Bank Ltd.",
-      amount: 450,
-      date: "1970-01-01",
-      status: "Bounced",
-    },
-  ];
+
 
   useEffect(() => {
     fetchPayments();
@@ -133,11 +51,137 @@ export default function PaymentDetails() {
         return;
       }
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setPayments(mockPayments);
+      console.log('Fetching payment details with credentials:', { uid, token });
+      
+      const response = await api.post("/payment_detail", {}, {
+        headers: {
+          "Client-Service": "COHAPPRT",
+          "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
+          uid: uid || '1',
+          token: token,
+          rurl: "etribes.ezcrm.site",
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      console.log('Payment details API response:', response.data);
+      
+      // Handle the API response data
+      console.log('Full API response structure:', response.data);
+      
+      // Check for payment_detail array in the response
+      if (response.data?.data?.payment_detail && Array.isArray(response.data.data.payment_detail)) {
+        const apiPayments = response.data.data.payment_detail;
+        console.log('Found payment_detail array with', apiPayments.length, 'items');
+        
+        const mappedPayments = apiPayments.map((payment, index) => {
+          console.log(`Mapping payment ${index + 1}:`, payment);
+          
+          return {
+            id: payment.id || index + 1,
+            company: payment.company_name || payment.company || '',
+            name: payment.pname || payment.name || '',
+            paymentMode: payment.received_through || payment.payment_mode || '',
+            bank: payment.name || payment.bank_name || '',
+            amount: parseFloat(payment.cheque_amount) || 0,
+            date: payment.bank_status_date || payment.updated_date || payment.date || '',
+            status: payment.cheque_status || payment.status || 'Unknown',
+            chequeNo: payment.cheque_no || '',
+            chequeDate: payment.cheque_date || '',
+            chequeImg: payment.cheque_img || '',
+            depositingBank: payment.depositing_bank || '',
+            updatedDate: payment.updated_date || '',
+            updatedBy: payment.updated_by || '',
+            validUpto: payment.valid_upto || ''
+          };
+        });
+        
+        setPayments(mappedPayments);
+        console.log('Final mapped payments:', mappedPayments);
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        // Fallback: if data is directly in response.data.data
+        const apiPayments = response.data.data;
+        console.log('Found data array with', apiPayments.length, 'items');
+        
+        const mappedPayments = apiPayments.map((payment, index) => {
+          console.log(`Mapping payment ${index + 1}:`, payment);
+          
+          return {
+            id: payment.id || index + 1,
+            company: payment.company_name || payment.company || '',
+            name: payment.pname || payment.name || '',
+            paymentMode: payment.received_through || payment.payment_mode || '',
+            bank: payment.name || payment.bank_name || '',
+            amount: parseFloat(payment.cheque_amount) || 0,
+            date: payment.bank_status_date || payment.updated_date || payment.date || '',
+            status: payment.cheque_status || payment.status || 'Unknown',
+            chequeNo: payment.cheque_no || '',
+            chequeDate: payment.cheque_date || '',
+            chequeImg: payment.cheque_img || '',
+            depositingBank: payment.depositing_bank || '',
+            updatedDate: payment.updated_date || '',
+            updatedBy: payment.updated_by || '',
+            validUpto: payment.valid_upto || ''
+          };
+        });
+        
+        setPayments(mappedPayments);
+        console.log('Final mapped payments:', mappedPayments);
+      } else if (response.data && Array.isArray(response.data)) {
+        // Fallback: if data is directly in response.data
+        const apiPayments = response.data;
+        console.log('Found data array with', apiPayments.length, 'items');
+        
+        const mappedPayments = apiPayments.map((payment, index) => {
+          console.log(`Mapping payment ${index + 1}:`, payment);
+          
+          return {
+            id: payment.id || index + 1,
+            company: payment.company_name || payment.company || '',
+            name: payment.pname || payment.name || '',
+            paymentMode: payment.received_through || payment.payment_mode || '',
+            bank: payment.name || payment.bank_name || '',
+            amount: parseFloat(payment.cheque_amount) || 0,
+            date: payment.bank_status_date || payment.updated_date || payment.date || '',
+            status: payment.cheque_status || payment.status || 'Unknown',
+            chequeNo: payment.cheque_no || '',
+            chequeDate: payment.cheque_date || '',
+            chequeImg: payment.cheque_img || '',
+            depositingBank: payment.depositing_bank || '',
+            updatedDate: payment.updated_date || '',
+            updatedBy: payment.updated_by || '',
+            validUpto: payment.valid_upto || ''
+          };
+        });
+        
+        setPayments(mappedPayments);
+        console.log('Final mapped payments:', mappedPayments);
+      } else {
+        // No data found in API response
+        console.log('No data found in API response');
+        console.log('Available keys in response.data:', Object.keys(response.data || {}));
+        if (response.data?.data) {
+          console.log('Available keys in response.data.data:', Object.keys(response.data.data || {}));
+        }
+        setPayments([]);
+      }
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || "Failed to fetch payment details");
+      console.error('Error fetching payment details:', err);
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      
+      if (err.response?.status === 401) {
+        toast.error("Session expired. Please log in again.");
+        window.location.href = "/login";
+      } else if (err.response?.status === 404) {
+        toast.error("Payment details endpoint not found. Please check the API configuration.");
+      } else {
+        toast.error(err.response?.data?.message || err.message || "Failed to fetch payment details");
+      }
+      
+      // Set empty array on error
+      setPayments([]);
     } finally {
       setLoading(false);
     }
@@ -146,11 +190,12 @@ export default function PaymentDetails() {
   const filterPayments = () => {
     const filtered = payments.filter(
       (payment) =>
-        payment.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.paymentMode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.bank.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.status.toLowerCase().includes(searchTerm.toLowerCase())
+        (payment.company || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (payment.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (payment.paymentMode || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (payment.bank || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (payment.status || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (payment.chequeNo || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredPayments(filtered);
     setCurrentPage(1);
@@ -159,13 +204,17 @@ export default function PaymentDetails() {
   const exportToExcel = () => {
     const exportData = filteredPayments.map((payment, index) => ({
       "S.No": index + 1,
-      Company: payment.company,
-      Name: payment.name,
-      "Payment Mode": payment.paymentMode,
-      Bank: payment.bank,
-      Amount: payment.amount,
-      Date: payment.date,
-      Status: payment.status,
+      Company: payment.company || 'N/A',
+      Name: payment.name || 'N/A',
+      "Payment Mode": payment.paymentMode || 'N/A',
+      Bank: payment.bank || 'N/A',
+      Amount: payment.amount || 0,
+      Date: payment.date || 'N/A',
+      Status: payment.status || 'N/A',
+      "Cheque No": payment.chequeNo || 'N/A',
+      "Cheque Date": payment.chequeDate || 'N/A',
+      "Updated Date": payment.updatedDate || 'N/A',
+      "Valid Upto": payment.validUpto || 'N/A',
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -177,16 +226,20 @@ export default function PaymentDetails() {
 
   const exportToCSV = () => {
     const csvContent = [
-      ["S.No", "Company", "Name", "Payment Mode", "Bank", "Amount", "Date", "Status"],
+      ["S.No", "Company", "Name", "Payment Mode", "Bank", "Amount", "Date", "Status", "Cheque No", "Cheque Date", "Updated Date", "Valid Upto"],
       ...filteredPayments.map((payment, index) => [
         index + 1,
-        payment.company,
-        payment.name,
-        payment.paymentMode,
-        payment.bank,
-        payment.amount,
-        payment.date,
-        payment.status,
+        payment.company || 'N/A',
+        payment.name || 'N/A',
+        payment.paymentMode || 'N/A',
+        payment.bank || 'N/A',
+        payment.amount || 0,
+        payment.date || 'N/A',
+        payment.status || 'N/A',
+        payment.chequeNo || 'N/A',
+        payment.chequeDate || 'N/A',
+        payment.updatedDate || 'N/A',
+        payment.validUpto || 'N/A',
       ])
     ].map(row => row.join(",")).join("\n");
 
@@ -204,7 +257,7 @@ export default function PaymentDetails() {
 
   const copyToClipboard = () => {
     const text = filteredPayments.map((payment, index) => 
-      `${index + 1}. ${payment.company} - ${payment.name} - ${payment.paymentMode} - ${payment.bank} - ₹${payment.amount} - ${payment.date} - ${payment.status}`
+      `${index + 1}. ${payment.company || 'N/A'} - ${payment.name || 'N/A'} - ${payment.paymentMode || 'N/A'} - ${payment.bank || 'N/A'} - ₹${payment.amount || 0} - ${payment.date || 'N/A'} - ${payment.status || 'N/A'}`
     ).join("\n");
     
     navigator.clipboard.writeText(text).then(() => {
@@ -239,19 +292,20 @@ export default function PaymentDetails() {
 
       // Define headers
       const headers = [
-        "S.No", "Company", "Name", "Payment Mode", "Bank", "Amount", "Date", "Status"
+        "S.No", "Company", "Name", "Payment Mode", "Bank", "Amount", "Date", "Status", "Cheque No"
       ];
 
       // Prepare data rows
       const rows = filteredPayments.map((payment, index) => [
         index + 1,
-        payment.company,
-        payment.name,
-        payment.paymentMode,
-        payment.bank,
-        `₹${payment.amount.toLocaleString()}`,
-        payment.date,
-        payment.status
+        payment.company || 'N/A',
+        payment.name || 'N/A',
+        payment.paymentMode || 'N/A',
+        payment.bank || 'N/A',
+        `₹${(payment.amount || 0).toLocaleString()}`,
+        payment.date || 'N/A',
+        payment.status || 'N/A',
+        payment.chequeNo || 'N/A'
       ]);
 
       // Generate table
@@ -285,7 +339,7 @@ export default function PaymentDetails() {
       });
 
       // Add summary at the bottom
-      const totalAmount = filteredPayments.reduce((sum, payment) => sum + payment.amount, 0);
+      const totalAmount = filteredPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
       const clearedCount = filteredPayments.filter(p => p.status === 'Cleared').length;
       const processingCount = filteredPayments.filter(p => p.status === 'Processing').length;
       const bouncedCount = filteredPayments.filter(p => p.status === 'Bounced').length;
@@ -565,56 +619,70 @@ export default function PaymentDetails() {
                       {indexOfFirstEntry + idx + 1}
                     </td>
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
-                      {payment.company}
+                      {payment.company || 'N/A'}
                     </td>
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xs">
-                          {payment.name.charAt(0).toUpperCase()}
+                          {(payment.name || 'N').charAt(0).toUpperCase()}
                         </div>
-                        <span className="font-medium text-gray-800 dark:text-gray-100">{payment.name}</span>
+                        <span className="font-medium text-gray-800 dark:text-gray-100">{payment.name || 'N/A'}</span>
                       </div>
                     </td>
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
-                      {payment.paymentMode}
+                      {payment.paymentMode || 'N/A'}
                     </td>
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
-                      {payment.bank}
+                      {payment.bank || 'N/A'}
                     </td>
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 font-medium">
-                      ₹{payment.amount.toLocaleString()}
+                      ₹{(payment.amount || 0).toLocaleString()}
                     </td>
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
-                      {payment.date}
+                      {payment.date || 'N/A'}
                     </td>
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700">
                       {getStatusBadge(payment.status)}
                     </td>
-                    <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleView(payment)}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                          title="View"
-                        >
-                          <FiEye size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(payment)}
-                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                          title="Edit"
-                        >
-                          <FiEdit size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(payment.id)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                          title="Delete"
-                        >
-                          <FiTrash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
+                                         <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700">
+                       <div className="flex items-center gap-2">
+                         {/* Show all actions for Processing or Bounced status */}
+                         {payment.status === 'Processing' || payment.status === 'Bounced' ? (
+                           <>
+                             <button
+                               onClick={() => handleView(payment)}
+                               className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                               title="View"
+                             >
+                               <FiEye size={16} />
+                             </button>
+                             <button
+                               onClick={() => handleEdit(payment)}
+                               className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                               title="Edit"
+                             >
+                               <FiEdit size={16} />
+                             </button>
+                             <button
+                               onClick={() => handleDelete(payment.id)}
+                               className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                               title="Delete"
+                             >
+                               <FiTrash2 size={16} />
+                             </button>
+                           </>
+                         ) : (
+                           /* Show only delete action for Cleared status */
+                           <button
+                             onClick={() => handleDelete(payment.id)}
+                             className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                             title="Delete"
+                           >
+                             <FiTrash2 size={16} />
+                           </button>
+                         )}
+                       </div>
+                     </td>
                   </tr>
                 ))}
               </tbody>
@@ -631,50 +699,64 @@ export default function PaymentDetails() {
                       {payment.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-800 dark:text-gray-100">{payment.name}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{payment.company}</p>
+                      <h3 className="font-semibold text-gray-800 dark:text-gray-100">{payment.name || 'N/A'}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{payment.company || 'N/A'}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleView(payment)}
-                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                      title="View"
-                    >
-                      <FiEye size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleEdit(payment)}
-                      className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                      title="Edit"
-                    >
-                      <FiEdit size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(payment.id)}
-                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                      title="Delete"
-                    >
-                      <FiTrash2 size={16} />
-                    </button>
-                  </div>
+                                     <div className="flex items-center gap-2">
+                     {/* Show all actions for Processing or Bounced status */}
+                     {payment.status === 'Processing' || payment.status === 'Bounced' ? (
+                       <>
+                         <button
+                           onClick={() => handleView(payment)}
+                           className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                           title="View"
+                         >
+                           <FiEye size={16} />
+                         </button>
+                         <button
+                           onClick={() => handleEdit(payment)}
+                           className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                           title="Edit"
+                         >
+                           <FiEdit size={16} />
+                         </button>
+                         <button
+                           onClick={() => handleDelete(payment.id)}
+                           className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                           title="Delete"
+                         >
+                           <FiTrash2 size={16} />
+                         </button>
+                       </>
+                     ) : (
+                       /* Show only delete action for Cleared status */
+                       <button
+                         onClick={() => handleDelete(payment.id)}
+                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                         title="Delete"
+                       >
+                         <FiTrash2 size={16} />
+                       </button>
+                     )}
+                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">Payment Mode:</span>
-                    <p className="font-medium text-gray-800 dark:text-gray-100">{payment.paymentMode}</p>
+                    <p className="font-medium text-gray-800 dark:text-gray-100">{payment.paymentMode || 'N/A'}</p>
                   </div>
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">Bank:</span>
-                    <p className="font-medium text-gray-800 dark:text-gray-100">{payment.bank}</p>
+                    <p className="font-medium text-gray-800 dark:text-gray-100">{payment.bank || 'N/A'}</p>
                   </div>
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">Amount:</span>
-                    <p className="font-medium text-gray-800 dark:text-gray-100">₹{payment.amount.toLocaleString()}</p>
+                    <p className="font-medium text-gray-800 dark:text-gray-100">₹{(payment.amount || 0).toLocaleString()}</p>
                   </div>
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">Date:</span>
-                    <p className="font-medium text-gray-800 dark:text-gray-100">{payment.date}</p>
+                    <p className="font-medium text-gray-800 dark:text-gray-100">{payment.date || 'N/A'}</p>
                   </div>
                   <div className="col-span-2">
                     <span className="text-gray-600 dark:text-gray-400">Status:</span>

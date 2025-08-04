@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { FiCalendar } from "react-icons/fi";
 import api from "../../api/axiosConfig";
 import { getAuthHeaders } from "../../utils/apiHeaders";
 
 export default function PastEventCard() {
   const [pastCount, setPastCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchPastCount();
@@ -12,6 +15,7 @@ export default function PastEventCard() {
 
   const fetchPastCount = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid');
       const response = await api.post('/event/past', {}, {
@@ -33,7 +37,10 @@ export default function PastEventCard() {
       }
       setPastCount(backendEvents.length);
     } catch (err) {
+      console.error('Error fetching past events:', err);
       setPastCount(0);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -48,7 +55,9 @@ export default function PastEventCard() {
       <div className="relative z-10 flex flex-col items-center justify-center h-full w-full">
         <FiCalendar size={32} className="text-violet-500 dark:text-violet-300 opacity-80 mb-1" />
         <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Past Event</div>
-        <div className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 drop-shadow">{pastCount}</div>
+        <div className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 drop-shadow">
+          {loading ? '...' : pastCount}
+        </div>
       </div>
     </div>
   );
