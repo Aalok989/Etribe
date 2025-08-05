@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import DashboardLayout from "../components/Layout/DashboardLayout";
 import {
   FiSearch,
@@ -24,7 +24,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-export default function GrievancesActive() {
+export default function GrievancesPending() {
   const [grievances, setGrievances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,6 +34,7 @@ export default function GrievancesActive() {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedGrievance, setSelectedGrievance] = useState(null);
+  const toastShownRef = useRef(false);
 
   useEffect(() => {
     fetchGrievances();
@@ -45,6 +46,9 @@ export default function GrievancesActive() {
 
   const fetchGrievances = async () => {
     try {
+      // Reset toast flag at the start of each fetch
+      toastShownRef.current = false;
+      
       const token = localStorage.getItem("token");
       const uid = localStorage.getItem("uid");
       
@@ -76,12 +80,15 @@ export default function GrievancesActive() {
       // Handle the API response data
       console.log('Full API response structure:', response.data);
       
+      let mappedGrievances = [];
+      let grievancesFound = false;
+      
       // Check for grievances data in the response
       if (response.data?.data && Array.isArray(response.data.data)) {
         const apiGrievances = response.data.data;
         console.log('Found grievances array with', apiGrievances.length, 'items');
         
-        const mappedGrievances = apiGrievances.map((grievance, index) => {
+        mappedGrievances = apiGrievances.map((grievance, index) => {
           console.log(`Mapping grievance ${index + 1}:`, grievance);
           
           return {
@@ -95,16 +102,13 @@ export default function GrievancesActive() {
             file: grievance.file || ''
           };
         });
-        
-        setGrievances(mappedGrievances);
-        console.log('Final mapped grievances:', mappedGrievances);
-        toast.success(`Loaded ${mappedGrievances.length} grievances successfully`);
+        grievancesFound = true;
       } else if (response.data && Array.isArray(response.data)) {
         // Fallback: if data is directly in response.data
         const apiGrievances = response.data;
         console.log('Found grievances array with', apiGrievances.length, 'items');
         
-        const mappedGrievances = apiGrievances.map((grievance, index) => {
+        mappedGrievances = apiGrievances.map((grievance, index) => {
           console.log(`Mapping grievance ${index + 1}:`, grievance);
           
           return {
@@ -118,10 +122,7 @@ export default function GrievancesActive() {
             file: grievance.file || ''
           };
         });
-        
-        setGrievances(mappedGrievances);
-        console.log('Final mapped grievances:', mappedGrievances);
-        toast.success(`Loaded ${mappedGrievances.length} grievances successfully`);
+        grievancesFound = true;
       } else if (response.data && typeof response.data === 'object') {
         // Check if data is nested differently
         console.log('Response data is an object, checking for nested arrays...');
@@ -141,7 +142,7 @@ export default function GrievancesActive() {
         
         if (foundArray) {
           console.log('Processing found array:', foundArray);
-          const mappedGrievances = foundArray.map((grievance, index) => {
+          mappedGrievances = foundArray.map((grievance, index) => {
             console.log(`Mapping grievance ${index + 1}:`, grievance);
             
             return {
@@ -155,10 +156,7 @@ export default function GrievancesActive() {
               file: grievance.file || ''
             };
           });
-          
-          setGrievances(mappedGrievances);
-          console.log('Final mapped grievances:', mappedGrievances);
-          toast.success(`Loaded ${mappedGrievances.length} grievances successfully`);
+          grievancesFound = true;
         } else {
           // No data found in API response
           console.log('No array found in response.data');
@@ -172,6 +170,14 @@ export default function GrievancesActive() {
         console.log('Available keys in response.data:', Object.keys(response.data || {}));
         setGrievances([]);
         toast.info("No grievances found in the system.");
+      }
+      
+      // Set grievances and show success message only once
+      if (grievancesFound && !toastShownRef.current) {
+        setGrievances(mappedGrievances);
+        console.log('Final mapped grievances:', mappedGrievances);
+        toast.success(`Loaded ${mappedGrievances.length} grievances successfully`);
+        toastShownRef.current = true;
       }
     } catch (err) {
       console.error('Error fetching grievances:', err);
@@ -272,9 +278,9 @@ export default function GrievancesActive() {
 
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Active Grievances");
-    XLSX.writeFile(wb, "active_grievances.xlsx");
-    toast.success("Active grievances exported to Excel!");
+    XLSX.utils.book_append_sheet(wb, ws, "Pending Grievances");
+    XLSX.writeFile(wb, "pending_grievances.xlsx");
+    toast.success("Pending grievances exported to Excel!");
   };
 
   const exportToCSV = () => {
@@ -294,12 +300,12 @@ export default function GrievancesActive() {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", "active_grievances.csv");
+    link.setAttribute("download", "pending_grievances.csv");
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("Active grievances exported to CSV!");
+    toast.success("Pending grievances exported to CSV!");
   };
 
   const copyToClipboard = () => {
@@ -308,7 +314,7 @@ export default function GrievancesActive() {
     ).join("\n");
     
     navigator.clipboard.writeText(text).then(() => {
-      toast.success("Active grievances copied to clipboard!");
+      toast.success("Pending grievances copied to clipboard!");
     }).catch(() => {
       toast.error("Failed to copy to clipboard");
     });
@@ -330,7 +336,7 @@ export default function GrievancesActive() {
       // Add title
       doc.setFontSize(16);
       doc.setFont("helvetica", "bold");
-      doc.text("Active Grievances Report", 40, 40);
+      doc.text("Pending Grievances Report", 40, 40);
 
       // Add date
       doc.setFontSize(10);
@@ -387,14 +393,14 @@ export default function GrievancesActive() {
       doc.text("Summary:", 40, summaryY);
       
       doc.setFont("helvetica", "normal");
-             doc.text(`Total Active Grievances: ${filteredGrievances.length}`, 40, summaryY + 15);
+             doc.text(`Total Pending Grievances: ${filteredGrievances.length}`, 40, summaryY + 15);
        doc.text(`Pending: ${filteredGrievances.filter(g => g.status === 'Pending').length}`, 40, summaryY + 30);
        doc.text(`Resolved: ${filteredGrievances.filter(g => g.status === 'Resolved').length}`, 40, summaryY + 45);
        doc.text(`Closed: ${filteredGrievances.filter(g => g.status === 'Closed').length}`, 40, summaryY + 60);
 
       // Save the PDF
-      doc.save("active_grievances.pdf");
-      toast.success("Active grievances exported to PDF!");
+      doc.save("pending_grievances.pdf");
+      toast.success("Pending grievances exported to PDF!");
     } catch (err) {
       console.error("PDF export failed:", err);
       toast.error("PDF export failed: " + err.message);
@@ -413,7 +419,7 @@ export default function GrievancesActive() {
         <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-800">
           <div className="flex items-center gap-3">
             <FiRefreshCw className="animate-spin text-indigo-600 text-2xl" />
-            <p className="text-indigo-700 dark:text-indigo-300">Loading active grievances...</p>
+            <p className="text-indigo-700 dark:text-indigo-300">Loading pending grievances...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -422,17 +428,17 @@ export default function GrievancesActive() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col gap-6 py-6">
+              <div className="flex flex-col gap-6 py-6">
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-orange-600">Active Grievances</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Manage and track all active grievance complaints</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-orange-600">Pending Grievances</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Manage and track all pending grievance complaints</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
               <FiAlertTriangle className="text-indigo-600" />
-              <span>Total Active: {grievances.length}</span>
+              <span>Total Pending: {grievances.length}</span>
             </div>
             <button 
               className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
@@ -565,83 +571,78 @@ export default function GrievancesActive() {
         </div>
 
         {/* Grievances Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {currentEntries.map((grievance, idx) => (
-            <div key={grievance.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-300 overflow-hidden">
-              {/* Header */}
-              <div className="p-6 border-b border-gray-100 dark:border-gray-700">
-                <div className="flex items-start justify-between mb-4">
+            <div key={grievance.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col h-full">
+              {/* Compact Header */}
+              <div className="p-4 flex-1">
+                <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg mb-3 line-clamp-2 leading-tight">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-2 line-clamp-2 leading-tight">
                       {grievance.title || 'Untitled Grievance'}
                     </h3>
-                                         <div className="flex items-center gap-2 mb-4">
-                       {getStatusBadge(grievance.status)}
-                     </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      {getStatusBadge(grievance.status)}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 ml-3 flex-shrink-0">
+                  <div className="flex items-center gap-1 ml-2 flex-shrink-0">
                     <button
                       onClick={() => handleView(grievance)}
-                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1.5 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                       title="View Details"
                     >
-                      <FiEye size={16} />
+                      <FiEye size={14} />
                     </button>
                     <button
                       onClick={() => handleEdit(grievance)}
-                      className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                      className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1.5 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
                       title="Edit"
                     >
-                      <FiEdit size={16} />
+                      <FiEdit size={14} />
                     </button>
                     <button
                       onClick={() => handleDelete(grievance.id)}
-                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                       title="Delete"
                     >
-                      <FiTrash2 size={16} />
+                      <FiTrash2 size={14} />
                     </button>
                   </div>
                 </div>
                 
-                                 {/* Description */}
-                 <div className="mb-4">
-                   <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 leading-relaxed min-h-[3.5rem]">
-                     {grievance.description ? 
-                       grievance.description.replace(/<[^>]*>/g, '').trim() || 'No description available' 
-                       : 'No description available'}
-                   </p>
-                 </div>
+                {/* Brief Description */}
+                <div className="mb-3">
+                  <p className="text-gray-600 dark:text-gray-400 text-xs line-clamp-2 leading-relaxed">
+                    {grievance.description ? 
+                      grievance.description.replace(/<[^>]*>/g, '').trim().substring(0, 80) + (grievance.description.length > 80 ? '...' : '') || 'No description' 
+                      : 'No description'}
+                  </p>
+                </div>
                 
-                {/* File Attachment */}
+                {/* File Attachment Indicator */}
                 {grievance.file && (
-                  <div className="flex items-center gap-2 mb-4">
-                    <FiFile className="text-gray-400 flex-shrink-0 w-4 h-4" />
-                    <span className="text-xs text-gray-500 dark:text-gray-400">Attachment available</span>
+                  <div className="flex items-center gap-1 mb-3">
+                    <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">📎 Attachment</span>
                   </div>
                 )}
               </div>
 
-                                                                            {/* Details */}
-                 <div className="p-6 space-y-3">
-                   <div className="flex items-center gap-3 text-sm">
-                     <FiUser className="text-gray-400 flex-shrink-0 w-4 h-4" />
-                     <span className="text-gray-600 dark:text-gray-400 min-w-[90px]">Submitted by:</span>
-                     <span className="font-medium text-gray-900 dark:text-gray-100 truncate flex-1">{grievance.submittedBy || 'N/A'}</span>
-                   </div>
-                   
-                   <div className="flex items-center gap-3 text-sm">
-                     <FiCalendar className="text-gray-400 flex-shrink-0 w-4 h-4" />
-                     <span className="text-gray-600 dark:text-gray-400 min-w-[90px]">Date:</span>
-                     <span className="font-medium text-gray-900 dark:text-gray-100 truncate flex-1">{grievance.submittedDate || 'N/A'}</span>
-                   </div>
-                   
-                   <div className="flex items-center gap-3 text-sm">
-                     <FiCalendar className="text-gray-400 flex-shrink-0 w-4 h-4" />
-                     <span className="text-gray-600 dark:text-gray-400 min-w-[90px]">Updated:</span>
-                     <span className="font-medium text-gray-900 dark:text-gray-100 truncate flex-1">{grievance.lastUpdated || 'N/A'}</span>
-                   </div>
-                 </div>
+              {/* Compact Details - Always at bottom */}
+              <div className="px-4 pb-4 space-y-2 mt-auto">
+                <div className="flex items-center gap-2 text-xs">
+                  <FiUser className="text-gray-400 flex-shrink-0 w-3 h-3" />
+                  <span className="text-gray-600 dark:text-gray-400">By:</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100 truncate flex-1">{grievance.submittedBy || 'N/A'}</span>
+                </div>
+                
+                <div className="flex items-center gap-2 text-xs">
+                  <FiCalendar className="text-gray-400 flex-shrink-0 w-3 h-3" />
+                  <span className="text-gray-600 dark:text-gray-400">Date:</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100 truncate flex-1">
+                    {grievance.submittedDate ? new Date(grievance.submittedDate).toLocaleDateString() : 'N/A'}
+                  </span>
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -652,7 +653,7 @@ export default function GrievancesActive() {
             <FiAlertTriangle className="mx-auto text-gray-400 text-4xl mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No grievances found</h3>
             <p className="text-gray-600 dark:text-gray-400">
-              {searchTerm ? 'No grievances match your search criteria.' : 'No active grievances at the moment.'}
+              {searchTerm ? 'No grievances match your search criteria.' : 'No pending grievances at the moment.'}
             </p>
           </div>
         )}
@@ -722,62 +723,120 @@ export default function GrievancesActive() {
                 </button>
               </div>
 
-              <div className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Title
-                    </label>
-                    <p className="text-gray-900 dark:text-gray-100 font-medium text-lg">{selectedGrievance.title || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Status
-                    </label>
-                    <div>{getStatusBadge(selectedGrievance.status)}</div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Submitted By
-                    </label>
-                    <p className="text-gray-900 dark:text-gray-100">{selectedGrievance.submittedBy || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Submitted Date
-                    </label>
-                    <p className="text-gray-900 dark:text-gray-100">{selectedGrievance.submittedDate || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Last Updated
-                    </label>
-                    <p className="text-gray-900 dark:text-gray-100">{selectedGrievance.lastUpdated || 'N/A'}</p>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Description
-                  </label>
-                  <p className="text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                    {selectedGrievance.description ? 
-                      selectedGrievance.description.replace(/<[^>]*>/g, '').trim() || 'No description available' 
-                      : 'No description available'}
-                  </p>
-                </div>
-                
-                {selectedGrievance.file && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Attachment
-                    </label>
-                    <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                      <FiFile className="text-gray-400" />
-                      <span className="text-gray-900 dark:text-gray-100">{selectedGrievance.file}</span>
+                                            <div className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Grievance Information */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                      Grievance Information
+                    </h4>
+                    
+                    <div className="space-y-3">
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Title:</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100 break-words max-w-xs text-right">
+                          {selectedGrievance.title || 'N/A'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Status:</span>
+                        <div>{getStatusBadge(selectedGrievance.status)}</div>
+                      </div>
+                      
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Submitted By:</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100 break-words max-w-xs text-right">
+                          {selectedGrievance.submittedBy || 'N/A'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Submitted Date:</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100">
+                          {selectedGrievance.submittedDate ? 
+                            new Date(selectedGrievance.submittedDate).toLocaleString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }) : 'N/A'}
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Last Updated:</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100">
+                          {selectedGrievance.lastUpdated ? 
+                            new Date(selectedGrievance.lastUpdated).toLocaleString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }) : 'N/A'}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                )}
+
+                  {/* Attachment Image */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                      Attachment
+                    </h4>
+                    
+                    {selectedGrievance.file ? (
+                      <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                        <img 
+                          src={`https://api.etribes.ezcrm.site/${selectedGrievance.file}`} 
+                          alt="Grievance Attachment" 
+                          className="w-full h-auto max-h-96 object-contain bg-gray-50 dark:bg-gray-700"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                        <div className="items-center justify-center h-48 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400" style={{ display: 'none' }}>
+                          <div className="text-center">
+                            <FiFile className="mx-auto text-4xl mb-2" />
+                            <p>Image not available</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-48 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <div className="text-center text-gray-500 dark:text-gray-400">
+                          <FiFile className="mx-auto text-4xl mb-2" />
+                          <p>No attachment available</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Description Section */}
+                <div className="mt-6">
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                    Description
+                  </h4>
+                  <div className="text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg max-h-60 overflow-y-auto">
+                    {selectedGrievance.description ? 
+                      selectedGrievance.description
+                        .replace(/<[^>]*>/g, '') // Remove HTML tags
+                        .replace(/\n/g, '<br />') // Convert newlines to HTML breaks
+                        .split('<br />')
+                        .map((line, index) => (
+                          <p key={index} className="mb-2 last:mb-0">
+                            {line.trim() || '\u00A0'} {/* Use non-breaking space for empty lines */}
+                          </p>
+                        ))
+                      : 'No description available'}
+                  </div>
+                </div>
+                
+                
 
                 <div className="flex gap-3 pt-4">
                   <button

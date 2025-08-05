@@ -1566,160 +1566,127 @@ export default function Circulars() {
       {/* View Circular Details Modal */}
       {showViewModal && selectedCircular && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold">
-                  <FiFileText size={20} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Circular Details</h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">View complete circular information</p>
-                </div>
-              </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Circular Details
+              </h3>
               <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedCircular(null);
-                }}
-                className="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => setShowViewModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
-                <FiX size={24} />
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-            
-            <div className="p-6 space-y-6">
-              {/* Header Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
-                  <label className="block text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
-                    <FiFileText className="inline mr-2" />
-                    Circular Number
-                  </label>
-                  <p className="text-blue-900 dark:text-blue-100 font-semibold text-lg">
-                    #{selectedCircular.circularNo}
-                  </p>
-                </div>
-                
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
-                  <label className="block text-sm font-medium text-green-700 dark:text-green-300 mb-2">
-                    <FiCalendar className="inline mr-2" />
-                    Date
-                  </label>
-                  <p className="text-green-900 dark:text-green-100 font-semibold text-lg">
-                    {new Date(selectedCircular.date).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </p>
-                </div>
-              </div>
-              
-              {/* Subject */}
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
-                <label className="block text-sm font-medium text-purple-700 dark:text-purple-300 mb-2">
-                  <FiFileText className="inline mr-2" />
-                  Subject
-                </label>
-                <p className="text-purple-900 dark:text-purple-100 font-semibold text-lg">
-                  {selectedCircular.subject}
-                </p>
-              </div>
-              
-              {/* Description */}
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <FiFileText className="inline mr-2" />
-                  Description
-                </label>
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-                  <p className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap leading-relaxed">
-                    {(() => {
-                      console.log("Modal rendering - selectedCircular:", selectedCircular);
-                      console.log("Modal rendering - description:", selectedCircular.description);
-                      console.log("Modal rendering - body:", selectedCircular.body);
-                      return selectedCircular.description || selectedCircular.body || 'No description available';
-                    })()}
-                  </p>
-                </div>
-              </div>
-              
-              {/* File Attachment Section */}
-              {(() => {
-                const filePath = selectedCircular.file || selectedCircular.file_path || selectedCircular.document || selectedCircular.attachment;
-                console.log("Modal file attachment check:", {
-                  file: selectedCircular.file,
-                  file_path: selectedCircular.file_path,
-                  document: selectedCircular.document,
-                  attachment: selectedCircular.attachment,
-                  finalPath: filePath
-                });
-                return filePath;
-              })() ? (
-                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center text-white">
-                      <FiFile size={20} />
-                    </div>
-                    <div>
-                      <span className="text-blue-800 dark:text-blue-200 font-semibold text-lg">
-                        File Attachment Available
-                      </span>
-                      <p className="text-blue-600 dark:text-blue-300 text-sm">
-                        Click to open the attached document
-                      </p>
-                    </div>
-                  </div>
+
+            <div className="p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Circular Information */}
+                <div className="space-y-4">
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                    Circular Information
+                  </h4>
                   
-                  <button
-                    onClick={async () => await openCircularFile(selectedCircular)}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-xl hover:from-blue-600 hover:to-cyan-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
-                  >
-                    <FiEye size={18} />
-                    Open File
-                  </button>
-                </div>
-              ) : (
-                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl flex items-center justify-center text-white">
-                      <FiFileText size={20} />
-                    </div>
-                    <div>
-                      <span className="text-yellow-800 dark:text-yellow-200 font-semibold text-lg">
-                        Text-Only Circular
+                  <div className="space-y-3">
+                    <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Circular No:</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-100 break-words max-w-xs text-right">
+                        {selectedCircular.circularNo || 'N/A'}
                       </span>
-                      <p className="text-yellow-600 dark:text-yellow-300 text-sm">
-                        This circular contains only text content. No downloadable file is attached.
-                      </p>
+                    </div>
+                    
+                    <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Subject:</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-100 break-words max-w-xs text-right">
+                        {selectedCircular.subject || 'N/A'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Date:</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-100">
+                        {selectedCircular.date ? 
+                          new Date(selectedCircular.date).toLocaleString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) : 'N/A'}
+                      </span>
                     </div>
                   </div>
                 </div>
-              )}
+
+                                  {/* File Attachment */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                      Attachment
+                    </h4>
+                    
+                    {(() => {
+                      const filePath = selectedCircular.file || selectedCircular.file_path || selectedCircular.document || selectedCircular.attachment;
+                      return filePath;
+                    })() ? (
+                      <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                        <img 
+                          src={`https://api.etribes.ezcrm.site/${selectedCircular.file || selectedCircular.file_path || selectedCircular.document || selectedCircular.attachment}`} 
+                          alt="Circular Attachment" 
+                          className="w-full h-auto max-h-96 object-contain bg-gray-50 dark:bg-gray-700"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                        <div className="items-center justify-center h-48 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400" style={{ display: 'none' }}>
+                          <div className="text-center">
+                            <FiFile className="mx-auto text-4xl mb-2" />
+                            <p>Image not available</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-48 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <div className="text-center text-gray-500 dark:text-gray-400">
+                          <FiFile className="mx-auto text-4xl mb-2" />
+                          <p>No attachment available</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+              </div>
               
-              {(() => {
-                const filePath = selectedCircular.file || selectedCircular.file_path || selectedCircular.document || selectedCircular.attachment;
-                return filePath;
-              })() && (
-                <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
-                  <p className="text-blue-700 dark:text-blue-300 text-sm font-medium">
-                    File: {selectedCircular.file || selectedCircular.file_path || selectedCircular.document || selectedCircular.attachment}
-                  </p>
+              {/* Description Section */}
+              <div className="mt-6">
+                <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                  Description
+                </h4>
+                <div className="text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg max-h-60 overflow-y-auto">
+                  {(() => {
+                    const description = selectedCircular.description || selectedCircular.body || 'No description available';
+                    return description
+                      .replace(/<[^>]*>/g, '') // Remove HTML tags
+                      .replace(/\n/g, '<br />') // Convert newlines to HTML breaks
+                      .split('<br />')
+                      .map((line, index) => (
+                        <p key={index} className="mb-2 last:mb-0">
+                          {line.trim() || '\u00A0'} {/* Use non-breaking space for empty lines */}
+                        </p>
+                      ));
+                  })()}
                 </div>
-              )}
-            </div>
-            
-            <div className="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
-              <button
-                onClick={() => {
-                  setShowViewModal(false);
-                  setSelectedCircular(null);
-                }}
-                className="px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl hover:from-gray-600 hover:to-gray-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
-              >
-                Close
-              </button>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors font-medium"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

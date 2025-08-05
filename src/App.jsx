@@ -6,6 +6,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
+import NewRegistration from "./pages/NewRegistration";
 import ImportantContactsPage from "./pages/ImportantContacts";
 import MasterSettings from "./pages/MasterSettings";
 import ActiveMembers from "./pages/ActiveMembers";
@@ -70,6 +71,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/new-registration"
+              element={
+                <ProtectedRoute>
+                  <NewRegistration />
                 </ProtectedRoute>
               }
             />

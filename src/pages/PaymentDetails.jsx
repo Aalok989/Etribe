@@ -14,6 +14,8 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiUsers,
+  FiX,
+  FiCalendar,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import api from "../api/axiosConfig";
@@ -29,7 +31,18 @@ export default function PaymentDetails() {
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [filteredPayments, setFilteredPayments] = useState([]);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
-
+  
+  // Edit modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [editForm, setEditForm] = useState({
+    chequeNo: '',
+    chequeAmount: '',
+    depositBank: '',
+    chequeStatus: '',
+    statusUpdateDate: ''
+  });
 
 
   useEffect(() => {
@@ -340,9 +353,16 @@ export default function PaymentDetails() {
 
       // Add summary at the bottom
       const totalAmount = filteredPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
-      const clearedCount = filteredPayments.filter(p => p.status === 'Cleared').length;
-      const processingCount = filteredPayments.filter(p => p.status === 'Processing').length;
-      const bouncedCount = filteredPayments.filter(p => p.status === 'Bounced').length;
+      // Dynamic status counting
+      const statusCounts = {};
+      filteredPayments.forEach(payment => {
+        const status = payment.status || 'Unknown';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+      });
+      
+      const statusSummary = Object.entries(statusCounts)
+        .map(([status, count]) => `${status}: ${count}`)
+        .join(' | ');
 
       const summaryY = doc.lastAutoTable.finalY + 20;
       doc.setFontSize(10);
@@ -352,7 +372,7 @@ export default function PaymentDetails() {
       doc.setFont("helvetica", "normal");
       doc.text(`Total Payments: ${filteredPayments.length}`, 40, summaryY + 15);
       doc.text(`Total Amount: ₹${totalAmount.toLocaleString()}`, 40, summaryY + 30);
-      doc.text(`Cleared: ${clearedCount} | Processing: ${processingCount} | Bounced: ${bouncedCount}`, 40, summaryY + 45);
+              doc.text(statusSummary, 40, summaryY + 45);
 
       // Save the PDF
       doc.save("payment_details.pdf");
@@ -364,19 +384,26 @@ export default function PaymentDetails() {
   };
 
   const getStatusBadge = (status) => {
-    const statusClasses = {
-      Cleared: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-      Processing: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
-      Bounced: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-    };
+    // Dynamic status badge with fallback styling
+    let statusClass = "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
+    
+    // Apply color based on status content (case-insensitive)
+    if (status) {
+      const lowerStatus = status.toLowerCase();
+      if (lowerStatus.includes('clear') || lowerStatus.includes('success') || lowerStatus.includes('complete')) {
+        statusClass = "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
+      } else if (lowerStatus.includes('process') || lowerStatus.includes('pending') || lowerStatus.includes('wait')) {
+        statusClass = "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
+      } else if (lowerStatus.includes('bounce') || lowerStatus.includes('fail') || lowerStatus.includes('reject')) {
+        statusClass = "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
+      }
+    }
 
     return (
       <span
-        className={`px-2 py-1 text-xs font-medium rounded-full ${
-          statusClasses[status] || "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-        }`}
+        className={`px-2 py-1 text-xs font-medium rounded-full ${statusClass}`}
       >
-        {status}
+        {status || 'Unknown'}
       </span>
     );
   };
@@ -384,22 +411,157 @@ export default function PaymentDetails() {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this payment record?")) {
       try {
-        setPayments(payments.filter(payment => payment.id !== id));
-        toast.success("Payment record deleted successfully");
+        const token = localStorage.getItem("token");
+        const uid = localStorage.getItem("uid");
+        
+        if (!token) {
+          toast.error("Please log in to delete payment records");
+          window.location.href = "/";
+          return;
+        }
+
+        console.log('Deleting payment with ID:', id);
+        
+        const response = await api.post("/payment_detail/delete", {
+          id: id.toString()
+        }, {
+          headers: {
+            "Client-Service": "COHAPPRT",
+            "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
+            uid: uid || '1',
+            token: token,
+            rurl: "etribes.ezcrm.site",
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        
+        console.log('Delete API response:', response.data);
+        
+        if (response.data?.status === 'success' || response.status === 200) {
+          // Remove the deleted payment from the local state
+          setPayments(payments.filter(payment => payment.id !== id));
+          toast.success("Payment record deleted successfully");
+        } else {
+          toast.error(response.data?.message || "Failed to delete payment record");
+        }
       } catch (err) {
-        toast.error("Failed to delete payment record");
+        console.error('Error deleting payment:', err);
+        console.error('Error response:', err.response?.data);
+        console.error('Error status:', err.response?.status);
+        
+        if (err.response?.status === 401) {
+          toast.error("Session expired. Please log in again.");
+          window.location.href = "/login";
+        } else if (err.response?.status === 404) {
+          toast.error("Delete endpoint not found. Please check the API configuration.");
+        } else {
+          toast.error(err.response?.data?.message || err.message || "Failed to delete payment record");
+        }
       }
     }
   };
 
   const handleView = (payment) => {
-    console.log("View payment:", payment);
-    toast.info("View functionality to be implemented");
+    setSelectedPayment(payment);
+    setShowViewModal(true);
   };
 
   const handleEdit = (payment) => {
-    console.log("Edit payment:", payment);
-    toast.info("Edit functionality to be implemented");
+    setSelectedPayment(payment);
+    setEditForm({
+      chequeNo: payment.chequeNo || '',
+      chequeAmount: payment.amount || '',
+      depositBank: payment.depositingBank || '',
+      chequeStatus: payment.status || '',
+      statusUpdateDate: payment.updatedDate || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("uid");
+      
+      if (!token) {
+        toast.error("Please log in to update payment records");
+        window.location.href = "/";
+        return;
+      }
+
+      console.log('Updating payment with ID:', selectedPayment.id);
+      
+      // Prepare the update data
+      const updateData = {
+        id: selectedPayment.id.toString(),
+        cheque_no: editForm.chequeNo,
+        cheque_amount: editForm.chequeAmount,
+        depositing_bank: editForm.depositBank,
+        cheque_status: editForm.chequeStatus,
+        updated_date: editForm.statusUpdateDate
+      };
+
+      // Make API call to update payment details
+      const response = await api.post("/payment_detail/update", updateData, {
+        headers: {
+          "Client-Service": "COHAPPRT",
+          "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
+          uid: uid || '1',
+          token: token,
+          rurl: "etribes.ezcrm.site",
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      console.log('Update API response:', response.data);
+      
+      if (response.data?.status === 'success' || response.status === 200) {
+        // Update the local state with the new data
+        const updatedPayments = payments.map(payment => 
+          payment.id === selectedPayment.id 
+            ? {
+                ...payment,
+                chequeNo: editForm.chequeNo,
+                amount: parseFloat(editForm.chequeAmount) || 0,
+                depositingBank: editForm.depositBank,
+                status: editForm.chequeStatus,
+                updatedDate: editForm.statusUpdateDate
+              }
+            : payment
+        );
+        
+        setPayments(updatedPayments);
+        setShowEditModal(false);
+        setSelectedPayment(null);
+        toast.success("Payment details updated successfully!");
+      } else {
+        toast.error(response.data?.message || "Failed to update payment details");
+      }
+    } catch (error) {
+      console.error("Error updating payment:", error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      if (error.response?.status === 401) {
+        toast.error("Session expired. Please log in again.");
+        window.location.href = "/login";
+      } else if (error.response?.status === 404) {
+        toast.error("Update endpoint not found. Please check the API configuration.");
+      } else {
+        toast.error(error.response?.data?.message || error.message || "Failed to update payment details");
+      }
+    }
+  };
+
+  const handleEditFormChange = (field, value) => {
+    setEditForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleRefresh = () => {
@@ -646,8 +808,8 @@ export default function PaymentDetails() {
                     </td>
                                          <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700">
                        <div className="flex items-center gap-2">
-                         {/* Show all actions for Processing or Bounced status */}
-                         {payment.status === 'Processing' || payment.status === 'Bounced' ? (
+                         {/* Show all actions for non-cleared status */}
+                         {payment.status && !payment.status.toLowerCase().includes('clear') ? (
                            <>
                              <button
                                onClick={() => handleView(payment)}
@@ -672,7 +834,7 @@ export default function PaymentDetails() {
                              </button>
                            </>
                          ) : (
-                           /* Show only delete action for Cleared status */
+                           /* Show only delete action for cleared status */
                            <button
                              onClick={() => handleDelete(payment.id)}
                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -704,8 +866,8 @@ export default function PaymentDetails() {
                     </div>
                   </div>
                                      <div className="flex items-center gap-2">
-                     {/* Show all actions for Processing or Bounced status */}
-                     {payment.status === 'Processing' || payment.status === 'Bounced' ? (
+                     {/* Show all actions for non-cleared status */}
+                     {payment.status && !payment.status.toLowerCase().includes('clear') ? (
                        <>
                          <button
                            onClick={() => handleView(payment)}
@@ -730,7 +892,7 @@ export default function PaymentDetails() {
                          </button>
                        </>
                      ) : (
-                       /* Show only delete action for Cleared status */
+                       /* Show only delete action for cleared status */
                        <button
                          onClick={() => handleDelete(payment.id)}
                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -810,6 +972,250 @@ export default function PaymentDetails() {
             </div>
           </div>
         </div>
+
+        {/* Edit Payment Modal */}
+        {showEditModal && selectedPayment && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Edit Cheque Details
+                </h3>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <FiX className="w-6 h-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Cheque No
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.chequeNo}
+                    onChange={(e) => handleEditFormChange('chequeNo', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 dark:bg-gray-700 dark:text-gray-100"
+                    placeholder="Enter cheque number"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Cheque Amount
+                  </label>
+                  <input
+                    type="number"
+                    value={editForm.chequeAmount}
+                    onChange={(e) => handleEditFormChange('chequeAmount', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 dark:bg-gray-700 dark:text-gray-100"
+                    placeholder="Enter amount"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Deposit Bank
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.depositBank}
+                    onChange={(e) => handleEditFormChange('depositBank', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 dark:bg-gray-700 dark:text-gray-100"
+                    placeholder="Enter bank name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Cheque Status
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.chequeStatus}
+                    onChange={(e) => handleEditFormChange('chequeStatus', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 dark:bg-gray-700 dark:text-gray-100"
+                    placeholder="Enter status"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Status Update Date
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={editForm.statusUpdateDate}
+                      onChange={(e) => handleEditFormChange('statusUpdateDate', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 dark:bg-gray-700 dark:text-gray-100 pr-10"
+                    />
+                    <FiCalendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                  >
+                    Update
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* View Payment Modal */}
+        {showViewModal && selectedPayment && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Payment Details
+                </h3>
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <FiX className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Payment Information */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                      Payment Information
+                    </h4>
+                    
+                    <div className="space-y-3">
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Company:</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPayment.company || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Name:</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPayment.name || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Payment Mode:</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPayment.paymentMode || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Bank:</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPayment.bank || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Amount:</span>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">₹{(selectedPayment.amount || 0).toLocaleString()}</span>
+                      </div>
+                      
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Date:</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPayment.date || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Status:</span>
+                        <div>{getStatusBadge(selectedPayment.status)}</div>
+                      </div>
+                      
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Cheque No:</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPayment.chequeNo || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Cheque Date:</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPayment.chequeDate || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Depositing Bank:</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPayment.depositingBank || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Updated Date:</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPayment.updatedDate || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Updated By:</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPayment.updatedBy || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between py-2">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Valid Upto:</span>
+                        <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPayment.validUpto || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cheque Image */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                      Cheque Image
+                    </h4>
+                    
+                    {selectedPayment.chequeImg ? (
+                      <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                        <img 
+                          src={`https://api.etribes.ezcrm.site/${selectedPayment.chequeImg}`} 
+                          alt="Cheque Image" 
+                          className="w-full h-auto max-h-96 object-contain bg-gray-50 dark:bg-gray-700"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                        <div className="flex items-center justify-center h-48 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                          <div className="text-center">
+                            <FiFile className="mx-auto text-4xl mb-2" />
+                            <p>Image not available</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-48 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <div className="text-center text-gray-500 dark:text-gray-400">
+                          <FiFile className="mx-auto text-4xl mb-2" />
+                          <p>No cheque image available</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={() => setShowViewModal(false)}
+                    className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors font-medium"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

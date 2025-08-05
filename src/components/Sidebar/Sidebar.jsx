@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   FiGrid,
+  FiUserPlus,
   FiUsers,
   FiUserCheck,
   FiCalendar,
@@ -25,6 +26,12 @@ const menuItems = [
     label: "Dashboard",
     icon: <FiGrid size={20} />,
     path: "/dashboard",
+    dropdown: false,
+  },
+  {
+    label: "New Registration",
+    icon: <FiUserPlus size={20} />,
+    path: "/new-registration",
     dropdown: false,
   },
   {

@@ -88,7 +88,14 @@ export default function PendingApproval() {
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [modifyMember, setModifyMember] = useState(null);
-  const [form, setForm] = useState({ plan: "", validUpto: "" });
+  const [form, setForm] = useState({ 
+    plan: "", 
+    validUpto: "", 
+    paymentMode: "", 
+    bankName: "", 
+    price: "", 
+    validTill: "" 
+  });
   const [loading, setLoading] = useState(true);
   const [firstLoad, setFirstLoad] = useState(true);
   const [sortField, setSortField] = useState("name");
@@ -142,10 +149,15 @@ export default function PendingApproval() {
           });
         
         console.log('Membership Plans Response:', response.data);
+        console.log('Membership Plans Response Structure:', JSON.stringify(response.data, null, 2));
         
           const plansData = Array.isArray(response.data?.data) ? response.data.data : [];
           setPlans(plansData);
         console.log('Plans loaded:', plansData);
+        if (plansData.length > 0) {
+          console.log('First plan structure:', plansData[0]);
+          console.log('Available fields in plan:', Object.keys(plansData[0]));
+        }
       } catch (error) {
         console.error('Failed to fetch membership plans:', error);
         toast.error('Failed to load membership plans');
@@ -161,7 +173,121 @@ export default function PendingApproval() {
     return { plans, loading, refetch: fetchPlans };
   }
 
+  // Fetch payment modes for dropdown
+  function usePaymentModes() {
+    const [paymentModes, setPaymentModes] = useState([]);
+    const [loading, setLoading] = useState(true);
+    
+    const fetchPaymentModes = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        const uid = localStorage.getItem('uid');
+        
+        if (!token || !uid) {
+          console.error('Authentication required for fetching payment modes');
+          return;
+        }
+        
+        const response = await api.get('/payment_detail/getmodes', {
+          headers: getAuthHeaders()
+        });
+        
+        console.log('Payment Modes Response:', response.data);
+        console.log('Payment Modes Response Structure:', JSON.stringify(response.data, null, 2));
+        
+        // Handle different possible response structures
+        let modesData = [];
+        if (Array.isArray(response.data?.data)) {
+          modesData = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          modesData = response.data;
+        } else if (response.data?.data && typeof response.data.data === 'object') {
+          // If data is an object, convert to array
+          modesData = Object.entries(response.data.data).map(([key, value]) => ({
+            id: key,
+            mode_name: value
+          }));
+        }
+        
+        setPaymentModes(modesData);
+        console.log('Payment modes loaded:', modesData);
+        console.log('First mode structure:', modesData[0]);
+      } catch (error) {
+        console.error('Failed to fetch payment modes:', error);
+        toast.error('Failed to load payment modes');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    useEffect(() => {
+      fetchPaymentModes();
+    }, []);
+    
+    return { paymentModes, loading, refetch: fetchPaymentModes };
+  }
+
+  // Fetch bank details for dropdown
+  function useBankDetails() {
+    const [bankDetails, setBankDetails] = useState([]);
+    const [loading, setLoading] = useState(true);
+    
+    const fetchBankDetails = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        const uid = localStorage.getItem('uid');
+        
+        if (!token || !uid) {
+          console.error('Authentication required for fetching bank details');
+          return;
+        }
+        
+        const response = await api.get('/payment_detail/getbankdetails', {
+          headers: getAuthHeaders()
+        });
+        
+        console.log('Bank Details Response:', response.data);
+        console.log('Bank Details Response Structure:', JSON.stringify(response.data, null, 2));
+        
+        // Handle different possible response structures
+        let bankData = [];
+        if (Array.isArray(response.data?.data)) {
+          bankData = response.data.data;
+        } else if (Array.isArray(response.data)) {
+          bankData = response.data;
+        } else if (response.data?.data && typeof response.data.data === 'object') {
+          // If data is an object, convert to array
+          bankData = Object.entries(response.data.data).map(([key, value]) => ({
+            id: key,
+            bank_name: value
+          }));
+        }
+        
+        setBankDetails(bankData);
+        console.log('Bank details loaded:', bankData);
+        console.log('First bank structure:', bankData[0]);
+      } catch (error) {
+        console.error('Failed to fetch bank details:', error);
+        toast.error('Failed to load bank details');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    useEffect(() => {
+      fetchBankDetails();
+    }, []);
+    
+    return { bankDetails, loading, refetch: fetchBankDetails };
+  }
+
   const { plans, loading: plansLoading, refetch: refetchPlans } = useMembershipPlans();
+  const { paymentModes, loading: paymentModesLoading, refetch: refetchPaymentModes } = usePaymentModes();
+  const { bankDetails, loading: bankDetailsLoading, refetch: refetchBankDetails } = useBankDetails();
+
+
 
   // Load additional fields on component mount
   useEffect(() => {
@@ -238,25 +364,140 @@ export default function PendingApproval() {
 
   const openModify = (member) => {
     setModifyMember(member);
-    setForm({
+    const initialForm = {
       plan: "",
-      validUpto: ""
-    });
+      validUpto: "",
+      paymentMode: "",
+      bankName: "",
+      price: "",
+      validTill: ""
+    };
+    setForm(initialForm);
   };
 
   const closeModify = () => {
     setModifyMember(null);
-    setForm({ plan: "", validUpto: "" });
+    setForm({ 
+      plan: "", 
+      validUpto: "", 
+      paymentMode: "", 
+      bankName: "", 
+      price: "", 
+      validTill: "" 
+    });
     setUpdateError(null);
     setUpdateSuccess(null);
   };
 
   const handleFormChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+          if (name === 'plan') {
+        // When membership plan is selected, auto-fill price and valid till
+        const selectedPlan = plans.find(plan => plan.id == value);
+          
+          if (selectedPlan) {
+            // Try multiple possible field names for price and validity
+            const planPrice = selectedPlan.price || selectedPlan.plan_price || selectedPlan.cost || selectedPlan.amount || '';
+            const planValidity = selectedPlan.plan_validity || selectedPlan.valid_till || selectedPlan.validity || selectedPlan.duration || selectedPlan.valid_upto || selectedPlan.valid_until || selectedPlan.period || '';
+            
+
+          
+          // Calculate valid upto date based on today's date + plan validity
+          let calculatedValidUpto = '';
+          if (planValidity) {
+            try {
+              const today = new Date();
+              const validityText = planValidity.toString().toLowerCase();
+              console.log('Today\'s date:', today);
+              console.log('Plan validity:', validityText);
+              
+              // If it's just a number (like "1"), assume it's months
+              if (validityText.includes('year') || validityText.includes('yr')) {
+                const years = parseInt(validityText.match(/\d+/)?.[0] || 1);
+                today.setFullYear(today.getFullYear() + years);
+                console.log('Added years:', years);
+              } else if (validityText.includes('month') || validityText.includes('mon')) {
+                const months = parseInt(validityText.match(/\d+/)?.[0] || 1);
+                today.setMonth(today.getMonth() + months);
+                console.log('Added months:', months);
+              } else if (validityText.includes('day')) {
+                const days = parseInt(validityText.match(/\d+/)?.[0] || 1);
+                today.setDate(today.getDate() + days);
+                console.log('Added days:', days);
+              } else {
+                // If just a number (like "1"), assume it's months
+                const months = parseInt(validityText);
+                if (!isNaN(months)) {
+                  today.setMonth(today.getMonth() + months);
+                  console.log('Added months (default):', months);
+                }
+              }
+              
+              calculatedValidUpto = today.toISOString().split('T')[0];
+              console.log('Calculated valid upto date:', calculatedValidUpto);
+            } catch (error) {
+              console.log('Error calculating valid upto date:', error);
+              calculatedValidUpto = planValidity; // Fallback to original value
+            }
+          }
+          
+                      setForm(prev => ({
+              ...prev,
+              [name]: value,
+              price: planPrice,
+              validTill: calculatedValidUpto
+            }));
+        } else {
+          setForm(prev => ({ ...prev, [name]: value }));
+        }
+      } else {
+        setForm(prev => ({ ...prev, [name]: value }));
+      }
   };
 
   const handleDateChange = (e) => {
-    setForm({ ...form, validUpto: e.target.value });
+    const selectedDate = e.target.value;
+    setForm(prev => ({ ...prev, validUpto: selectedDate }));
+    
+    // If we have a selected plan, recalculate the valid till based on the selected date
+    if (form.plan) {
+      const selectedPlan = plans.find(plan => plan.id == form.plan);
+      if (selectedPlan) {
+        const planValidity = selectedPlan.plan_validity || selectedPlan.valid_till || selectedPlan.validity || selectedPlan.duration || selectedPlan.valid_upto || selectedPlan.valid_until || selectedPlan.period || '';
+        
+        if (planValidity) {
+          try {
+            // Use the selected date as base instead of today
+            const baseDate = new Date(selectedDate);
+            const validityText = planValidity.toString().toLowerCase();
+            
+            // If it's just a number (like "1"), assume it's months
+            if (validityText.includes('year') || validityText.includes('yr')) {
+              const years = parseInt(validityText.match(/\d+/)?.[0] || 1);
+              baseDate.setFullYear(baseDate.getFullYear() + years);
+            } else if (validityText.includes('month') || validityText.includes('mon')) {
+              const months = parseInt(validityText.match(/\d+/)?.[0] || 1);
+              baseDate.setMonth(baseDate.getMonth() + months);
+            } else if (validityText.includes('day')) {
+              const days = parseInt(validityText.match(/\d+/)?.[0] || 1);
+              baseDate.setDate(baseDate.getDate() + days);
+            } else {
+              // If just a number (like "1"), assume it's months
+              const months = parseInt(validityText);
+              if (!isNaN(months)) {
+                baseDate.setMonth(baseDate.getMonth() + months);
+              }
+            }
+            
+            const calculatedValidUpto = baseDate.toISOString().split('T')[0];
+            setForm(prev => ({ ...prev, validTill: calculatedValidUpto }));
+          } catch (error) {
+            console.log('Error calculating valid upto date:', error);
+          }
+        }
+      }
+    }
   };
 
   const activateMembership = async ({ company_detail_id, membership_plan_id, valid_upto }) => {
@@ -744,52 +985,122 @@ export default function PendingApproval() {
           </div>
         </div>
         
-        {/* Enhanced Modify Membership Modal */}
+        {/* Activate Membership Modal */}
         {modifyMember && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl dark:shadow-2xl p-8 w-full max-w-lg relative">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl dark:shadow-2xl p-6 w-full max-w-md relative">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Activate Membership</h2>
               <button
-                className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-rose-500 transition-colors"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 onClick={closeModify}
-                title="Close"
               >
-                <FiX size={24} />
+                  <FiX className="w-6 h-6" />
               </button>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-xl">
-                  {modifyMember.name ? modifyMember.name.charAt(0).toUpperCase() : 'N'}
                 </div>
+              
+              <form className="space-y-4" onSubmit={e => e.preventDefault()}>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Activate Membership</h2>
-                  <p className="text-gray-600 dark:text-gray-400">Activate membership for {modifyMember.name || 'Unknown Member'}</p>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    *Payment Mode
+                  </label>
+                  <select
+                    name="paymentMode"
+                    value={form.paymentMode || ''}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 dark:bg-gray-700 dark:text-gray-100"
+                    placeholder="Payment Mode"
+                    required
+                    disabled={paymentModesLoading}
+                  >
+                    <option value="">
+                      {paymentModesLoading ? 'Loading payment modes...' : 'Payment Mode'}
+                    </option>
+                    {paymentModes.map(mode => {
+                      // Handle different possible data structures
+                      const modeId = mode.id || mode.mode_id || mode;
+                      const modeName = mode.mode_name || mode.name || mode.mode || mode;
+                      
+                      // Ensure we have a string for display
+                      const displayName = typeof modeName === 'string' ? modeName : JSON.stringify(modeName);
+                      
+                      return (
+                        <option key={modeId} value={modeId}>
+                          {displayName}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {paymentModesLoading && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      Loading payment modes...
+                    </p>
+                  )}
+                  {!paymentModesLoading && paymentModes.length === 0 && (
+                    <p className="text-sm text-red-500 dark:text-red-400 mt-1">
+                      No payment modes available
+                    </p>
+                  )}
                 </div>
-              </div>
-              <form className="space-y-6" onSubmit={e => e.preventDefault()}>
+
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-gray-700 font-semibold">
-                      Membership Plan <span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    *Bank Name
                     </label>
-                    <button
-                      type="button"
-                      onClick={refetchPlans}
-                      className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1"
-                      title="Refresh plans"
-                    >
-                      <FiRefreshCw size={12} />
-                      Refresh
-                    </button>
+                  <select
+                    name="bankName"
+                    value={form.bankName || ''}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 dark:bg-gray-700 dark:text-gray-100"
+                    placeholder="Select Bank"
+                    required
+                    disabled={bankDetailsLoading}
+                  >
+                    <option value="">
+                      {bankDetailsLoading ? 'Loading bank details...' : 'Select Bank'}
+                    </option>
+                    {bankDetails.map(bank => {
+                      // Handle different possible data structures
+                      const bankId = bank.id || bank.bank_id || bank;
+                      const bankName = bank.bank_name || bank.name || bank.bank || bank;
+                      
+                      // Ensure we have a string for display
+                      const displayName = typeof bankName === 'string' ? bankName : JSON.stringify(bankName);
+                      
+                      return (
+                        <option key={bankId} value={bankId}>
+                          {displayName}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {bankDetailsLoading && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      Loading bank details...
+                    </p>
+                  )}
+                  {!bankDetailsLoading && bankDetails.length === 0 && (
+                    <p className="text-sm text-red-500 dark:text-red-400 mt-1">
+                      No bank details available
+                    </p>
+                  )}
                   </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    *Membership Type
+                  </label>
                   <select
                     name="plan"
                     value={form.plan}
                     onChange={handleFormChange}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 dark:bg-gray-700 dark:text-gray-100"
+                    placeholder="Select Membership"
                     required
                     disabled={plansLoading}
                   >
                     <option value="">
-                      {plansLoading ? 'Loading plans...' : 'Select Plan'}
+                      {plansLoading ? 'Loading plans...' : 'Select Membership'}
                     </option>
                     {plans.map(plan => (
                       <option key={plan.id} value={plan.id}>
@@ -797,32 +1108,60 @@ export default function PendingApproval() {
                       </option>
                     ))}
                   </select>
-                  {plansLoading && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      Loading membership plans...
-                    </p>
-                  )}
-                  {!plansLoading && plans.length === 0 && (
-                    <p className="text-sm text-red-500 dark:text-red-400 mt-1">
-                      No membership plans available
-                    </p>
-                  )}
                 </div>
+
                 <div>
-                  <label className="block text-gray-700 font-semibold mb-2">Valid Until <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="date"
-                      name="validUpto"
-                      value={form.validUpto}
-                      onChange={handleDateChange}
-                      min={new Date().toISOString().split('T')[0]}
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-400 transition-colors"
-                      required
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    *Date
+                  </label>
+                  <input
+                    type="date"
+                    name="validUpto"
+                    value={form.validUpto}
+                    onChange={handleDateChange}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 dark:bg-gray-700 dark:text-gray-100"
+                    placeholder="dd-mm-yyyy"
+                    required
+                  />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Price
+                  </label>
+                  <input
+                    type="text"
+                    name="price"
+                    value={form.price || ''}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                    placeholder="Auto-filled from membership plan"
+                    readOnly
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Price will be automatically filled when you select a membership plan
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Valid Till
+                  </label>
+                  <input
+                    type="text"
+                    name="validTill"
+                    value={form.validTill || ''}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-600 text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                    placeholder="Auto-filled from membership plan"
+                    readOnly
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Validity will be automatically filled when you select a membership plan
+                  </p>
+                </div>
+
                 {updateError && (
                   <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                     <div className="flex items-center gap-2">
@@ -831,31 +1170,24 @@ export default function PendingApproval() {
                     </div>
                   </div>
                 )}
-                {updateSuccess && (
-                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <FiUsers />
-                      <span>{updateSuccess}</span>
-                    </div>
-                  </div>
-                )}
-                <div className="flex gap-4 justify-end pt-4 border-t border-gray-100">
+
+                <div className="flex gap-3 pt-4">
                   <button
                     type="button"
-                    className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-colors"
                     onClick={closeModify}
+                    className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors font-medium"
                     disabled={updateLoading}
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
-                    className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 flex items-center justify-center gap-2"
                     onClick={handleUpdate}
                     disabled={updateLoading || !form.plan || !form.validUpto}
                   >
                     {updateLoading && <FiRefreshCw className="animate-spin" size={16} />}
-                    {updateLoading ? 'Activating...' : 'Activate Membership'}
+                    {updateLoading ? 'Processing...' : 'Confirm Payment'}
                   </button>
                 </div>
               </form>
