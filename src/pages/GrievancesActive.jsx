@@ -306,7 +306,7 @@ export default function GrievancesActive() {
 
       // Format the request body as a JSON string to match the curl command format
       const requestBody = JSON.stringify({
-        id: grievanceId.toString(),
+        grievance_id: grievanceId.toString(),
         status: newStatus
       });
 
@@ -331,7 +331,7 @@ export default function GrievancesActive() {
       console.log('Status Update - Response status:', response.status);
       console.log('Status Update - Response data:', response.data);
 
-      if (response.data?.status === 'success') {
+      if (response.data?.status === 'success' || response.status === 200 || response.data?.message?.includes('success')) {
         // Close the modal first
         setShowViewModal(false);
         setSelectedGrievance(null);
@@ -340,6 +340,12 @@ export default function GrievancesActive() {
         await fetchGrievances();
         
         toast.success(`Status updated to ${newStatus} successfully`);
+        
+        // Ensure modal closes even if there are any timing issues
+        setTimeout(() => {
+          setShowViewModal(false);
+          setSelectedGrievance(null);
+        }, 100);
       } else {
         console.log('Status Update - Response status not success:', response.data);
         toast.error(response.data?.message || "Failed to update status");

@@ -652,9 +652,9 @@ export default function PaymentDetails() {
             ? {
                 ...payment,
                 chequeNo: editForm.chequeNo,
-                amount: parseFloat(editForm.chequeAmount) || 0,
-                depositingBank: editForm.depositBank,
-                status: editForm.chequeStatus,
+                cheque_amount: parseFloat(editForm.chequeAmount) || 0,
+                bank_id: editForm.depositBank,
+                cheque_status: editForm.chequeStatus,
                 updatedDate: editForm.statusUpdateDate
               }
             : payment

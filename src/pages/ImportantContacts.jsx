@@ -215,20 +215,14 @@ export default function ImportantContactsPage() {
     toast.info("Refreshing contacts...");
   };
 
-  if (loading) {
+  // Loading state matching other member pages
+  if (loading && contactsData.length === 0) {
     return (
       <DashboardLayout>
-        <div className="flex flex-col gap-4 py-3">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h1 className="text-2xl font-bold text-orange-600">Important Contacts</h1>
-          </div>
-          <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto p-8">
-            <div className="flex items-center justify-center">
-              <div className="text-center text-gray-600">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-2"></div>
-                <p>Loading contacts...</p>
-              </div>
-            </div>
+        <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-800">
+          <div className="flex items-center gap-3">
+            <FiRefreshCw className="animate-spin text-indigo-600 text-2xl" />
+            <p className="text-indigo-700 dark:text-indigo-300">Loading important contacts...</p>
           </div>
         </div>
       </DashboardLayout>

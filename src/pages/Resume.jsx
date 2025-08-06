@@ -34,6 +34,8 @@ export default function Resume() {
   const [sortField, setSortField] = useState("");
   const [sortDirection, setSortDirection] = useState("asc");
   const [showUploadForm, setShowUploadForm] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedResume, setSelectedResume] = useState(null);
   const [uploadFormData, setUploadFormData] = useState({
     fullName: "",
     emailAddress: "",
@@ -484,6 +486,11 @@ export default function Resume() {
       console.error("Error opening resume file:", error);
       toast.error("Failed to open resume file. Please try again.");
     }
+  };
+
+  const handleView = (resume) => {
+    setSelectedResume(resume);
+    setShowViewModal(true);
   };
 
   const handleViewResumeWithOptions = (resume, event) => {
@@ -937,7 +944,7 @@ export default function Resume() {
                     </td>
                     <td className="p-3 text-center border-r border-gray-200 dark:border-gray-700">
                       <button
-                        onClick={(e) => handleViewResumeWithOptions(resume, e)}
+                        onClick={() => handleView(resume)}
                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                         title="View Resume"
                       >
@@ -965,7 +972,7 @@ export default function Resume() {
                     </div>
                   </div>
                   <button
-                    onClick={(e) => handleViewResumeWithOptions(resume, e)}
+                    onClick={() => handleView(resume)}
                     className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                     title="View Resume"
                   >
@@ -1202,6 +1209,190 @@ export default function Resume() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Resume Modal */}
+      {showViewModal && selectedResume && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Resume Details
+              </h3>
+              <button
+                onClick={() => setShowViewModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Resume Information */}
+                <div className="space-y-4">
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                    Resume Information
+                  </h4>
+                  
+                  <div className="space-y-3">
+                    <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Name:</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-100 break-words max-w-xs text-right">
+                        {selectedResume.name || 'N/A'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Contact No:</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-100 break-words max-w-xs text-right">
+                        {selectedResume.contactNo || 'N/A'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Email:</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-100 break-words max-w-xs text-right">
+                        {selectedResume.emailId || 'N/A'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Qualification:</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-100 break-words max-w-xs text-right">
+                        {selectedResume.qualification || 'N/A'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Skills:</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-100 break-words max-w-xs text-right">
+                        {selectedResume.skills || 'N/A'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Experience:</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-100 break-words max-w-xs text-right">
+                        {selectedResume.experience || 'N/A'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Uploaded On:</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-100">
+                        {selectedResume.uploadedOn ? 
+                          new Date(selectedResume.uploadedOn).toLocaleString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Resume File */}
+                <div className="space-y-4">
+                  <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                    Resume File
+                  </h4>
+                  
+                  {selectedResume.resumeFile ? (
+                    <div className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                      {(() => {
+                        const fileExtension = selectedResume.resumeFile.split('.').pop()?.toLowerCase();
+                        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension);
+                        const isPDF = fileExtension === 'pdf';
+                        
+                        if (isImage) {
+                          return (
+                            <>
+                              <img 
+                                src={`https://api.etribes.ezcrm.site/${selectedResume.resumeFile}`} 
+                                alt="Resume File" 
+                                className="w-full h-auto max-h-96 object-contain bg-gray-50 dark:bg-gray-700"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'flex';
+                                }}
+                              />
+                              <div className="items-center justify-center h-48 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400" style={{ display: 'none' }}>
+                                <div className="text-center">
+                                  <FiFile className="mx-auto text-4xl mb-2" />
+                                  <p>Image not available</p>
+                                </div>
+                              </div>
+                            </>
+                          );
+                          } else if (isPDF) {
+    const pdfUrl = `https://api.etribes.ezcrm.site/${selectedResume.resumeFile}`;
+    const googleDocsViewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(pdfUrl)}&embedded=true`;
+    
+    return (
+      <iframe
+        src={googleDocsViewerUrl}
+        title="Resume PDF Preview"
+        className="w-full h-96 bg-gray-50 dark:bg-gray-700 border-none rounded"
+        frameBorder="0"
+      />
+    );
+                        } else {
+                          return (
+                            <div className="p-4 bg-gray-50 dark:bg-gray-700">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                  <FiFile className="text-blue-600" />
+                                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                    Resume File
+                                  </span>
+                                </div>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                  {fileExtension?.toUpperCase() || 'FILE'}
+                                </span>
+                              </div>
+                              <div className="space-y-2">
+                                <button
+                                  onClick={() => handleViewResumeWithOptions(selectedResume, { preventDefault: () => {} })}
+                                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                                >
+                                  View/Download Resume
+                                </button>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                                  Click to view or download the resume file
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
+                      })()}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-48 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                      <div className="text-center text-gray-500 dark:text-gray-400">
+                        <FiFile className="mx-auto text-4xl mb-2" />
+                        <p>No resume file available</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors font-medium"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -34,6 +34,7 @@ export default function GrievancesPending() {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedGrievance, setSelectedGrievance] = useState(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const toastShownRef = useRef(false);
 
   useEffect(() => {
@@ -250,6 +251,84 @@ export default function GrievancesPending() {
       } catch (err) {
         toast.error("Failed to delete grievance");
       }
+    }
+  };
+
+  const handleStatusUpdate = async (grievanceId, newStatus) => {
+    try {
+      setIsUpdatingStatus(true);
+      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("uid");
+      
+      console.log('Status Update - Starting with:', { grievanceId, newStatus, token, uid });
+      
+      if (!token) {
+        toast.error("Please log in to update grievance status");
+        return;
+      }
+
+      // Format the request body as a JSON string to match the curl command format
+      const requestBody = JSON.stringify({
+        grievance_id: grievanceId.toString(),
+        status: newStatus
+      });
+
+      const requestHeaders = {
+        "Client-Service": "COHAPPRT",
+        "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
+        uid: uid || '1',
+        token: token,
+        rurl: "etribes.ezcrm.site",
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "text/plain",
+      };
+
+      console.log('Status Update - Request body (string):', requestBody);
+      console.log('Status Update - Request headers:', requestHeaders);
+
+      const response = await api.post("grievances/update_status", requestBody, {
+        headers: requestHeaders,
+      });
+
+      console.log('Status Update - Full response:', response);
+      console.log('Status Update - Response status:', response.status);
+      console.log('Status Update - Response data:', response.data);
+
+      if (response.data?.status === 'success' || response.status === 200 || response.data?.message?.includes('success')) {
+        // Close the modal first
+        setShowViewModal(false);
+        setSelectedGrievance(null);
+        
+        // Refresh the data to get the latest state from backend
+        await fetchGrievances();
+        
+        toast.success(`Status updated to ${newStatus} successfully`);
+        
+        // Ensure modal closes even if there are any timing issues
+        setTimeout(() => {
+          setShowViewModal(false);
+          setSelectedGrievance(null);
+        }, 100);
+      } else {
+        console.log('Status Update - Response status not success:', response.data);
+        toast.error(response.data?.message || "Failed to update status");
+      }
+    } catch (err) {
+      console.error('Status Update - Error details:', err);
+      console.error('Status Update - Error response:', err.response);
+      console.error('Status Update - Error message:', err.message);
+      
+      if (err.response?.status === 401) {
+        toast.error("Authentication failed. Please log in again.");
+      } else if (err.response?.status === 404) {
+        toast.error("Grievance not found or update endpoint not available.");
+      } else if (err.response?.status === 500) {
+        toast.error("Server error. Please try again later.");
+      } else {
+        toast.error(err.response?.data?.message || "Failed to update status. Please check your connection.");
+      }
+    } finally {
+      setIsUpdatingStatus(false);
     }
   };
 
@@ -741,7 +820,21 @@ export default function GrievancesPending() {
                       
                       <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
                         <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Status:</span>
-                        <div>{getStatusBadge(selectedGrievance.status)}</div>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={selectedGrievance.status}
+                            onChange={(e) => handleStatusUpdate(selectedGrievance.id, e.target.value)}
+                            disabled={isUpdatingStatus}
+                            className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <option value="Active">🟢 Active</option>
+                            <option value="Pending">🟡 Pending</option>
+                            <option value="Closed">🔴 Closed</option>
+                          </select>
+                          {isUpdatingStatus && (
+                            <FiRefreshCw className="animate-spin text-green-600 text-xs" />
+                          )}
+                        </div>
                       </div>
                       
                       <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">

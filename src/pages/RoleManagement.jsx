@@ -5,21 +5,7 @@ import api from "../api/axiosConfig";
 import { toast } from 'react-toastify';
 import { getAuthHeaders } from "../utils/apiHeaders";
 
-const modules = [
-  "Group Settings",
-  "SMTP Settings",
-  "User Roles",
-  "Role Management",
-  "System Accounts",
-  "Account Password Change",
-  "Message Settings",
-  "Membership Plans",
-  "Members Services",
-  "Contacts Management",
-  "Events Management",
-];
-
-const defaultPermissions = modules.map((mod) => ({
+const createDefaultPermissions = (modulesList) => modulesList.map((mod) => ({
   module: mod,
   view: false,
   add: false,
@@ -30,10 +16,53 @@ const defaultPermissions = modules.map((mod) => ({
 export default function RoleManagement() {
   const [roles, setRoles] = useState([]);
   const [selectedRole, setSelectedRole] = useState("");
-  const [permissions, setPermissions] = useState(defaultPermissions);
+  const [modules, setModules] = useState([]);
+  const [permissions, setPermissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [loadingPermissions, setLoadingPermissions] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Fetch modules from API
+  const fetchModules = async () => {
+    try {
+      const headers = getAuthHeaders();
+      
+      const response = await api.post('/userRole/get_modules', {
+        role_id: "1" // Use role_id 1 to get all available modules
+      }, {
+        headers: headers
+      });
+      
+      let modulesData = [];
+      if (response.data?.status === true && Array.isArray(response.data?.data)) {
+        modulesData = response.data.data;
+      } else if (Array.isArray(response.data)) {
+        modulesData = response.data;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        modulesData = response.data.data;
+      } else {
+        modulesData = [];
+      }
+      
+      // Extract module names from the response
+      const moduleNames = modulesData.map(module => 
+        module.name || module.module_name || module.module || module.title || 'Unknown Module'
+      );
+      
+      if (moduleNames.length > 0) {
+        setModules(moduleNames);
+        setPermissions(createDefaultPermissions(moduleNames));
+      } else {
+        setModules([]);
+        setPermissions([]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch modules:', err);
+      setModules([]);
+      setPermissions([]);
+    }
+  };
 
   // Fetch roles from API
   const fetchRoles = async () => {
@@ -48,8 +77,10 @@ export default function RoleManagement() {
         return;
       }
 
+      const headers = getAuthHeaders();
+      
       const response = await api.post('/userRole', {}, {
-        headers: getAuthHeaders()
+        headers: headers
       });
 
       let rolesData = [];
@@ -61,9 +92,18 @@ export default function RoleManagement() {
         rolesData = response.data.roles;
       } else if (response.data?.status && response.data.data) {
         rolesData = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
+      } else {
+        rolesData = [];
       }
-
-      setRoles(rolesData);
+      
+      // Transform roles data to match expected format
+      const transformedRoles = rolesData.map((role, index) => ({
+        id: role.id || role.role_id || index,
+        role: role.name || role.role_name || role.role || `Role ${index + 1}`
+      }));
+      
+      setRoles(transformedRoles);
+      
       setLoading(false);
     } catch (err) {
       console.error('Failed to fetch roles:', err);
@@ -90,7 +130,7 @@ export default function RoleManagement() {
       }, {
         headers: getAuthHeaders()
       });
-
+      
       // Handle the current API response format with actual permission states
       let permissionsData = [];
       if (response.data?.status === true && Array.isArray(response.data?.data)) {
@@ -192,8 +232,9 @@ export default function RoleManagement() {
     }
   };
 
-  // Load roles on component mount
+  // Load roles and modules on component mount
   useEffect(() => {
+    fetchModules();
     fetchRoles();
   }, []);
 
@@ -201,8 +242,10 @@ export default function RoleManagement() {
   useEffect(() => {
     if (selectedRole) {
       fetchRolePermissions(selectedRole);
+    } else {
+      setPermissions(createDefaultPermissions(modules));
     }
-  }, [selectedRole]);
+  }, [selectedRole, modules]);
 
   const handleRoleChange = (e) => {
     setSelectedRole(e.target.value);
@@ -253,6 +296,8 @@ export default function RoleManagement() {
             <span>Total Roles: {roles.length}</span>
           </div>
         </div>
+
+
 
         {/* Success/Error Messages */}
         {/* No need to clear error/success with toast */}
@@ -305,6 +350,8 @@ export default function RoleManagement() {
                 <FiRefreshCw size={14} />
                 <span>Refresh</span>
               </button>
+              
+
             </div>
           </div>
           
