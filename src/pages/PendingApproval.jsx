@@ -94,7 +94,11 @@ export default function PendingApproval() {
     paymentMode: "", 
     bankName: "", 
     price: "", 
-    validTill: "" 
+    validTill: "",
+    chequeNo: "",
+    chequeImg: null,
+    chequeAmount: "",
+    chequeDate: "" // Added chequeDate
   });
   const [loading, setLoading] = useState(true);
   const [firstLoad, setFirstLoad] = useState(true);
@@ -370,7 +374,10 @@ export default function PendingApproval() {
       paymentMode: "",
       bankName: "",
       price: "",
-      validTill: ""
+      validTill: "",
+      chequeNo: "",
+      chequeImg: null,
+      chequeAmount: "" // Added chequeAmount
     };
     setForm(initialForm);
   };
@@ -383,16 +390,22 @@ export default function PendingApproval() {
       paymentMode: "", 
       bankName: "", 
       price: "", 
-      validTill: "" 
+      validTill: "",
+      chequeNo: "",
+      chequeImg: null,
+      chequeAmount: "" // Added chequeAmount
     });
     setUpdateError(null);
     setUpdateSuccess(null);
   };
 
   const handleFormChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, files } = e.target;
     
-          if (name === 'plan') {
+    if (type === 'file') {
+      setForm(prev => ({ ...prev, [name]: files[0] }));
+    } else {
+      if (name === 'plan') {
         // When membership plan is selected, auto-fill price and valid till
         const selectedPlan = plans.find(plan => plan.id == value);
           
@@ -454,6 +467,7 @@ export default function PendingApproval() {
       } else {
         setForm(prev => ({ ...prev, [name]: value }));
       }
+    }
   };
 
   const handleDateChange = (e) => {
@@ -518,6 +532,45 @@ export default function PendingApproval() {
     return response.data;
   };
 
+  // Add a function to call the payment_detail/add API
+  const addPaymentDetail = async (payload, isCheque) => {
+    const token = localStorage.getItem('token');
+    const uid = localStorage.getItem('uid');
+    if (!token || !uid) {
+      throw new Error('Authentication required');
+    }
+    
+    let data;
+    let headers = getAuthHeaders();
+    
+    // if (isCheque) {
+      data = new FormData();
+      data.append('company_detail_id', String(payload.company_detail_id));
+      data.append('payment_mode', payload.payment_mode);
+      data.append('bank_id', String(payload.bank_id));
+      data.append('cheque_amount', String(payload.cheque_amount));
+      data.append('cheque_no', String(payload.cheque_no));
+      data.append('cheque_date', payload.cheque_date);
+      if (payload.file) data.append('file', payload.file);
+      // Remove content-type for FormData
+      delete headers['Content-Type'];
+    // } else {
+    //   // For non-cheque payment modes, send plan price as cheque_amount only
+    //   data = {
+    //     company_detail_id: String(payload.company_detail_id),
+    //     payment_mode: payload.payment_mode,
+    //     bank_id: String(payload.bank_id),
+    //     cheque_amount: String(payload.cheque_amount), // This is the plan price
+    //   };
+    // }
+    
+    const response = await api.post('/payment_detail/add', data, {
+      headers,
+      timeout: 15000,
+    });
+    return response.data;
+  };
+
   const handleUpdate = async () => {
     if (!modifyMember) return;
     // Validation
@@ -544,25 +597,40 @@ export default function PendingApproval() {
     setUpdateError(null);
     setUpdateSuccess(null);
     try {
+      // 1. Activate membership
       await activateMembership({
         company_detail_id: modifyMember.company_detail_id || modifyMember.id,
         membership_plan_id: form.plan, // Use the selected plan's ID
         valid_upto: form.validUpto,
       });
-      toast.success('Membership activated successfully!');
+      // 2. Add payment detail
+      const isCheque = selectedPaymentModeName === 'Cheque';
+      const selectedPlan = plans.find(plan => plan.id == form.plan);
+      const paymentPayload = {
+        company_detail_id: modifyMember.company_detail_id || modifyMember.id,
+        payment_mode: selectedPaymentModeName,
+        bank_id: form.bankName,
+        cheque_amount: isCheque ? form.chequeAmount : (!isCheque && selectedPlan ? (selectedPlan.price || selectedPlan.plan_price || selectedPlan.cost || selectedPlan.amount || '') : undefined),
+        cheque_no: isCheque ? form.chequeNo : undefined,
+        cheque_date: isCheque ? form.chequeDate : undefined,
+        file: isCheque ? form.chequeImg : undefined,
+      };
+      await addPaymentDetail(paymentPayload, isCheque);
+      toast.success('Membership activated and payment recorded successfully!');
       setMembers(prevMembers => prevMembers.filter(member => member.id !== modifyMember.id));
-    closeModify();
+      navigate('/members-services/payment-details'); // Redirect to Payment Details page
+      closeModify();
     } catch (err) {
       if (err.response) {
-        const errorMessage = err.response.data?.message || err.response.data?.error || 'Failed to activate membership';
+        const errorMessage = err.response.data?.message || err.response.data?.error || 'Failed to activate membership or record payment';
         setUpdateError(errorMessage);
         toast.error(errorMessage);
       } else if (err.request) {
         setUpdateError('Network error. Please check your connection.');
         toast.error('Network error. Please check your connection.');
       } else {
-        setUpdateError('Failed to activate membership. Please try again.');
-        toast.error('Failed to activate membership.');
+        setUpdateError('Failed to activate membership or record payment. Please try again.');
+        toast.error('Failed to activate membership or record payment.');
       }
       closeModify();
     } finally {
@@ -680,6 +748,15 @@ export default function PendingApproval() {
       </DashboardLayout>
     );
   }
+
+  // Helper to get selected payment mode display name
+  const selectedPaymentModeName = paymentModes.find(
+    mode => (mode.id || mode.mode_id || mode) == form.paymentMode
+  )?.mode_name || paymentModes.find(
+    mode => (mode.id || mode.mode_id || mode) == form.paymentMode
+  )?.name || paymentModes.find(
+    mode => (mode.id || mode.mode_id || mode) == form.paymentMode
+  )?.mode || form.paymentMode;
 
   return (
     <DashboardLayout>
@@ -988,16 +1065,16 @@ export default function PendingApproval() {
         {/* Activate Membership Modal */}
         {modifyMember && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl dark:shadow-2xl p-6 w-full max-w-md relative">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl dark:shadow-2xl p-6 w-full max-w-md relative max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Activate Membership</h2>
-              <button
+                <button
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                onClick={closeModify}
-              >
+                  onClick={closeModify}
+                >
                   <FiX className="w-6 h-6" />
-              </button>
-                </div>
+                </button>
+              </div>
               
               <form className="space-y-4" onSubmit={e => e.preventDefault()}>
                 <div>
@@ -1042,6 +1119,64 @@ export default function PendingApproval() {
                     </p>
                   )}
                 </div>
+                {(selectedPaymentModeName && selectedPaymentModeName.toLowerCase() === 'cheque') && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Cheque Number
+                      </label>
+                      <input
+                        type="text"
+                        name="chequeNo"
+                        value={form.chequeNo}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 dark:bg-gray-700 dark:text-gray-100"
+                        placeholder="Enter Cheque Number"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Cheque Amount
+                      </label>
+                      <input
+                        type="number"
+                        name="chequeAmount"
+                        value={form.chequeAmount}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 dark:bg-gray-700 dark:text-gray-100"
+                        placeholder="Enter Cheque Amount"
+                        required
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Cheque Date
+                      </label>
+                      <input
+                        type="date"
+                        name="chequeDate"
+                        value={form.chequeDate}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 dark:bg-gray-700 dark:text-gray-100"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Upload Cheque Image
+                      </label>
+                      <input
+                        type="file"
+                        name="chequeImg"
+                        accept="image/*"
+                        onChange={e => setForm(prev => ({ ...prev, chequeImg: e.target.files[0] }))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 dark:bg-gray-700 dark:text-gray-100"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
