@@ -1,50 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiClock } from "react-icons/fi";
-import api from "../../api/axiosConfig";
+import { useDashboard } from "../../context/DashboardContext";
 
 export default function PastEventCard() {
-  const [pastEventsCount, setPastEventsCount] = useState(0);
+  const { stats } = useDashboard();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchPastEvents = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const uid = localStorage.getItem('uid');
-        const response = await api.post('/event/past', {}, {
-          headers: {
-            'Client-Service': 'COHAPPRT',
-            'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
-            'uid': uid,
-            'token': token,
-            'rurl': 'etribes.ezcrm.site',
-            'Content-Type': 'application/json',
-          }
-        });
-        let backendEvents = [];
-        if (Array.isArray(response.data?.data?.event)) {
-          backendEvents = response.data.data.event;
-        } else if (Array.isArray(response.data?.data?.events)) {
-          backendEvents = response.data.data.events;
-        } else if (Array.isArray(response.data?.data)) {
-          backendEvents = response.data.data;
-        } else if (Array.isArray(response.data)) {
-          backendEvents = response.data;
-        } else if (response.data?.data && typeof response.data.data === 'object') {
-          backendEvents = Object.values(response.data.data);
-        } else {
-          backendEvents = [];
-        }
-        setPastEventsCount(backendEvents.length);
-      } catch (err) {
-        setPastEventsCount(0);
-      }
-    };
-
-    fetchPastEvents();
-    return () => {};
-  }, []);
+  // Use cached stats from dashboard context
+  const pastEventsCount = stats.pastEventsCount;
 
   return (
     <div

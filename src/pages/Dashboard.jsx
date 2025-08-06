@@ -7,48 +7,15 @@ import ImportantContacts from "../components/ImportantContacts/ImportantContacts
 import PastEventCard from "../components/PastEventCard/PastEventCard";
 import TotalEventCard from "../components/TotalEventCard/TotalEventCard";
 import UpcomingEvents from "../components/UpcomingEvents/UpcomingEvents";
-import { getAuthHeaders } from "../utils/apiHeaders";
-import api from "../api/axiosConfig";
+import { useDashboard } from "../context/DashboardContext";
 
 // Simplified Upcoming Events Card for Mobile/Tablet
 function UpcomingEventsCard() {
   const navigate = useNavigate();
-  const [upcomingCount, setUpcomingCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const { stats, loading } = useDashboard();
 
-  useEffect(() => {
-    const fetchUpcomingCount = async () => {
-      try {
-        setLoading(true);
-        const response = await api.post('/event/future', {}, {
-          headers: getAuthHeaders()
-        });
-
-        let backendEvents = [];
-        if (Array.isArray(response.data?.data?.event)) {
-          backendEvents = response.data.data.event;
-        } else if (Array.isArray(response.data?.data?.events)) {
-          backendEvents = response.data.data.events;
-        } else if (Array.isArray(response.data?.data)) {
-          backendEvents = response.data.data;
-        } else if (Array.isArray(response.data)) {
-          backendEvents = response.data;
-        } else if (response.data?.data && typeof response.data.data === 'object') {
-          backendEvents = Object.values(response.data.data);
-        } else {
-          backendEvents = [];
-        }
-        setUpcomingCount(backendEvents.length);
-      } catch (err) {
-        console.error('Error fetching upcoming events:', err);
-        setUpcomingCount(0);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUpcomingCount();
-  }, []);
+  // Use cached stats from dashboard context
+  const upcomingCount = stats.upcomingEventsCount;
 
   return (
     <div 
@@ -64,16 +31,16 @@ function UpcomingEventsCard() {
         </svg>
         <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Upcoming Events</div>
         <div className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 drop-shadow">
-          {loading ? '...' : upcomingCount}
+          {loading.initial || loading.events ? '...' : upcomingCount}
         </div>
       </div>
     </div>
   );
 }
 
-export default function Dashboard() {
+function DashboardContent() {
   return (
-    <DashboardLayout>
+    <>
       {/* Mobile & Tablet Layout (xs to lg) - Image Layout */}
       <div className="block lg:hidden space-y-6 py-3 bg-transparent dark:bg-gray-800 transition-colors duration-300">
         {/* Dashboard Overview Section */}
@@ -144,6 +111,14 @@ export default function Dashboard() {
           <ImportantContacts />
         </div>
       </div>
+    </>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <DashboardLayout>
+      <DashboardContent />
     </DashboardLayout>
   );
 }

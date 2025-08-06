@@ -44,9 +44,14 @@ export default function PaymentDetails() {
     statusUpdateDate: ''
   });
 
+  // Bank details state
+  const [bankDetails, setBankDetails] = useState([]);
+  const [bankDetailsLoading, setBankDetailsLoading] = useState(false);
+
 
   useEffect(() => {
     fetchPayments();
+    fetchBankDetails();
   }, []);
 
   useEffect(() => {
@@ -197,6 +202,66 @@ export default function PaymentDetails() {
       setPayments([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchBankDetails = async () => {
+    try {
+      setBankDetailsLoading(true);
+      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("uid");
+      
+      if (!token) {
+        console.log("No token found for bank details fetch");
+        return;
+      }
+
+      console.log('Fetching bank details with credentials:', { uid, token });
+      
+      const response = await api.post("/payment_detail/getbankdetails", {}, {
+        headers: {
+          "Client-Service": "COHAPPRT",
+          "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
+          uid: uid || '1',
+          token: token,
+          rurl: "etribes.ezcrm.site",
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      console.log('Bank details API response:', response.data);
+      
+      // Handle the API response data
+      let bankData = [];
+      
+      if (response.data?.data && Array.isArray(response.data.data)) {
+        bankData = response.data.data;
+      } else if (response.data && Array.isArray(response.data)) {
+        bankData = response.data;
+      } else if (response.data?.data && typeof response.data.data === 'object') {
+        // Handle object format like {ad1: "Bank1", ad2: "Bank2"}
+        bankData = Object.values(response.data.data).filter(value => value);
+      }
+      
+      console.log('Processed bank data:', bankData);
+      setBankDetails(bankData);
+      
+    } catch (error) {
+      console.error("Error fetching bank details:", error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      if (error.response?.status === 401) {
+        console.error("Session expired for bank details fetch");
+      } else {
+        console.error("Failed to fetch bank details:", error.response?.data?.message || error.message);
+      }
+      
+      // Set empty array on error
+      setBankDetails([]);
+    } finally {
+      setBankDetailsLoading(false);
     }
   };
 
@@ -353,16 +418,9 @@ export default function PaymentDetails() {
 
       // Add summary at the bottom
       const totalAmount = filteredPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
-      // Dynamic status counting
-      const statusCounts = {};
-      filteredPayments.forEach(payment => {
-        const status = payment.status || 'Unknown';
-        statusCounts[status] = (statusCounts[status] || 0) + 1;
-      });
-      
-      const statusSummary = Object.entries(statusCounts)
-        .map(([status, count]) => `${status}: ${count}`)
-        .join(' | ');
+      const clearedCount = filteredPayments.filter(p => p.status === 'Cleared').length;
+      const processingCount = filteredPayments.filter(p => p.status === 'Processing').length;
+      const bouncedCount = filteredPayments.filter(p => p.status === 'Bounced').length;
 
       const summaryY = doc.lastAutoTable.finalY + 20;
       doc.setFontSize(10);
@@ -372,7 +430,7 @@ export default function PaymentDetails() {
       doc.setFont("helvetica", "normal");
       doc.text(`Total Payments: ${filteredPayments.length}`, 40, summaryY + 15);
       doc.text(`Total Amount: ₹${totalAmount.toLocaleString()}`, 40, summaryY + 30);
-              doc.text(statusSummary, 40, summaryY + 45);
+      doc.text(`Cleared: ${clearedCount} | Processing: ${processingCount} | Bounced: ${bouncedCount}`, 40, summaryY + 45);
 
       // Save the PDF
       doc.save("payment_details.pdf");
@@ -384,26 +442,19 @@ export default function PaymentDetails() {
   };
 
   const getStatusBadge = (status) => {
-    // Dynamic status badge with fallback styling
-    let statusClass = "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
-    
-    // Apply color based on status content (case-insensitive)
-    if (status) {
-      const lowerStatus = status.toLowerCase();
-      if (lowerStatus.includes('clear') || lowerStatus.includes('success') || lowerStatus.includes('complete')) {
-        statusClass = "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      } else if (lowerStatus.includes('process') || lowerStatus.includes('pending') || lowerStatus.includes('wait')) {
-        statusClass = "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
-      } else if (lowerStatus.includes('bounce') || lowerStatus.includes('fail') || lowerStatus.includes('reject')) {
-        statusClass = "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      }
-    }
+    const statusClasses = {
+      Cleared: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+      Processing: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
+      Bounced: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
+    };
 
     return (
       <span
-        className={`px-2 py-1 text-xs font-medium rounded-full ${statusClass}`}
+        className={`px-2 py-1 text-xs font-medium rounded-full ${
+          statusClasses[status] || "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+        }`}
       >
-        {status || 'Unknown'}
+        {status}
       </span>
     );
   };
@@ -467,15 +518,87 @@ export default function PaymentDetails() {
     setShowViewModal(true);
   };
 
+  // Bank name to ID mapping using dynamic bank data
+  const getBankId = (bankName) => {
+    if (!bankName) return '';
+    
+    // First try to find by exact name match
+    const exactMatch = bankDetails.find(bank => {
+      const bankNameFromData = bank.name || bank.bank_name || bank.mode_name || bank.toString();
+      return bankNameFromData === bankName;
+    });
+    
+    if (exactMatch) {
+      return exactMatch.id || exactMatch.bank_id || '';
+    }
+    
+    // If no exact match, try partial match
+    const partialMatch = bankDetails.find(bank => {
+      const bankNameFromData = bank.name || bank.bank_name || bank.mode_name || bank.toString();
+      return bankNameFromData.toLowerCase().includes(bankName.toLowerCase()) || 
+             bankName.toLowerCase().includes(bankNameFromData.toLowerCase());
+    });
+    
+    if (partialMatch) {
+      return partialMatch.id || partialMatch.bank_id || '';
+    }
+    
+    // Fallback to original hardcoded mapping if dynamic data is not available
+    const bankMapping = {
+      'HDFC Bank': '1',
+      'ICICI Bank': '2',
+      'State Bank of India': '3',
+      'Axis Bank': '4',
+      'Kotak Mahindra Bank': '5',
+      'Yes Bank': '6',
+      'Punjab National Bank': '7',
+      'Bank of Baroda': '8',
+      'Canara Bank': '9',
+      'Union Bank of India': '10'
+    };
+    return bankMapping[bankName] || '';
+  };
+
   const handleEdit = (payment) => {
+    console.log('Opening edit modal for payment:', payment);
+    
+    // Format date for input field (YYYY-MM-DD)
+    let formattedDate = '';
+    if (payment.updatedDate) {
+      try {
+        const date = new Date(payment.updatedDate);
+        formattedDate = date.toISOString().split('T')[0];
+      } catch (error) {
+        console.error('Error formatting date:', error);
+        formattedDate = payment.updatedDate || '';
+      }
+    }
+    
+    // Get bank ID
+    const bankId = getBankId(payment.depositingBank);
+    console.log('Bank mapping:', {
+      originalBank: payment.depositingBank,
+      mappedBankId: bankId,
+      availableBanks: bankDetails
+    });
+    
     setSelectedPayment(payment);
     setEditForm({
       chequeNo: payment.chequeNo || '',
-      chequeAmount: payment.amount || '',
-      depositBank: payment.depositingBank || '',
+      chequeAmount: payment.amount?.toString() || '',
+      depositBank: bankId || '',
       chequeStatus: payment.status || '',
-      statusUpdateDate: payment.updatedDate || ''
+      statusUpdateDate: formattedDate
     });
+    
+    console.log('Edit form initialized:', {
+      chequeNo: payment.chequeNo || '',
+      chequeAmount: payment.amount?.toString() || '',
+      depositBank: bankId || '',
+      chequeStatus: payment.status || '',
+      statusUpdateDate: formattedDate
+    });
+    
     setShowEditModal(true);
   };
 
@@ -493,19 +616,22 @@ export default function PaymentDetails() {
       }
 
       console.log('Updating payment with ID:', selectedPayment.id);
+      console.log('Current edit form data:', editForm);
       
-      // Prepare the update data
+      // Prepare the update data according to the API specification
       const updateData = {
-        id: selectedPayment.id.toString(),
+        payment_id: selectedPayment.id.toString(),
         cheque_no: editForm.chequeNo,
         cheque_amount: editForm.chequeAmount,
-        depositing_bank: editForm.depositBank,
+        bank_id: editForm.depositBank, // Assuming bank_id is the bank selection
         cheque_status: editForm.chequeStatus,
-        updated_date: editForm.statusUpdateDate
+        status_update_date: editForm.statusUpdateDate
       };
+      
+      console.log('Sending update data to API:', updateData);
 
-      // Make API call to update payment details
-      const response = await api.post("/payment_detail/update", updateData, {
+      // Make API call to update payment details using the correct endpoint
+      const response = await api.post("/payment_detail/edit", updateData, {
         headers: {
           "Client-Service": "COHAPPRT",
           "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
@@ -513,7 +639,7 @@ export default function PaymentDetails() {
           token: token,
           rurl: "etribes.ezcrm.site",
           "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
+          "Content-Type": "text/plain",
         },
       });
       
@@ -558,10 +684,15 @@ export default function PaymentDetails() {
   };
 
   const handleEditFormChange = (field, value) => {
-    setEditForm(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    console.log('Form field change:', { field, value });
+    setEditForm(prev => {
+      const updated = {
+        ...prev,
+        [field]: value
+      };
+      console.log('Updated edit form:', updated);
+      return updated;
+    });
   };
 
   const handleRefresh = () => {
@@ -808,8 +939,8 @@ export default function PaymentDetails() {
                     </td>
                                          <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700">
                        <div className="flex items-center gap-2">
-                         {/* Show all actions for non-cleared status */}
-                         {payment.status && !payment.status.toLowerCase().includes('clear') ? (
+                         {/* Show all actions for Processing or Bounced status */}
+                         {payment.status === 'Processing' || payment.status === 'Bounced' ? (
                            <>
                              <button
                                onClick={() => handleView(payment)}
@@ -834,7 +965,7 @@ export default function PaymentDetails() {
                              </button>
                            </>
                          ) : (
-                           /* Show only delete action for cleared status */
+                           /* Show only delete action for Cleared status */
                            <button
                              onClick={() => handleDelete(payment.id)}
                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -866,8 +997,8 @@ export default function PaymentDetails() {
                     </div>
                   </div>
                                      <div className="flex items-center gap-2">
-                     {/* Show all actions for non-cleared status */}
-                     {payment.status && !payment.status.toLowerCase().includes('clear') ? (
+                     {/* Show all actions for Processing or Bounced status */}
+                     {payment.status === 'Processing' || payment.status === 'Bounced' ? (
                        <>
                          <button
                            onClick={() => handleView(payment)}
@@ -892,7 +1023,7 @@ export default function PaymentDetails() {
                          </button>
                        </>
                      ) : (
-                       /* Show only delete action for cleared status */
+                       /* Show only delete action for Cleared status */
                        <button
                          onClick={() => handleDelete(payment.id)}
                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -1020,26 +1151,43 @@ export default function PaymentDetails() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Deposit Bank
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={editForm.depositBank}
                     onChange={(e) => handleEditFormChange('depositBank', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 dark:bg-gray-700 dark:text-gray-100"
-                    placeholder="Enter bank name"
-                  />
+                    disabled={bankDetailsLoading}
+                  >
+                    <option value="">
+                      {bankDetailsLoading ? "Loading banks..." : "Select Bank"}
+                    </option>
+                    {bankDetails.map((bank, index) => {
+                      // Handle different bank data formats
+                      const bankId = bank.id || bank.bank_id || (index + 1).toString();
+                      const bankName = bank.name || bank.bank_name || bank.mode_name || bank.toString();
+                      
+                      return (
+                        <option key={bankId} value={bankId}>
+                          {bankName}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Cheque Status
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={editForm.chequeStatus}
                     onChange={(e) => handleEditFormChange('chequeStatus', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 dark:bg-gray-700 dark:text-gray-100"
-                    placeholder="Enter status"
-                  />
+                  >
+                    <option value="">Select Status</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Cleared">Cleared</option>
+                    <option value="Bounced">Bounced</option>
+                  </select>
                 </div>
 
                 <div>
@@ -1186,7 +1334,7 @@ export default function PaymentDetails() {
                             e.target.nextSibling.style.display = 'flex';
                           }}
                         />
-                        <div className="flex items-center justify-center h-48 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                        <div className="hidden flex items-center justify-center h-48 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
                           <div className="text-center">
                             <FiFile className="mx-auto text-4xl mb-2" />
                             <p>Image not available</p>

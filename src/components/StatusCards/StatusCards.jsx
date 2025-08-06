@@ -1,68 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { FiUserCheck, FiUserX, FiAlertCircle } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import api from "../../api/axiosConfig";
+import { useDashboard } from "../../context/DashboardContext";
 
 export default function StatusCards() {
-  const [activeCount, setActiveCount] = useState(0);
-  const [inactiveCount, setInactiveCount] = useState(0);
-  const [expiredCount, setExpiredCount] = useState(0);
+  const { stats } = useDashboard();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchActiveCount = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const uid = localStorage.getItem('uid');
-        const response = await api.post('/userDetail/active_members', { uid }, {
-          headers: {
-            'token': token,
-            'uid': uid,
-          }
-        });
-        const members = Array.isArray(response.data) ? response.data : response.data.data || [];
-        setActiveCount(members.length);
-      } catch (err) {
-        setActiveCount(0);
-      }
-    };
-    const fetchInactiveCount = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const uid = localStorage.getItem('uid');
-        const response = await api.post('/userDetail/not_members', { uid }, {
-          headers: {
-            'token': token,
-            'uid': uid,
-          }
-        });
-        const members = Array.isArray(response.data) ? response.data : response.data.data || [];
-        setInactiveCount(members.length);
-      } catch (err) {
-        setInactiveCount(0);
-      }
-    };
-    const fetchExpiredCount = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const uid = localStorage.getItem('uid');
-        const response = await api.post('/userDetail/membership_expired', { uid }, {
-          headers: {
-            'token': token,
-            'uid': uid,
-          }
-        });
-        const members = Array.isArray(response.data) ? response.data : response.data.data || [];
-        setExpiredCount(members.length);
-      } catch (err) {
-        setExpiredCount(0);
-      }
-    };
-    fetchActiveCount();
-    fetchInactiveCount();
-    fetchExpiredCount();
-    // Auto-refresh removed
-  }, []);
+  // Use cached stats from dashboard context
+  const activeCount = stats.activeCount;
+  const inactiveCount = stats.inactiveCount;
+  const expiredCount = stats.expiredCount;
 
   const statusData = [
     {

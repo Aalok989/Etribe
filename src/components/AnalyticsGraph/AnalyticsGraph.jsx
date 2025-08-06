@@ -18,7 +18,7 @@ import {
   ComposedChart,
 } from "recharts";
 import { FiTrendingUp, FiUsers, FiUserCheck, FiUserX, FiClock, FiRefreshCw, FiBarChart2, FiPieChart, FiActivity } from "react-icons/fi";
-import api from '../../api/axiosConfig';
+import { useDashboard } from '../../context/DashboardContext';
 
 // Custom tooltip component
 const CustomTooltip = ({ active, payload, label }) => {
@@ -61,96 +61,25 @@ const CustomLegend = ({ payload }) => {
 };
 
 export default function AnalyticsGraph() {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data: dashboardData, loading: dashboardLoading, errors, refreshMembers, stats } = useDashboard();
   const [chartType, setChartType] = useState('line'); // line, area, bar, pie
   const [selectedMetric, setSelectedMetric] = useState('all'); // all, active, inactive, expired
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [stats, setStats] = useState({
-    total: 0,
-    active: 0,
-    inactive: 0,
-    expired: 0
-  });
 
-  // Fetch analytics with optional loading spinner
-  const fetchAnalytics = async (showLoading = false) => {
-    if (showLoading) setLoading(true);
-    setError(null);
-    try {
-      const token = localStorage.getItem('token');
-      const uid = localStorage.getItem('uid') || '1';
-      
-      console.log('Fetching analytics data...');
-      
-      // Fetch all member data
-      const [activeRes, inactiveRes, expiredRes] = await Promise.all([
-        api.post('/userDetail/active_members', { uid }, { headers: { token, uid } }),
-        api.post('/userDetail/not_members', { uid }, { headers: { token, uid } }),
-        api.post('/userDetail/membership_expired', { uid }, { headers: { token, uid } }),
-      ]);
+  // Use analytics data from dashboard context
+  const data = dashboardData.analytics || [];
+  const loading = dashboardLoading.members || dashboardLoading.initial;
+  const error = errors.members;
 
-      // Process data
-      const activeMembers = Array.isArray(activeRes.data) ? activeRes.data : activeRes.data.data || [];
-      const inactiveMembers = Array.isArray(inactiveRes.data) ? inactiveRes.data : inactiveRes.data.data || [];
-      const expiredMembers = Array.isArray(expiredRes.data) ? expiredRes.data : expiredRes.data.data || [];
-
-      // Update stats
-      setStats({
-        total: activeMembers.length + inactiveMembers.length + expiredMembers.length,
-        active: activeMembers.length,
-        inactive: inactiveMembers.length,
-        expired: expiredMembers.length
-      });
-
-      // Group by month using month index for accurate mapping, with debug logging
-      const groupByMonth = (members) => {
-        const monthMap = {};
-        members.forEach(m => {
-          const date = m.lct ? new Date(m.lct) : new Date();
-          const monthIdx = date.getMonth(); // 0 = Jan, 6 = July
-          console.log('Member:', m, 'Parsed date:', date, 'Month index:', monthIdx, 'Month:', months[monthIdx]);
-          if (!monthMap[monthIdx]) monthMap[monthIdx] = 0;
-          monthMap[monthIdx]++;
-        });
-        return monthMap;
-      };
-
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      const activeByMonth = groupByMonth(activeMembers);
-      const inactiveByMonth = groupByMonth(inactiveMembers);
-      const expiredByMonth = groupByMonth(expiredMembers);
-
-      // Prepend a dummy entry for '0' at the start of the X-axis, then all months
-      const chartData = [
-        { month: '0', Active: 0, Inactive: 0, Expired: 0 },
-        ...months.map((month, idx) => ({
-          month,
-          Active: activeByMonth[idx] || 0,
-          Inactive: inactiveByMonth[idx] || 0,
-          Expired: expiredByMonth[idx] || 0,
-        }))
-      ];
-      setData(chartData);
-      setLastUpdated(new Date());
-      
-    } catch (err) {
-      console.error('Analytics fetch error:', err);
-      setError('Failed to fetch analytics data');
-      setData([]);
-    } finally {
-      if (showLoading) setLoading(false);
-    }
-  };
-
+  // Update last updated when data changes
   useEffect(() => {
-    fetchAnalytics(true); // Initial load with spinner
-    // Auto-refresh removed
-  }, []);
+    if (data.length > 0) {
+      setLastUpdated(new Date());
+    }
+  }, [data]);
 
   const handleRefresh = () => {
-    fetchAnalytics(true); // Manual refresh with spinner
+    refreshMembers();
   };
 
   const getChartComponent = () => {

@@ -37,7 +37,7 @@ import Login from "./pages/Login";
 import DashboardLayout from "./components/Layout/DashboardLayout";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { GroupDataProvider } from "./context/GroupDataContext";
+import { DashboardProvider } from "./context/DashboardContext";
 
 function isAuthenticated() {
   return !!localStorage.getItem("token");
@@ -52,7 +52,7 @@ function ProtectedRoute({ children }) {
 
 function App() {
   return (
-    <GroupDataProvider>
+    <DashboardProvider>
       <Router>
         <Routes>
             <Route path="/login" element={<Login />} />
@@ -296,7 +296,7 @@ function App() {
         </Routes>
         <ToastContainer position="top-right" autoClose={3000} />
       </Router>
-    </GroupDataProvider>
+    </DashboardProvider>
   );
 }
 

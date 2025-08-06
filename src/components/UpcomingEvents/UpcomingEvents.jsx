@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FiCalendar, FiMapPin, FiClock, FiUsers } from "react-icons/fi";
-import api from "../../api/axiosConfig";
-import { getAuthHeaders } from "../../utils/apiHeaders";
+import { useDashboard } from '../../context/DashboardContext';
 
 // Utility function to strip HTML tags
 function stripHtmlTags(str) {
@@ -10,71 +9,47 @@ function stripHtmlTags(str) {
 }
 
 export default function UpcomingEvents() {
+  const { data: dashboardData, loading: dashboardLoading, errors } = useDashboard();
   const [events, setEvents] = useState([]);
   const [selected, setSelected] = useState(null);
-  const [loading, setLoading] = useState(true);
+
+  // Use data from dashboard context
+  const loading = dashboardLoading.events || dashboardLoading.initial;
+  const rawEvents = dashboardData.events.future || [];
 
   useEffect(() => {
-    const fetchUpcomingEvents = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const uid = localStorage.getItem('uid');
-        const response = await api.post('/event/future', {}, {
-          headers: getAuthHeaders()
-        });
+    if (rawEvents.length > 0) {
+      const BASE_URL = "https://api.etribes.ezcrm.site";
+      const mappedEvents = rawEvents.map((e, idx) => {
+        const eventDate = e.event_date && e.event_time
+          ? new Date(`${e.event_date}T${e.event_time}`)
+          : e.datetime ? new Date(e.datetime) : new Date();
+        
+        return {
+          id: e.id || idx,
+          day: eventDate.toLocaleDateString('en-US', { weekday: 'short' }),
+          date: eventDate.getDate().toString(),
+          month: eventDate.toLocaleDateString('en-US', { month: 'short' }),
+          year: eventDate.getFullYear().toString(),
+          title: e.event_title || e.event || e.title || e.name || `Event ${idx + 1}`,
+          time: e.event_time || '12:00 PM',
+          venue: e.event_venue || e.venue || e.location || 'TBD',
+          description: e.event_description || e.agenda || e.description || 'No description available.',
+          imageUrl: e.event_image
+            ? (e.event_image.startsWith("http") ? e.event_image : BASE_URL + e.event_image)
+            : (e.image || e.imageUrl || ""),
+        };
+      });
 
-        let backendEvents = [];
-        if (Array.isArray(response.data?.data?.event)) {
-          backendEvents = response.data.data.event;
-        } else if (Array.isArray(response.data?.data?.events)) {
-          backendEvents = response.data.data.events;
-        } else if (Array.isArray(response.data?.data)) {
-          backendEvents = response.data.data;
-        } else if (Array.isArray(response.data)) {
-          backendEvents = response.data;
-        } else if (response.data?.data && typeof response.data.data === 'object') {
-          backendEvents = Object.values(response.data.data);
-        } else {
-          backendEvents = [];
-        }
-
-        const BASE_URL = "https://api.etribes.ezcrm.site";
-        const mappedEvents = backendEvents.map((e, idx) => {
-          const eventDate = e.event_date && e.event_time
-            ? new Date(`${e.event_date}T${e.event_time}`)
-            : e.datetime ? new Date(e.datetime) : new Date();
-          
-          return {
-            id: e.id || idx,
-            day: eventDate.toLocaleDateString('en-US', { weekday: 'short' }),
-            date: eventDate.getDate().toString(),
-            month: eventDate.toLocaleDateString('en-US', { month: 'short' }),
-            year: eventDate.getFullYear().toString(),
-            title: e.event_title || e.event || e.title || e.name || `Event ${idx + 1}`,
-            time: e.event_time || '12:00 PM',
-            venue: e.event_venue || e.venue || e.location || 'TBD',
-            description: e.event_description || e.agenda || e.description || 'No description available.',
-            imageUrl: e.event_image
-              ? (e.event_image.startsWith("http") ? e.event_image : BASE_URL + e.event_image)
-              : (e.image || e.imageUrl || ""),
-          };
-        });
-
-        setEvents(mappedEvents);
-        if (mappedEvents.length > 0 && !selected) {
-          setSelected(mappedEvents[0]);
-        }
-      } catch (err) {
-        console.error('Fetch upcoming events error:', err);
-        // Fallback to empty array
-        setEvents([]);
-      } finally {
-        setLoading(false);
+      setEvents(mappedEvents);
+      if (mappedEvents.length > 0 && !selected) {
+        setSelected(mappedEvents[0]);
       }
-    };
-
-    fetchUpcomingEvents();
-  }, []);
+    } else {
+      setEvents([]);
+      setSelected(null);
+    }
+  }, [rawEvents, selected]);
 
   // If no events, show a message
   if (loading) {

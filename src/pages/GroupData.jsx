@@ -6,11 +6,11 @@ import { FiEdit2, FiX, FiUpload, FiCheckCircle } from "react-icons/fi";
 import api from "../api/axiosConfig";
 import { toast } from 'react-toastify';
 import { getAuthHeaders } from "../utils/apiHeaders";
-import { useGroupData } from "../context/GroupDataContext";
+import { useGroupData, GroupDataProvider } from "../context/GroupDataContext";
 
 const initialData = {};
 
-export default function GroupData() {
+function GroupDataContent() {
   const [data, setData] = useState(initialData);
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState(initialData);
@@ -598,5 +598,13 @@ export default function GroupData() {
         </div>
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function GroupData() {
+  return (
+    <GroupDataProvider>
+      <GroupDataContent />
+    </GroupDataProvider>
   );
 } 

@@ -4,10 +4,29 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useContacts } from "../../context/ContactsContext";
+import { useDashboard } from "../../context/DashboardContext";
 import { toast } from "react-toastify";
 
 export default function ImportantContacts() {
-  const { contactsData, loading, error, editContact: editContactAPI, deleteContact: deleteContactAPI, fetchContacts } = useContacts();
+  // Use dashboard context for faster loading with cached data
+  const { data: dashboardData, loading: dashboardLoading, refreshContacts } = useDashboard();
+  
+  // Keep existing contacts context for CRUD operations (optional - fallback if not available)
+  let editContactAPI = null;
+  let deleteContactAPI = null;
+  try {
+    const contactsContext = useContacts();
+    editContactAPI = contactsContext.editContact;
+    deleteContactAPI = contactsContext.deleteContact;
+  } catch (e) {
+    // ContactsContext not available, CRUD operations will be disabled
+    console.log('ContactsContext not available, CRUD operations disabled');
+  }
+  
+  // Use dashboard data for display (faster loading)
+  const contactsData = dashboardData.contacts || [];
+  const loading = dashboardLoading.contacts || dashboardLoading.initial;
+  
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [editContact, setEditContact] = useState(null);
@@ -64,10 +83,16 @@ export default function ImportantContacts() {
 
   const handleEditSave = async () => {
     setFormError(null);
+    if (!editContactAPI) {
+      toast.error("Edit functionality not available");
+      return;
+    }
     try {
       await editContactAPI(editForm);
-    setEditContact(null);
+      setEditContact(null);
       toast.success("Contact updated successfully!");
+      // Refresh the dashboard data
+      refreshContacts();
     } catch (err) {
       setFormError(err.toString());
       toast.error("Failed to update contact.");
@@ -77,11 +102,17 @@ export default function ImportantContacts() {
   const handleDelete = async () => {
     if (deleteConfirm.trim().toLowerCase() === "delete") {
       setFormError(null);
+      if (!deleteContactAPI) {
+        toast.error("Delete functionality not available");
+        return;
+      }
       try {
         await deleteContactAPI(deleteContact.id);
-      setDeleteContact(null);
-      setDeleteConfirm("");
+        setDeleteContact(null);
+        setDeleteConfirm("");
         toast.success("Contact deleted successfully!");
+        // Refresh the dashboard data
+        refreshContacts();
       } catch (err) {
         setFormError(err.toString());
         toast.error("Failed to delete contact.");
@@ -160,7 +191,7 @@ export default function ImportantContacts() {
   };
 
   const handleRefresh = () => {
-    fetchContacts();
+    refreshContacts();
     toast.info("Refreshing contacts...");
   };
 
@@ -174,6 +205,28 @@ export default function ImportantContacts() {
           <div className="text-center text-gray-600 dark:text-gray-300">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-2"></div>
             <p>Loading contacts...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if no contacts available
+  if (!loading && contactsData.length === 0) {
+    return (
+      <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+        <div className="rounded-t-2xl inset-0 bg-gradient-to-r from-indigo-300 via-blue-200 to-blue-300 dark:from-indigo-900 dark:via-blue-900 dark:to-gray-900 px-6 py-4">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white tracking-wide">Important Contacts</h2>
+        </div>
+        <div className="p-6 flex items-center justify-center">
+          <div className="text-center text-gray-600 dark:text-gray-300">
+            <p>No contacts available</p>
+            <button
+              onClick={handleRefresh}
+              className="mt-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
+            >
+              Refresh
+            </button>
           </div>
         </div>
       </div>
@@ -353,15 +406,27 @@ export default function ImportantContacts() {
                   <td className="p-3 text-gray-500 dark:text-gray-400 min-w-[120px]">{c.address}</td>
                   <td className="p-3 flex gap-2 justify-center min-w-[120px]">
                     <button 
-                      className="flex items-center gap-1 bg-yellow-400 text-white px-2 py-1.5 rounded-lg text-xs font-semibold hover:bg-yellow-500 transition"
-                      onClick={() => setEditContact(c)}
+                      className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition ${
+                        editContactAPI 
+                          ? 'bg-yellow-400 text-white hover:bg-yellow-500' 
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      onClick={() => editContactAPI && setEditContact(c)}
+                      disabled={!editContactAPI}
+                      title={editContactAPI ? 'Modify contact' : 'Edit functionality not available'}
                     >
                       <FiEdit2 />
                       Modify
                     </button>
                     <button 
-                      className="flex items-center gap-1 bg-rose-500 text-white px-2 py-1.5 rounded-lg text-xs font-semibold hover:bg-rose-600 transition"
-                      onClick={() => setDeleteContact(c)}
+                      className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold transition ${
+                        deleteContactAPI 
+                          ? 'bg-rose-500 text-white hover:bg-rose-600' 
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      onClick={() => deleteContactAPI && setDeleteContact(c)}
+                      disabled={!deleteContactAPI}
+                      title={deleteContactAPI ? 'Delete contact' : 'Delete functionality not available'}
                     >
                       <FiTrash2 />
                       Delete

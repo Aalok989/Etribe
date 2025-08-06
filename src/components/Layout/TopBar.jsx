@@ -3,6 +3,7 @@ import { FiSun, FiMoon, FiUser, FiBell, FiClock, FiCalendar, FiCheckCircle } fro
 import { Link } from "react-router-dom";
 import api from "../../api/axiosConfig";
 import { getAuthHeaders } from "../../utils/apiHeaders";
+import { useDashboard } from "../../context/DashboardContext";
 import { useGroupData } from "../../context/GroupDataContext";
 
 export default function TopBar() {
@@ -15,8 +16,21 @@ export default function TopBar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const notificationsRef = useRef(null);
   
-  // Use GroupDataContext for real-time logo updates
-  const { groupData } = useGroupData();
+  // Try to use DashboardContext first, fallback to GroupDataContext
+  let groupData = {};
+  try {
+    const dashboard = useDashboard();
+    groupData = dashboard.data?.groupData || {};
+  } catch (e) {
+    // DashboardContext not available, try GroupDataContext
+    try {
+      const groupDataContext = useGroupData();
+      groupData = groupDataContext.groupData || {};
+    } catch (e2) {
+      // Neither context available, use empty object
+      groupData = {};
+    }
+  }
 
   useEffect(() => {
     if (theme === "dark") {
