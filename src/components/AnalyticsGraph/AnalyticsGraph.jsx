@@ -65,15 +65,14 @@ export default function AnalyticsGraph() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [chartType, setChartType] = useState('line'); // line, area, bar, pie
-  const [selectedMetric, setSelectedMetric] = useState('all'); // all, active, pending-approval, expired
+  const [selectedMetric, setSelectedMetric] = useState('all'); // all, active, inactive, expired
   const [lastUpdated, setLastUpdated] = useState(null);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
-    'pending-approval': 0,
+    inactive: 0,
     expired: 0
   });
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
   // Fetch analytics with optional loading spinner
   const fetchAnalytics = async (showLoading = false) => {
@@ -82,6 +81,8 @@ export default function AnalyticsGraph() {
     try {
       const token = localStorage.getItem('token');
       const uid = localStorage.getItem('uid') || '1';
+      
+      console.log('Fetching analytics data...');
       
       // Fetch all member data
       const [activeRes, inactiveRes, expiredRes] = await Promise.all([
@@ -99,33 +100,38 @@ export default function AnalyticsGraph() {
       setStats({
         total: activeMembers.length + inactiveMembers.length + expiredMembers.length,
         active: activeMembers.length,
-        'pending-approval': inactiveMembers.length,
+        inactive: inactiveMembers.length,
         expired: expiredMembers.length
       });
 
-      // Group by month using month index for accurate mapping
+      // Group by month using month index for accurate mapping, with debug logging
       const groupByMonth = (members) => {
         const monthMap = {};
         members.forEach(m => {
           const date = m.lct ? new Date(m.lct) : new Date();
           const monthIdx = date.getMonth(); // 0 = Jan, 6 = July
+          console.log('Member:', m, 'Parsed date:', date, 'Month index:', monthIdx, 'Month:', months[monthIdx]);
           if (!monthMap[monthIdx]) monthMap[monthIdx] = 0;
           monthMap[monthIdx]++;
         });
         return monthMap;
       };
 
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       const activeByMonth = groupByMonth(activeMembers);
       const inactiveByMonth = groupByMonth(inactiveMembers);
       const expiredByMonth = groupByMonth(expiredMembers);
 
-      // Chart data: all months, no dummy entry
-      const chartData = months.map((month, idx) => ({
+      // Prepend a dummy entry for '0' at the start of the X-axis, then all months
+      const chartData = [
+        { month: '0', Active: 0, Inactive: 0, Expired: 0 },
+        ...months.map((month, idx) => ({
           month,
           Active: activeByMonth[idx] || 0,
-          'Pending Approval': inactiveByMonth[idx] || 0,
+          Inactive: inactiveByMonth[idx] || 0,
           Expired: expiredByMonth[idx] || 0,
-      }));
+        }))
+      ];
       setData(chartData);
       setLastUpdated(new Date());
       
@@ -150,7 +156,7 @@ export default function AnalyticsGraph() {
   const getChartComponent = () => {
     const colors = {
       Active: '#10b981',
-      'Pending Approval': '#6366f1', 
+      Inactive: '#6366f1', 
       Expired: '#f43f5e'
     };
 
@@ -164,13 +170,13 @@ export default function AnalyticsGraph() {
     switch (chartType) {
       case 'area':
         return (
-          <AreaChart data={filteredData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+          <AreaChart data={filteredData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <defs>
               <linearGradient id="activeGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
                 <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
               </linearGradient>
-              <linearGradient id="pendingApprovalGradient" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="inactiveGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8}/>
                 <stop offset="95%" stopColor="#6366f1" stopOpacity={0.1}/>
               </linearGradient>
@@ -186,10 +192,6 @@ export default function AnalyticsGraph() {
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              padding={{ left: 0, right: 0 }}
-              ticks={months}
-              interval={0}
-              allowDataOverflow={false}
             />
             <YAxis 
               allowDecimals={false}
@@ -202,7 +204,7 @@ export default function AnalyticsGraph() {
             {selectedMetric === 'all' && (
               <>
                 <Area type="monotone" dataKey="Active" stroke="#10b981" fill="url(#activeGradient)" strokeWidth={3} />
-                <Area type="monotone" dataKey="Pending Approval" stroke="#6366f1" fill="url(#pendingApprovalGradient)" strokeWidth={3} />
+                <Area type="monotone" dataKey="Inactive" stroke="#6366f1" fill="url(#inactiveGradient)" strokeWidth={3} />
                 <Area type="monotone" dataKey="Expired" stroke="#f43f5e" fill="url(#expiredGradient)" strokeWidth={3} />
               </>
             )}
@@ -220,7 +222,7 @@ export default function AnalyticsGraph() {
 
       case 'bar':
         return (
-          <BarChart data={filteredData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+          <BarChart data={filteredData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis 
               dataKey="month" 
@@ -228,10 +230,6 @@ export default function AnalyticsGraph() {
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              padding={{ left: 0, right: 0 }}
-              ticks={months}
-              interval={0}
-              allowDataOverflow={false}
             />
             <YAxis 
               allowDecimals={false}
@@ -244,7 +242,7 @@ export default function AnalyticsGraph() {
             {selectedMetric === 'all' && (
               <>
                 <Bar dataKey="Active" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Pending Approval" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Inactive" fill="#6366f1" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="Expired" fill="#f43f5e" radius={[4, 4, 0, 0]} />
               </>
             )}
@@ -258,10 +256,9 @@ export default function AnalyticsGraph() {
           </BarChart>
         );
 
-      case 'line':
-      default:
+      default: // line chart
         return (
-          <LineChart data={filteredData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+          <LineChart data={filteredData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis 
               dataKey="month" 
@@ -269,10 +266,6 @@ export default function AnalyticsGraph() {
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              padding={{ left: 0, right: 0 }}
-              ticks={months}
-              interval={0}
-              allowDataOverflow={false}
             />
             <YAxis 
               allowDecimals={false}
@@ -294,7 +287,7 @@ export default function AnalyticsGraph() {
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="Pending Approval" 
+                  dataKey="Inactive" 
                   stroke="#6366f1" 
                   strokeWidth={3} 
                   dot={{ r: 6, fill: '#6366f1', strokeWidth: 2, stroke: '#ffffff' }}
@@ -332,20 +325,15 @@ export default function AnalyticsGraph() {
         <div className="absolute inset-0 bg-gradient-to-r from-indigo-300 via-blue-200 to-blue-300 dark:from-indigo-900 dark:via-blue-900 dark:to-gray-900" />
         <div className="absolute inset-0 bg-white/30 dark:bg-gray-800/40 backdrop-blur-md border-b border-white/30 dark:border-gray-700" />
         <div className="relative z-10 flex items-center gap-3 px-5 py-3">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-indigo-100 tracking-wide flex-1">Member Analytics</h2>
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="p-2 bg-white/20 dark:bg-gray-800/40 rounded-lg backdrop-blur-sm hover:bg-white/30 dark:hover:bg-gray-700/40 transition-all duration-200 disabled:opacity-50"
-            aria-label="Refresh"
-          >
-            <FiRefreshCw className={`w-5 h-5 text-indigo-600 dark:text-indigo-300 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+          <div className="p-2 bg-white/20 dark:bg-gray-800/40 rounded-lg backdrop-blur-sm">
+            <FiTrendingUp className="w-6 h-6 text-white dark:text-indigo-200" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-indigo-100 tracking-wide">Member Analytics</h2>
         </div>
       </div>
 
       {/* Chart Controls */}
-      <div className="px-4 py-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex flex-row flex-wrap items-center gap-3">
+      <div className="px-8 py-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex flex-wrap items-center gap-6">
         {/* Chart Type Selector */}
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Chart:</span>
@@ -381,7 +369,7 @@ export default function AnalyticsGraph() {
           >
             <option value="all">All Metrics</option>
             <option value="Active">Active Only</option>
-            <option value="Pending Approval">Pending Approval Only</option>
+            <option value="Inactive">Inactive Only</option>
             <option value="Expired">Expired Only</option>
           </select>
         </div>
@@ -392,28 +380,20 @@ export default function AnalyticsGraph() {
             Updated: {lastUpdated.toLocaleTimeString()}
           </div>
         )}
+
+        {/* Refresh Button */}
+        <button
+          onClick={handleRefresh}
+          disabled={loading}
+          className="ml-auto p-2 bg-white/20 dark:bg-gray-800/40 rounded-lg backdrop-blur-sm hover:bg-white/30 dark:hover:bg-gray-700/40 transition-all duration-200 disabled:opacity-50"
+          aria-label="Refresh"
+        >
+          <FiRefreshCw className={`w-5 h-5 text-indigo-600 dark:text-indigo-300 ${loading ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
       {/* Chart Container */}
-      <div className="flex-1 min-h-0 h-0 flex items-center justify-center" style={{ outline: 'none', userSelect: 'none' }}>
-        <style>{`
-          .recharts-surface {
-            outline: none !important;
-            border: none !important;
-          }
-          .recharts-wrapper {
-            outline: none !important;
-            border: none !important;
-          }
-          svg {
-            outline: none !important;
-            border: none !important;
-          }
-          .recharts-surface:focus {
-            outline: none !important;
-            border: none !important;
-          }
-        `}</style>
+      <div className="flex-1 min-h-0 h-0 flex items-center justify-center">
         {loading ? (
           <div className="flex items-center justify-center h-full w-full">
             <div className="text-center">

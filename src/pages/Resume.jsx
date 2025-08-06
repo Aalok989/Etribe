@@ -44,43 +44,6 @@ export default function Resume() {
     resumeFile: null
   });
 
-  // Mock data 
-  const mockResumes = [
-    {
-      id: 1,
-      name: "Deepak",
-      contactNo: "9416090924",
-      emailId: "rohit@30days.in",
-      qualification: "test",
-      skills: "test",
-      experience: "test",
-      uploadedOn: "2025-02-25",
-      resumeFile: "deepak_resume.pdf"
-    },
-    {
-      id: 2,
-      name: "Rohit Arya",
-      contactNo: "9416090924",
-      emailId: "rohit@30days.in",
-      qualification: "tseest",
-      skills: "testing",
-      experience: "test",
-      uploadedOn: "2025-02-25",
-      resumeFile: "rohit_arya_resume.pdf"
-    },
-    {
-      id: 3,
-      name: "Rohit Arya",
-      contactNo: "9416090924",
-      emailId: "rohit@30days.in",
-      qualification: "test",
-      skills: "test",
-      experience: "test",
-      uploadedOn: "2025-02-25",
-      resumeFile: "rohit_arya_resume2.pdf"
-    },
-  ];
-
   useEffect(() => {
     fetchResumes();
   }, []);
@@ -100,23 +63,114 @@ export default function Resume() {
         return;
       }
 
-      // For now, using mock data - replace with actual API call
-      // const response = await api.get("/resumes", {
-      //   headers: {
-      //     "Client-Service": "COHAPPRT",
-      //     "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
-      //     uid,
-      //     token,
-      //     rurl: "etribes.ezcrm.site",
-      //     "Content-Type": "application/json",
-      //   },
-      // });
+      console.log('Fetching resumes with credentials:', { uid, token });
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setResumes(mockResumes);
+      const response = await api.post("/resume", {}, {
+        headers: {
+          "Client-Service": "COHAPPRT",
+          "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
+          uid: uid || '1',
+          token: token,
+          rurl: "etribes.ezcrm.site",
+          "Content-Type": "application/json",
+        },
+      });
+      
+      console.log('Resume API response:', response.data);
+      
+      // Debug: Log the structure of each resume object
+      if (response.data?.data && Array.isArray(response.data.data)) {
+        console.log('Individual resume objects:');
+        response.data.data.forEach((resume, index) => {
+          console.log(`Resume ${index + 1}:`, {
+            id: resume.id,
+            name: resume.name,
+            contact: resume.contact,
+            email_id: resume.email_id,
+            qualification: resume.qualification,
+            skill: resume.skill,
+            skills: resume.skills,
+            experience: resume.experience,
+            uploaded_on: resume.uploaded_on,
+            resume_file: resume.resume_file,
+            // Log all keys to see what's actually available
+            allKeys: Object.keys(resume)
+          });
+        });
+      }
+      
+      // Handle the API response data
+      if (response.data?.data) {
+        // If the API returns data in response.data.data format
+        const apiResumes = response.data.data;
+        const mappedResumes = Array.isArray(apiResumes) ? apiResumes.map((resume, index) => {
+          // Debug each resume mapping
+          console.log(`Mapping resume ${index + 1}:`, {
+            original: resume,
+            mappedSkills: resume.skill || resume.skills || resume.skill_set || resume.skill_set || ''
+          });
+          
+          return {
+            id: resume.id || index + 1,
+            name: resume.name || resume.full_name || resume.fullName || '',
+            contactNo: resume.contact_no || resume.contactNo || resume.contact || '',
+            emailId: resume.email_id || resume.emailId || resume.email || '',
+            qualification: resume.qualification || '',
+            skills: (resume.skill || resume.skills || resume.skill_set || '') || '',  // Handle null values
+            experience: resume.experience || '',
+            uploadedOn: resume.uploaded_on || resume.uploadedOn || resume.created_at || new Date().toISOString().split('T')[0],
+            resumeFile: resume.resume_file || resume.resumeFile || resume.file || ''
+          };
+        }) : [];
+        
+        setResumes(mappedResumes);
+        console.log('Final mapped resumes:', mappedResumes);
+      } else if (response.data) {
+        // If the API returns data directly in response.data
+        const apiResumes = Array.isArray(response.data) ? response.data : [response.data];
+        const mappedResumes = apiResumes.map((resume, index) => {
+          // Debug each resume mapping
+          console.log(`Mapping resume ${index + 1}:`, {
+            original: resume,
+            mappedSkills: resume.skill || resume.skills || resume.skill_set || ''
+          });
+          
+          return {
+            id: resume.id || index + 1,
+            name: resume.name || resume.full_name || resume.fullName || '',
+            contactNo: resume.contact_no || resume.contactNo || resume.contact || '',
+            emailId: resume.email_id || resume.emailId || resume.email || '',
+            qualification: resume.qualification || '',
+            skills: (resume.skill || resume.skills || resume.skill_set || '') || '',  // Handle null values
+            experience: resume.experience || '',
+            uploadedOn: resume.uploaded_on || resume.uploadedOn || resume.created_at || new Date().toISOString().split('T')[0],
+            resumeFile: resume.resume_file || resume.resumeFile || resume.file || ''
+          };
+        });
+        
+        setResumes(mappedResumes);
+        console.log('Final mapped resumes:', mappedResumes);
+      } else {
+        // No data found in API response
+        console.log('No data found in API response');
+        setResumes([]);
+      }
     } catch (err) {
+      console.error('Error fetching resumes:', err);
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      
+      if (err.response?.status === 401) {
+        toast.error("Session expired. Please log in again.");
+        window.location.href = "/login";
+      } else if (err.response?.status === 404) {
+        toast.error("Resume endpoint not found. Please check the API configuration.");
+      } else {
       toast.error(err.response?.data?.message || err.message || "Failed to fetch resumes");
+      }
+      
+      // Set empty array on error instead of mock data
+      setResumes([]);
     } finally {
       setLoading(false);
     }
@@ -318,62 +372,74 @@ export default function Resume() {
       return;
     }
 
+    // Additional validation for skills
+    if (!uploadFormData.skills || uploadFormData.skills.trim() === '') {
+      toast.error("Please enter your skills");
+      return;
+    }
+
     try {
-      // Create FormData for file upload
+      const token = localStorage.getItem("token");
+      const uid = localStorage.getItem("uid");
+      
+      if (!token || !uid) {
+        toast.error("Please log in to upload resumes");
+        return;
+      }
+
+      // Create FormData for file upload with correct field names
       const formData = new FormData();
-      formData.append('fullName', uploadFormData.fullName);
-      formData.append('emailAddress', uploadFormData.emailAddress);
-      formData.append('contactNumber', uploadFormData.contactNumber);
+      formData.append('resume_file', uploadFormData.resumeFile);
+      formData.append('name', uploadFormData.fullName);
+      formData.append('contact', uploadFormData.contactNumber);
+      formData.append('email_id', uploadFormData.emailAddress);
       formData.append('qualification', uploadFormData.qualification);
-      formData.append('skills', uploadFormData.skills);
+      formData.append('skill', uploadFormData.skills);  // Make sure this is not empty
+      formData.append('skills', uploadFormData.skills); // Try alternative field name
       formData.append('experience', uploadFormData.experience);
-      formData.append('resumeFile', uploadFormData.resumeFile);
 
-      // For now, simulate API call
-      // const response = await api.post("/resumes/upload", formData, {
-      //   headers: {
-      //     "Client-Service": "COHAPPRT",
-      //     "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
-      //     uid: localStorage.getItem("uid"),
-      //     token: localStorage.getItem("token"),
-      //     rurl: "etribes.ezcrm.site",
-      //     "Content-Type": "multipart/form-data",
-      //   },
-      // });
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Add to local state for demo
-      const newResume = {
-        id: resumes.length + 1,
-        name: uploadFormData.fullName,
-        contactNo: uploadFormData.contactNumber,
-        emailId: uploadFormData.emailAddress,
-        qualification: uploadFormData.qualification,
-        skills: uploadFormData.skills,
-        experience: uploadFormData.experience,
-        uploadedOn: new Date().toISOString().split('T')[0],
-        resumeFile: uploadFormData.resumeFile.name
-      };
-
-      setResumes(prev => [newResume, ...prev]);
-      
-      // Reset form
-      setUploadFormData({
-        fullName: "",
-        emailAddress: "",
-        contactNumber: "",
-        qualification: "",
-        skills: "",
-        experience: "",
-        resumeFile: null
+      const response = await api.post("/resume/add", formData, {
+        headers: {
+          "Client-Service": "COHAPPRT",
+          "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
+          uid: uid,
+          token: token,
+          rurl: "etribes.ezcrm.site",
+          "Authorization": `Bearer ${token}`,
+        },
+        withCredentials: true,
       });
+
+      if (response.data?.status === 'success' || response.data?.message || response.data?.data) {
+        // Refresh the resume list to get the updated data
+        await fetchResumes();
       
-      setShowUploadForm(false);
-      toast.success("Resume uploaded successfully!");
+        // Reset form
+        setUploadFormData({
+          fullName: "",
+          emailAddress: "",
+          contactNumber: "",
+          qualification: "",
+          skills: "",
+          experience: "",
+          resumeFile: null
+        });
+        
+        setShowUploadForm(false);
+        toast.success("Resume uploaded successfully!");
+      } else {
+        toast.error("Upload completed but response format unexpected");
+      }
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message || "Failed to upload resume");
+      console.error('Upload error:', err);
+      
+      if (err.response?.status === 401) {
+        toast.error("Session expired. Please log in again.");
+      } else if (err.response?.status === 413) {
+        toast.error("File too large. Please select a smaller file.");
+      } else {
+        toast.error(err.response?.data?.message || err.message || "Failed to upload resume");
+      }
     }
   };
 
@@ -391,29 +457,133 @@ export default function Resume() {
   };
 
   const handleViewResume = (resume) => {
-    // Implement view resume functionality
-    toast.info("View resume functionality to be implemented");
+    if (!resume.resumeFile) {
+      toast.error("No resume file available to view");
+      return;
+    }
+
+    try {
+      const fileUrl = resume.resumeFile.startsWith('http') 
+        ? resume.resumeFile 
+        : `https://api.etribes.ezcrm.site/${resume.resumeFile}`;
+      
+      const fileExtension = resume.resumeFile.split('.').pop()?.toLowerCase();
+      
+      if (fileExtension === 'pdf') {
+        window.open(fileUrl, '_blank');
+        toast.success("Opening PDF resume...");
+      } else if (['doc', 'docx'].includes(fileExtension)) {
+        if (window.confirm("Word documents cannot be previewed in browser. Would you like to download the file?")) {
+          downloadResumeFile(fileUrl, resume.name);
+        }
+      } else {
+        window.open(fileUrl, '_blank');
+        toast.success("Opening resume file...");
+      }
+    } catch (error) {
+      console.error("Error opening resume file:", error);
+      toast.error("Failed to open resume file. Please try again.");
+    }
+  };
+
+  const handleViewResumeWithOptions = (resume, event) => {
+    event.preventDefault();
+    
+    if (!resume.resumeFile) {
+      toast.error("No resume file available to view");
+      return;
+    }
+
+    const fileUrl = resume.resumeFile.startsWith('http') 
+      ? resume.resumeFile 
+      : `https://api.etribes.ezcrm.site/${resume.resumeFile}`;
+    
+    const fileExtension = resume.resumeFile.split('.').pop()?.toLowerCase();
+    
+    const options = [];
+    
+    if (fileExtension === 'pdf') {
+      options.push('View in Browser');
+    }
+    options.push('Download File');
+    
+    const choice = window.confirm(
+      `Choose an action for ${resume.name}'s resume:\n\n` +
+      options.map((opt, index) => `${index + 1}. ${opt}`).join('\n') +
+      '\n\nClick OK for first option, Cancel for second option.'
+    );
+    
+    if (choice) {
+      if (fileExtension === 'pdf') {
+        window.open(fileUrl, '_blank');
+        toast.success("Opening PDF resume...");
+      } else {
+        downloadResumeFile(fileUrl, resume.name);
+      }
+    } else {
+      downloadResumeFile(fileUrl, resume.name);
+    }
+  };
+
+  const downloadResumeFile = (fileUrl, fileName) => {
+    try {
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = fileName || 'resume';
+      link.target = '_blank';
+      
+      const token = localStorage.getItem("token");
+      if (token) {
+        link.setAttribute('data-token', token);
+      }
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Downloading resume file...");
+    } catch (error) {
+      console.error("Error downloading file:", error);
+      toast.error("Failed to download file. Please try again.");
+    }
   };
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this resume?")) {
       try {
-        // Replace with actual API call
-        // await api.delete(`/resumes/${id}`, {
-        //   headers: {
-        //     "Client-Service": "COHAPPRT",
-        //     "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
-        //     uid: localStorage.getItem("uid"),
-        //     token: localStorage.getItem("token"),
-        //     rurl: "etribes.ezcrm.site",
-        //     "Content-Type": "application/json",
-        //   },
-        // });
+        const token = localStorage.getItem("token");
+        const uid = localStorage.getItem("uid");
         
-        setResumes(resumes.filter(resume => resume.id !== id));
-        toast.success("Resume deleted successfully");
+        if (!token || !uid) {
+          toast.error("Please log in to delete resumes");
+          return;
+        }
+
+        const response = await api.post(`/resume/delete`, { id }, {
+          headers: {
+            "Client-Service": "COHAPPRT",
+            "Auth-Key": "4F21zrjoAASqz25690Zpqf67UyY",
+            uid: uid,
+            token: token,
+            rurl: "etribes.ezcrm.site",
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.data?.status === 'success' || response.data?.message) {
+          setResumes(resumes.filter(resume => resume.id !== id));
+          toast.success("Resume deleted successfully");
+        } else {
+          toast.error("Delete completed but response format unexpected");
+        }
       } catch (err) {
-        toast.error("Failed to delete resume");
+        console.error('Delete error:', err);
+        
+        if (err.response?.status === 401) {
+          toast.error("Session expired. Please log in again.");
+        } else {
+          toast.error("Failed to delete resume");
+        }
       }
     }
   };
@@ -467,49 +637,36 @@ export default function Resume() {
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-4 py-3">
+        {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Resume</h1>
-          <button
-            onClick={handleUploadResume}
-            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
-          >
-            <FiUpload className="text-xs sm:text-sm" />
-            <span className="text-xs sm:text-sm">Upload Resume</span>
-          </button>
+          <h1 className="text-xl sm:text-2xl font-bold text-orange-600">Resume</h1>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <FiUsers className="text-indigo-600" />
+            <span>Total Resumes: {resumes.length}</span>
+          </div>
         </div>    
 
         <div className="rounded-2xl shadow-lg bg-white dark:bg-gray-800 max-w-7xl w-full mx-auto">
           {/* Controls */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600 dark:text-gray-400">
-                  Show
-                </label>
-                <select
-                  value={entriesPerPage}
-                  onChange={handleEntriesChange}
-                  className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
-                <span className="text-sm text-gray-600 dark:text-gray-400">entries</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <FiSearch className="text-gray-400" />
+              <div className="relative flex-1">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search..."
+                  placeholder="Search by name..."
+                  className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 focus:ring-2 focus:ring-indigo-400 transition-colors"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="border border-gray-300 dark:border-gray-600 rounded px-3 py-1 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  onChange={e => setSearchTerm(e.target.value)}
+                  style={{ minWidth: '100%', maxWidth: '100%' }}
                 />
               </div>
+              
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 flex-shrink-0">
+                <span>Showing {indexOfFirstEntry + 1} to {Math.min(indexOfLastEntry, sortedResumes.length)} of {sortedResumes.length} entries</span>
+              </div>
             </div>
-
+            
             <div className="flex flex-wrap gap-2 items-center justify-between xl:justify-start">
               <button 
                 className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
@@ -560,7 +717,7 @@ export default function Resume() {
               </div>
               
               {/* Mobile/Tablet Export Dropdown - Show on smaller screens */}
-              <div className="relative xl:hidden">
+              <div className="relative xl:hidden flex-1 flex justify-center">
                 <button
                   className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-600 transition"
                   onClick={() => setShowExportDropdown(!showExportDropdown)}
@@ -615,6 +772,15 @@ export default function Resume() {
                   </div>
                 )}
               </div>
+              
+              <button
+                className="flex items-center gap-1 bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition"
+                onClick={handleUploadResume}
+              >
+                <FiUpload />
+                <span className="hidden sm:inline">Upload Resume</span>
+                <span className="sm:hidden">Upload</span>
+              </button>
             </div>
           </div>
           
@@ -769,15 +935,15 @@ export default function Resume() {
                     <td className="p-3 text-left border-r border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100">
                       {resume.uploadedOn}
                     </td>
-                                         <td className="p-3 text-center border-r border-gray-200 dark:border-gray-700">
-                       <button
-                         onClick={() => handleViewResume(resume)}
-                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                         title="View Resume"
-                       >
-                         <FiEye size={16} />
-                       </button>
-                     </td>
+                    <td className="p-3 text-center border-r border-gray-200 dark:border-gray-700">
+                      <button
+                        onClick={(e) => handleViewResumeWithOptions(resume, e)}
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                        title="View Resume"
+                      >
+                        <FiEye size={16} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -798,13 +964,13 @@ export default function Resume() {
                       <p className="text-sm text-gray-600 dark:text-gray-400">{resume.contactNo}</p>
                     </div>
                   </div>
-                                     <button
-                     onClick={() => handleViewResume(resume)}
-                     className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                     title="View Resume"
-                   >
-                     <FiEye size={16} />
-                   </button>
+                  <button
+                    onClick={(e) => handleViewResumeWithOptions(resume, e)}
+                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                    title="View Resume"
+                  >
+                    <FiEye size={16} />
+                  </button>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
@@ -833,201 +999,212 @@ export default function Resume() {
           </div>
 
           {/* Pagination Controls */}
-          <div className="flex flex-row items-center justify-between gap-4 p-6 border-t border-gray-100 dark:border-gray-700">
-            <div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                Showing {indexOfFirstEntry + 1} to {Math.min(indexOfLastEntry, sortedResumes.length)} of {sortedResumes.length} entries
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handlePrev}
-                disabled={currentPage === 1}
-                className={`p-2 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
-                  currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-                title="Previous"
-              >
-                <FiChevronLeft size={16} />
-              </button>
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={handleNext}
-                disabled={currentPage === totalPages}
-                className={`p-2 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
-                  currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-                title="Next"
-              >
-                <FiChevronRight size={16} />
-              </button>
-            </div>
-                     </div>
-         </div>
-       </div>
-
-               {/* Upload Resume Modal */}
-        {showUploadForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Upload Resume</h2>
-                <button
-                  onClick={handleFormCancel}
-                  className="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
+          {/* Pagination Controls */}
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700 dark:text-gray-400">Show</span>
+                <select
+                className="border rounded-lg px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                  value={entriesPerPage}
+                  onChange={handleEntriesChange}
                 >
-                  <FiX size={24} />
-                </button>
+                {[5, 10, 25, 50, 100].map(num => (
+                    <option key={num} value={num}>{num}</option>
+                  ))}
+                </select>
+              <span className="text-sm text-gray-600 dark:text-gray-400">entries per page</span>
               </div>
-             
-             <form onSubmit={handleFormSubmit} className="p-6">
-               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                 {/* Left Column */}
-                 <div className="space-y-4">
-                                       <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        *Full Name
-                      </label>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePrev}
+                  disabled={currentPage === 1}
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                    currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                title="Previous"
+                  >
+                    &lt;
+                </button>
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                <button
+                  onClick={handleNext}
+                  disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                    currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                title="Next"
+                  >
+                    &gt;
+                </button>
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Upload Resume Modal */}
+      {showUploadForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Upload Resume</h2>
+              <button
+                onClick={handleFormCancel}
+                className="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
+              >
+                <FiX size={24} />
+              </button>
+            </div>
+           
+            <form onSubmit={handleFormSubmit} className="p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      *Full Name
+                    </label>
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={uploadFormData.fullName}
+                      onChange={handleFormInputChange}
+                      placeholder="Enter your full name"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      *Email Address
+                    </label>
+                    <input
+                      type="email"
+                      name="emailAddress"
+                      value={uploadFormData.emailAddress}
+                      onChange={handleFormInputChange}
+                      placeholder="Enter your email"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      *Skills
+                    </label>
+                    <textarea
+                      name="skills"
+                      value={uploadFormData.skills}
+                      onChange={handleFormInputChange}
+                      placeholder="Enter your skills"
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      *Upload Resume
+                    </label>
+                    <div className="flex items-center gap-2">
                       <input
-                        type="text"
-                        name="fullName"
-                        value={uploadFormData.fullName}
+                        type="file"
+                        name="resumeFile"
                         onChange={handleFormInputChange}
-                        placeholder="Enter your full name"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                        accept=".pdf,.doc,.docx"
+                        className="hidden"
+                        id="resumeFile"
                         required
                       />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        *Email Address
+                      <label
+                        htmlFor="resumeFile"
+                        className="px-4 py-2 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
+                      >
+                        Choose File
                       </label>
-                      <input
-                        type="email"
-                        name="emailAddress"
-                        value={uploadFormData.emailAddress}
-                        onChange={handleFormInputChange}
-                        placeholder="Enter your email"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        *Skills
-                      </label>
-                      <textarea
-                        name="skills"
-                        value={uploadFormData.skills}
-                        onChange={handleFormInputChange}
-                        placeholder="Enter your skills"
-                        rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        *Upload Resume
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="file"
-                          name="resumeFile"
-                          onChange={handleFormInputChange}
-                          accept=".pdf,.doc,.docx"
-                          className="hidden"
-                          id="resumeFile"
-                          required
-                        />
-                        <label
-                          htmlFor="resumeFile"
-                          className="px-4 py-2 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
-                        >
-                          Choose File
-                        </label>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {uploadFormData.resumeFile ? uploadFormData.resumeFile.name : "No file chosen"}
-                        </span>
-                      </div>
-                    </div>
-                 </div>
-                 
-                                   {/* Right Column */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        *Contact Number
-                      </label>
-                      <input
-                        type="tel"
-                        name="contactNumber"
-                        value={uploadFormData.contactNumber}
-                        onChange={handleFormInputChange}
-                        placeholder="Enter your contact number"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        *Qualification
-                      </label>
-                      <textarea
-                        name="qualification"
-                        value={uploadFormData.qualification}
-                        onChange={handleFormInputChange}
-                        placeholder="Enter your qualification details"
-                        rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        *Experience
-                      </label>
-                      <textarea
-                        name="experience"
-                        value={uploadFormData.experience}
-                        onChange={handleFormInputChange}
-                        placeholder="Enter your work experience"
-                        rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                        required
-                      />
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {uploadFormData.resumeFile ? uploadFormData.resumeFile.name : "No file chosen"}
+                      </span>
                     </div>
                   </div>
-               </div>
-               
-                               {/* Form Actions */}
-                <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <button
-                    type="button"
-                    onClick={handleFormCancel}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                  >
-                    Save
-                  </button>
                 </div>
-             </form>
-           </div>
-         </div>
-       )}
-     </DashboardLayout>
-   );
- } 
+                
+                {/* Right Column */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      *Contact Number
+                    </label>
+                    <input
+                      type="tel"
+                      name="contactNumber"
+                      value={uploadFormData.contactNumber}
+                      onChange={handleFormInputChange}
+                      placeholder="Enter your contact number"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      *Qualification
+                    </label>
+                    <textarea
+                      name="qualification"
+                      value={uploadFormData.qualification}
+                      onChange={handleFormInputChange}
+                      placeholder="Enter your qualification details"
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      *Experience
+                    </label>
+                    <textarea
+                      name="experience"
+                      value={uploadFormData.experience}
+                      onChange={handleFormInputChange}
+                      placeholder="Enter your work experience"
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Form Actions */}
+              <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={handleFormCancel}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </DashboardLayout>
+  );
+} 

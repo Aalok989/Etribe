@@ -1265,37 +1265,47 @@ export default function Circulars() {
           </div>
 
           {/* Pagination Controls */}
-          <div className="flex flex-row items-center justify-between gap-4 p-6 border-t border-gray-100 dark:border-gray-700">
-            <div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                Showing {indexOfFirstEntry + 1} to {Math.min(indexOfLastEntry, sortedCirculars.length)} of {sortedCirculars.length} entries
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handlePrev}
-                disabled={currentPage === 1}
-                className={`p-2 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
-                  currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700 dark:text-gray-400">Show</span>
+                <select
+                className="border rounded-lg px-3 py-1 text-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 text-gray-700 focus:ring-2 focus:ring-indigo-400 transition-colors"
+                  value={entriesPerPage}
+                  onChange={handleEntriesChange}
+                >
+                {[5, 10, 25, 50, 100].map(num => (
+                    <option key={num} value={num}>{num}</option>
+                  ))}
+                </select>
+              <span className="text-sm text-gray-600 dark:text-gray-400">entries per page</span>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePrev}
+                  disabled={currentPage === 1}
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                    currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 title="Previous"
-              >
-                <FiChevronLeft size={16} />
-              </button>
+                  >
+                    &lt;
+                </button>
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={handleNext}
-                disabled={currentPage === totalPages}
-                className={`p-2 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
-                  currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                    Page {currentPage} of {totalPages}
+                  </span>
+                <button
+                  onClick={handleNext}
+                  disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded-lg text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-gray-700 transition-colors ${
+                    currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 title="Next"
-              >
-                <FiChevronRight size={16} />
-              </button>
+                  >
+                    &gt;
+                </button>
+                </div>
             </div>
           </div>
         </div>

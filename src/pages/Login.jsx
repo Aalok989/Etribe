@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import api from '../api/axiosConfig'; // Import custom Axios instance
 import logo from '../assets/logos/company-logo.png';
 import bgImage from '../assets/images/bg-login.jpg';
-import countries from 'world-countries';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-
-const countryList = countries.map(c => ({ code: c.cca2, name: c.name.common }));
+import 'react-toastify/dist/ReactToastify.css';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -26,6 +24,10 @@ const Login = () => {
     pincode: '',
   });
   const [regError, setRegError] = useState('');
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [loadingStates, setLoadingStates] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,6 +37,100 @@ const Login = () => {
       navigate('/dashboard', { replace: true });
     }
   }, [navigate]);
+
+  // Fetch countries
+  const fetchCountries = async () => {
+    try {
+      setLoadingCountries(true);
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid');
+      
+      const response = await api.post('/common/countries', {}, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid || '1',
+          'token': token || '6788e852b29ae',
+          'rurl': 'etribes.ezcrm.site',
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      console.log('Countries response:', response.data);
+      
+      if (response.data && Array.isArray(response.data.data)) {
+        // Transform the response to match expected format with id and name
+        const transformedCountries = response.data.data.map((country, index) => ({
+          id: index + 1, // Use index as id since API doesn't provide id
+          name: country.country
+        }));
+        setCountries(transformedCountries);
+      } else {
+        console.error('Invalid countries response format:', response.data);
+        setCountries([]);
+      }
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+      console.error('Error details:', error.response?.data);
+      setCountries([]);
+    } finally {
+      setLoadingCountries(false);
+    }
+  };
+
+  // Fetch states based on selected country
+  const fetchStates = async (countryId) => {
+    console.log('fetchStates called with countryId:', countryId);
+    if (!countryId) {
+      console.log('No countryId provided, clearing states');
+      setStates([]);
+      return;
+    }
+
+    try {
+      setLoadingStates(true);
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid');
+      
+      // For now, hardcode India to test the API
+      const countryName = 'India';
+      console.log('Available countries:', countries);
+      console.log('Looking for country with id:', countryId, 'type:', typeof countryId);
+      console.log('Using hardcoded country name:', countryName);
+      
+      const response = await api.post('/common/states', { country: countryName }, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid || '1',
+          'token': token || '6788e852b29ae',
+          'rurl': 'etribes.ezcrm.site',
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      console.log('States response:', response.data);
+      
+      if (response.data && Array.isArray(response.data.data)) {
+        console.log('Raw states data:', response.data.data);
+        setStates(response.data.data);
+      } else {
+        console.error('Invalid states response format:', response.data);
+        setStates([]);
+      }
+    } catch (error) {
+      console.error('Error fetching states:', error);
+      console.error('Error details:', error.response?.data);
+      setStates([]);
+    } finally {
+      setLoadingStates(false);
+    }
+  };
+
+  // Load countries when component mounts
+  useEffect(() => {
+    fetchCountries();
+  }, []);
 
   // Password validation function
   const validatePassword = (password) => {
@@ -120,10 +216,59 @@ const Login = () => {
     }
     
     try {
-      // Registration API call would go here
-      console.log('Registration data:', regForm);
-      setRedirect(true);
+      const token = localStorage.getItem('token');
+      const uid = localStorage.getItem('uid');
+      
+      // Prepare registration data according to API format
+      const registrationData = {
+        name: regForm.name,
+        email: regForm.email,
+        password: regForm.password,
+        confirm_password: regForm.confirmPassword,
+        phone_num: regForm.contact,
+        area_id: regForm.state, // Use state ID as area_id
+        address: regForm.address,
+        district: regForm.district,
+        city: regForm.city,
+        pincode: regForm.pincode
+      };
+      
+      console.log('Registration data:', registrationData);
+      
+      const response = await api.post('/common/register', registrationData, {
+        headers: {
+          'Client-Service': 'COHAPPRT',
+          'Auth-Key': '4F21zrjoAASqz25690Zpqf67UyY',
+          'uid': uid || '1',
+          'token': token || '6788e852b29ae',
+          'rurl': 'etribes.ezcrm.site',
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      console.log('Registration response:', response.data);
+      
+      if (response.data?.status === 'success' || response.data?.success) {
+        toast.success('Registration successful! Please log in.');
+        setIsLogin(true); // Switch back to login form
+        setRegForm({
+          name: '',
+          contact: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          address: '',
+          country: '',
+          state: '',
+          district: '',
+          city: '',
+          pincode: '',
+        });
+      } else {
+        setRegError(response.data?.message || 'Registration failed. Please try again.');
+      }
     } catch (err) {
+      console.error('Registration error:', err);
       setRegError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
@@ -131,7 +276,18 @@ const Login = () => {
   };
 
   const handleRegChange = (e) => {
-    setRegForm({ ...regForm, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    console.log('handleRegChange called:', { name, value });
+    setRegForm({ ...regForm, [name]: value });
+    
+    // If country changes, fetch states for that country
+    if (name === 'country') {
+      console.log('Country changed, calling fetchStates with value:', value);
+      fetchStates(value);
+      // Reset state when country changes
+      setRegForm(prev => ({ ...prev, state: '' }));
+    }
+    
     // Clear error when user starts typing
     if (regError) setRegError('');
   };
@@ -201,7 +357,7 @@ const Login = () => {
               <input 
                 id="reg-name"
                 name="name" 
-                value={regForm.name} 
+                value={regForm.name || ''} 
                 onChange={handleRegChange} 
                 required 
                 className="w-full px-4 py-2 border border-primary-light rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white/80 text-primary-dark" 
@@ -214,7 +370,7 @@ const Login = () => {
               <input 
                 id="reg-contact"
                 name="contact" 
-                value={regForm.contact} 
+                value={regForm.contact || ''} 
                 onChange={handleRegChange} 
                 type="tel"
                 required 
@@ -228,7 +384,7 @@ const Login = () => {
               <input 
                 id="reg-email"
                 name="email" 
-                value={regForm.email} 
+                value={regForm.email || ''} 
                 onChange={handleRegChange} 
                 type="email" 
                 required 
@@ -243,7 +399,7 @@ const Login = () => {
                 <input 
                   id="reg-password"
                   name="password" 
-                  value={regForm.password} 
+                  value={regForm.password || ''} 
                   onChange={handleRegChange} 
                   type="password" 
                   required 
@@ -257,7 +413,7 @@ const Login = () => {
                 <input 
                   id="reg-confirm-password"
                   name="confirmPassword" 
-                  value={regForm.confirmPassword} 
+                  value={regForm.confirmPassword || ''} 
                   onChange={handleRegChange} 
                   type="password" 
                   required 
@@ -272,7 +428,7 @@ const Login = () => {
               <input 
                 id="reg-address"
                 name="address" 
-                value={regForm.address} 
+                value={regForm.address || ''} 
                 onChange={handleRegChange} 
                 required 
                 className="w-full px-4 py-2 border border-primary-light rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white/80 text-primary-dark" 
@@ -285,37 +441,46 @@ const Login = () => {
               <select 
                 id="reg-country"
                 name="country" 
-                value={regForm.country} 
+                value={regForm.country || ''} 
                 onChange={handleRegChange} 
                 required 
                 className="w-full px-4 py-2 border border-primary-light rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white/80 text-primary-dark"
                 aria-describedby="reg-country-error"
+                disabled={loadingCountries}
               >
-                <option value="">Select Country</option>
-                {countryList.map(c => (
-                  <option key={c.code} value={c.name}>{c.name}</option>
+                <option value="">{loadingCountries ? 'Loading countries...' : 'Select Country'}</option>
+                {countries.map(country => (
+                  <option key={country.id} value={country.id}>{country.name}</option>
                 ))}
               </select>
             </div>
             <div>
               <label htmlFor="reg-state" className="block text-primary-dark font-semibold mb-1">State</label>
-              <input 
+              <select 
                 id="reg-state"
                 name="state" 
-                value={regForm.state} 
+                value={regForm.state || ''} 
                 onChange={handleRegChange} 
                 required 
-                className="w-full px-4 py-2 border border-primary-light rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white/80 text-primary-dark" 
-                placeholder="Enter your state"
+                className="w-full px-4 py-2 border border-primary-light rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white/80 text-primary-dark"
                 aria-describedby="reg-state-error"
-              />
+                disabled={loadingStates || !regForm.country}
+              >
+                <option value="">
+                  {!regForm.country ? 'Select Country First' : 
+                   loadingStates ? 'Loading states...' : 'Select State'}
+                </option>
+                {states.map(state => (
+                  <option key={state.id} value={state.id}>{state.state}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label htmlFor="reg-district" className="block text-primary-dark font-semibold mb-1">District</label>
               <input 
                 id="reg-district"
                 name="district" 
-                value={regForm.district} 
+                value={regForm.district || ''} 
                 onChange={handleRegChange} 
                 required 
                 className="w-full px-4 py-2 border border-primary-light rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white/80 text-primary-dark" 
@@ -328,7 +493,7 @@ const Login = () => {
               <input 
                 id="reg-city"
                 name="city" 
-                value={regForm.city} 
+                value={regForm.city || ''} 
                 onChange={handleRegChange} 
                 required 
                 className="w-full px-4 py-2 border border-primary-light rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white/80 text-primary-dark" 
@@ -341,7 +506,7 @@ const Login = () => {
               <input 
                 id="reg-pincode"
                 name="pincode" 
-                value={regForm.pincode} 
+                value={regForm.pincode || ''} 
                 onChange={handleRegChange} 
                 required 
                 className="w-full px-4 py-2 border border-primary-light rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 bg-white/80 text-primary-dark" 
@@ -352,7 +517,7 @@ const Login = () => {
             {regError && <div id="reg-error" className="text-red-500 text-sm text-center" role="alert">{regError}</div>}
             <button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-green-600 to-primary text-white py-2 rounded-lg font-bold shadow-lg hover:from-green-700 hover:to-primary-dark transition disabled:opacity-50"
+              className="w-full bg-green-600 text-white py-2 rounded-lg font-bold shadow-lg hover:bg-green-700 transition disabled:opacity-50"
               disabled={loading}
               aria-describedby={loading ? "reg-loading-status" : undefined}
             >

@@ -54,10 +54,30 @@ export const ContactsProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    fetchContacts();
-    // Removed setInterval for auto-refresh
-    // Only call fetchContacts after CRUD operations
+    // Only fetch contacts if user is logged in
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchContacts();
+    } else {
+      // If no token, set loading to false and clear data
+      setLoading(false);
+      setContactsData([]);
+      setError(null);
+    }
   }, []);
+
+  // Check for token changes periodically (every 2 seconds)
+  useEffect(() => {
+    const checkToken = () => {
+      const token = localStorage.getItem('token');
+      if (token && contactsData.length === 0 && !loading) {
+        fetchContacts();
+      }
+    };
+
+    const interval = setInterval(checkToken, 2000);
+    return () => clearInterval(interval);
+  }, [contactsData.length, loading]);
 
   const addContact = async (contact) => {
     const token = localStorage.getItem('token');
@@ -116,8 +136,16 @@ export const ContactsProvider = ({ children }) => {
     }
   };
 
+  // Function to manually trigger contacts fetch (can be called after login)
+  const refreshContacts = () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchContacts();
+    }
+  };
+
   return (
-    <ContactsContext.Provider value={{ contactsData, loading, error, addContact, editContact, deleteContact, fetchContacts }}>
+    <ContactsContext.Provider value={{ contactsData, loading, error, addContact, editContact, deleteContact, fetchContacts, refreshContacts }}>
       {children}
     </ContactsContext.Provider>
   );
